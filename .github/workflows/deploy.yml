@@ -12,7 +12,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ---------- PHP / Composer ----------
+      # ---------- PHP / Composer (still needed: vendor/ isn't committed) ----------
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -23,23 +23,9 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-      # ---------- pnpm / Vite (Inertia/React build) ----------
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build frontend assets (clean build)
-        run: |
-          rm -rf public/build node_modules/.vite
-          pnpm build
+      # ---------- Frontend assets: NOT built here anymore ----------
+      # public/build is committed to the repo directly. Run `pnpm build`
+      # locally before pushing, and commit the resulting public/build folder.
 
       # ---------- Clean up before shipping to server ----------
       - name: Strip files that shouldn't be deployed
@@ -50,7 +36,7 @@ jobs:
           rm -rf .github
           rm -f .env .env.example
 
-      # ---------- Ship the built app to the server ----------
+      # ---------- Ship files to the server ----------
       - name: Deploy via rsync over SSH
         uses: burnett01/rsync-deployments@7.0.1
         with:
