@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       # ---------- PHP / Composer (still needed: vendor/ isn't committed) ----------
       - name: Setup PHP
@@ -39,7 +39,7 @@ jobs:
 
       # ---------- Ship the archive to the server ----------
       - name: Upload archive via SCP
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
@@ -51,7 +51,7 @@ jobs:
 
       # ---------- Extract on server and finish the deploy ----------
       - name: Extract archive and run post-deploy Artisan commands
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
