@@ -32,7 +32,6 @@ jobs:
       # only on the server and are never overwritten by a deploy.
       - name: Package build for transfer
         run: |
-          rm -rf tests .git .github
           rm -f .env .env.example
           tar -czf deploy.tar.gz --exclude=storage --exclude=deploy.tar.gz .
 
