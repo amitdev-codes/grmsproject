@@ -9,7 +9,7 @@ return
         'users' => 'Basebedisi',
         'grievances' => 'Linyenyefatso',
         'grievance-categories' => 'Mikhahlelo ea Litletlebo',
-        'grievance-channels' => 'Channels',
+        'grievance-channels' => 'Liteishene',
         'grievance-escalations' => 'Keketso ea Litletlebo',
         'grievance-messages' => 'Melaetsa ea Litletlebo',
         'grievance-status-history' => 'Nalane ea Boemo ba Litletlebo',
