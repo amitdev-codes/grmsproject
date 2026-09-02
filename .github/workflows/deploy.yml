@@ -32,8 +32,10 @@ jobs:
       # only on the server and are never overwritten by a deploy.
       - name: Package build for transfer
         run: |
+          rm -rf .git .github
           rm -f .env .env.example
-          tar -czf deploy.tar.gz --exclude=storage --exclude=deploy.tar.gz .
+          tar -czf ../deploy.tar.gz --exclude=storage .
+          mv ../deploy.tar.gz ./deploy.tar.gz
 
       # ---------- Ship the archive to the server ----------
       - name: Upload archive via SCP
