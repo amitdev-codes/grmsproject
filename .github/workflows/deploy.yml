@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # ---------- PHP / Composer (still needed: vendor/ isn't committed) ----------
       - name: Setup PHP
@@ -27,29 +27,29 @@ jobs:
       # public/build is committed to the repo directly. Run `pnpm build`
       # locally before pushing, and commit the resulting public/build folder.
 
-      # ---------- Clean up before shipping to server ----------
-      - name: Strip files that shouldn't be deployed
+      # ---------- Package everything into a single archive ----------
+      # storage/, .env, .env.example are excluded on purpose — those live
+      # only on the server and are never overwritten by a deploy.
+      - name: Package build for transfer
         run: |
-          rm -rf tests
-          rm -rf node_modules
-          rm -rf .git
-          rm -rf .github
+          rm -rf tests .git .github
           rm -f .env .env.example
+          tar -czf /tmp/deploy.tar.gz --exclude=storage .
 
-      # ---------- Ship files to the server ----------
-      - name: Deploy via rsync over SSH
-        uses: burnett01/rsync-deployments@7.0.1
+      # ---------- Ship the archive to the server ----------
+      - name: Upload archive via SCP
+        uses: appleboy/scp-action@v0.1.7
         with:
-          switches: -avzr --delete --exclude=".env" --exclude="storage/" --exclude="public/storage" --exclude="/public/uploads"
-          path: ./
-          remote_path: ${{ secrets.DEPLOY_PATH }}
-          remote_host: ${{ secrets.DEPLOY_HOST }}
-          remote_port: ${{ secrets.DEPLOY_PORT }}
-          remote_user: ${{ secrets.DEPLOY_USER }}
-          remote_key: ${{ secrets.DEPLOY_SSH_KEY }}
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          source: "/tmp/deploy.tar.gz"
+          target: "~/"
+          strip_components: 0
 
-      # ---------- Finish the deploy on the server ----------
-      - name: Run post-deploy Artisan commands
+      # ---------- Extract on server and finish the deploy ----------
+      - name: Extract archive and run post-deploy Artisan commands
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -57,8 +57,11 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT }}
           script: |
+            cd ${{ secrets.DEPLOY_PATH }} && php artisan down || true
+            mkdir -p ${{ secrets.DEPLOY_PATH }}
+            tar -xzf ~/deploy.tar.gz -C ${{ secrets.DEPLOY_PATH }}
+            rm -f ~/deploy.tar.gz
             cd ${{ secrets.DEPLOY_PATH }}
-            php artisan down || true
             php artisan migrate --force
             php artisan config:clear
             php artisan config:cache
