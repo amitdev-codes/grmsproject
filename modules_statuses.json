@@ -1,0 +1,10 @@
+{
+    "Grievance": true,
+    "Report": true,
+    "Setting": true,
+    "Log": true,
+    "Master": true,
+    "Frontend": true,
+    "Notification": true,
+    "UserManagement": true
+}

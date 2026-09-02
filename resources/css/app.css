@@ -1,0 +1,456 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+@import './data-table.css';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --font-sans:
+        'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
+    --font-serif: 'Source Serif 4', serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* ─── TYPE SCALE ───────────────────────────────────────────────────────────── */
+:root {
+    --fs-card-title:        0.9375rem;
+    --fs-card-description:  0.75rem;
+    --fs-card-body:         0.8125rem;
+
+    --fs-table-head:        0.6875rem;
+    --fs-table-row:         0.8125rem;
+    --fs-table-caption:     0.75rem;
+
+    --fs-btn:               0.8125rem;
+    --fs-btn-sm:            0.75rem;
+    --fs-btn-lg:            0.9375rem;
+
+    --fs-label:             0.8125rem;
+    --fs-hint:              0.75rem;
+    --fs-badge:             0.6875rem;
+    --fs-input:             0.8125rem;
+}
+
+/* ─── LIGHT MODE — GRMS palette ──────────────────────────────────────────────
+   Sourced from the GRMS landing-page style block. Where that palette didn't
+   define a slot this token system needs (secondary, muted, destructive,
+   chart colors, warning/info), a value was derived from the nearest GRMS
+   color (--ridge-* grays, --accent, --resolved) — flagged inline. Replace
+   any of these if you have exact values in mind.                          ─ */
+:root {
+    --background:             #EFEFE6; /* --bg-page */
+    --foreground:             #14213D; /* --text-primary */
+
+    --card:                   #F8F8F2; /* --bg-raised */
+    --card-foreground:        #14213D;
+
+    --popover:                #F8F8F2;
+    --popover-foreground:     #14213D;
+
+    --primary:                #B8763A; /* --accent */
+    --primary-foreground:     #ECEAE0; /* --text-on-inverse */
+
+    --secondary:              #E5E4D6; /* derived — light tint of --ridge-1 */
+    --secondary-foreground:   #4E5A72; /* --text-secondary */
+
+    --muted:                  #E5E4D6; /* derived — near --ridge-1 */
+    --muted-foreground:       #4E5A72; /* --text-secondary */
+
+    --accent:                 #E9DECF; /* derived — soft tint of --accent */
+    --accent-dark: #8F5A28;
+    --accent-foreground:      #8F5A28; /* --accent-dark */
+
+    --destructive:            #C6432E; /* NOT in GRMS palette — kept a red in the same warm-earth family as --accent, rather than reusing the old purple theme's cool red */
+    --destructive-foreground: #ECEAE0;
+
+    --border:                 #D6D5C7; /* --border */
+    --input:                  #D6D5C7;
+    --ring:                   #B8763A; /* --accent */
+
+    /* NOT in GRMS palette — kept distinct hues for chart legibility,
+       tinted toward the earth-tone family instead of the old purple set */
+    --chart-1:                #B8763A; /* accent */
+    --chart-2:                #1E7145; /* resolved green */
+    --chart-3:                #4E5A72; /* text-secondary blue-gray */
+    --chart-4:                #9CA290; /* ridge-3 */
+    --chart-5:                #8F5A28; /* accent-dark */
+
+    --radius: 0.5rem;
+
+    --sidebar:                       #14213D; /* --bg-inverse */
+    --sidebar-foreground:            #ECEAE0; /* --text-on-inverse */
+    --sidebar-primary:               #B8763A; /* --accent */
+    --sidebar-primary-foreground:    #ECEAE0;
+    --sidebar-accent:                #1C2540; /* derived — slightly lighter than bg-inverse */
+    --sidebar-accent-foreground:     #A9B4C9; /* --text-on-inverse-secondary */
+    --sidebar-border:                #2A3350; /* dark-mode --border, works as a subtle inverse-surface border */
+    --sidebar-ring:                  #B8763A;
+
+    --checkbox-border:        #9CA290; /* --ridge-3 */
+
+    --success:                #1E7145; /* --resolved */
+    --success-foreground:     #ECEAE0;
+    --success-muted:          #E1EFE6; /* --resolved-bg */
+
+    --warning:                #B8763A; /* NOT in GRMS palette — reused --accent since it's already an amber/ochre tone */
+    --warning-foreground:     #ECEAE0;
+    --warning-muted:          #F3E7D8; /* derived light tint */
+
+    --info:                   #4E5A72; /* NOT in GRMS palette — reused --text-secondary's blue-gray */
+    --info-foreground:        #ECEAE0;
+    --info-muted:             #E7E9EE; /* derived light tint */
+}
+
+/* ─── DARK MODE — GRMS palette ──────────────────────────────────────────────── */
+.dark {
+    --background:             #10182B; /* --bg-page (dark) */
+    --foreground:             #ECEAE0; /* --text-primary (dark) */
+
+    --card:                   #182238; /* --bg-raised (dark) */
+    --card-foreground:        #ECEAE0;
+
+    --popover:                #182238;
+    --popover-foreground:     #ECEAE0;
+
+    --primary:                #D89552; /* --accent (dark) */
+    --primary-foreground:     #10182B;
+
+    --secondary:              #212C4A; /* --ridge-2 (dark) */
+    --secondary-foreground:   #A7B0C4; /* --text-secondary (dark) */
+
+    --muted:                  #1C2540; /* --ridge-1 (dark) */
+    --muted-foreground:       #A7B0C4;
+
+    --accent:                 #263254; /* --ridge-3 (dark) */
+    --accent-foreground:      #EAB273; /* --accent-dark (dark) */
+    --accent-dark: #EAB273;
+
+    --destructive:            #D9573F; /* derived — lighter/desaturated for dark bg legibility */
+    --destructive-foreground: #ECEAE0;
+
+    --border:                 #2A3350; /* --border (dark) */
+    --input:                  #2A3350;
+    --ring:                   #D89552; /* --accent (dark) */
+
+    --chart-1:                #D89552;
+    --chart-2:                #4CA37A; /* --resolved (dark) */
+    --chart-3:                #A7B0C4;
+    --chart-4:                #263254; /* --ridge-3 (dark) */
+    --chart-5:                #EAB273; /* --accent-dark (dark) */
+
+    --sidebar:                       #080C16; /* --bg-inverse (dark) */
+    --sidebar-foreground:            #ECEAE0; /* --text-on-inverse */
+    --sidebar-primary:               #D89552;
+    --sidebar-primary-foreground:    #080C16;
+    --sidebar-accent:                #182238; /* derived */
+    --sidebar-accent-foreground:     #8790A6; /* --text-on-inverse-secondary (dark) */
+    --sidebar-border:                #2A3350;
+    --sidebar-ring:                  #D89552;
+
+    --checkbox-border:        #263254; /* --ridge-3 (dark) */
+
+    --success:                #4CA37A; /* --resolved (dark) */
+    --success-foreground:     #10182B;
+    --success-muted:          #16281F; /* --resolved-bg (dark) */
+
+    --warning:                #D89552; /* reused --accent (dark) */
+    --warning-foreground:     #10182B;
+    --warning-muted:          #2A2013; /* derived dark tint */
+
+    --info:                   #A7B0C4; /* reused --text-secondary (dark) */
+    --info-foreground:        #10182B;
+    --info-muted:             #1B2130; /* derived dark tint */
+}
+
+/* ─── BASE ──────────────────────────────────────────────────────────────────── */
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    html {
+        font-family: var(--font-sans), serif;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+        font-family: var(--font-sans), serif;
+        font-feature-settings: 'cv11', 'ss01';
+        -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-sans), serif;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+
+    button, input, select, textarea, optgroup {
+        font-family: var(--font-sans), serif;
+        font-feature-settings: 'cv11', 'ss01';
+        font-size: var(--fs-input);
+    }
+
+    .card, [class*="Card"] {
+        box-shadow: 0 2px 6px 0 rgba(20, 33, 61, 0.08); /* shadow tint updated to match new --foreground navy instead of the old purple */
+    }
+
+    .dark .card, .dark [class*="Card"] {
+        box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    input, select, textarea {
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 20%, transparent);
+    }
+
+    button:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+    }
+}
+
+/* ─── DISPLAY / MONO UTILITIES — from the GRMS style block ─────────────────── */
+@utility font-display {
+    font-family: var(--font-serif), serif;
+}
+
+@utility font-mono {
+    font-family: var(--font-mono), monospace;
+}
+
+/* ─── TYPOGRAPHY UTILITIES ───────────────────────────────────────────────────── */
+@utility text-card-title {
+    font-size: var(--fs-card-title);
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+@utility text-card-description {
+    font-size: var(--fs-card-description);
+    line-height: 1.4;
+}
+
+@utility text-card-body {
+    font-size: var(--fs-card-body);
+    line-height: 1.5;
+}
+
+@utility text-table-head {
+    font-size: var(--fs-table-head);
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+@utility text-table-row {
+    font-size: var(--fs-table-row);
+    line-height: 1.4;
+}
+
+@utility text-btn {
+    font-size: var(--fs-btn);
+    font-weight: 500;
+}
+
+@utility text-btn-sm {
+    font-size: var(--fs-btn-sm);
+    font-weight: 500;
+}
+
+@utility text-label {
+    font-size: var(--fs-label);
+    font-weight: 500;
+}
+
+@utility text-hint {
+    font-size: var(--fs-hint);
+}
+
+@utility text-badge {
+    font-size: var(--fs-badge);
+    font-weight: 500;
+}
+
+/* ─── COMPONENTS ─────────────────────────────────────────────────────────────── */
+@layer components {
+    .btn,
+    .btn-primary,
+    .btn-secondary,
+    .btn-outline-primary,
+    .btn-outline,
+    .btn-ghost,
+    .btn-danger,
+    .btn-icon {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-btn
+        transition-all duration-150 ease-out
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+        disabled:pointer-events-none disabled:opacity-50;
+    }
+
+    .btn {
+        @apply bg-transparent text-foreground;
+    }
+
+    .btn-primary {
+        @apply text-primary-foreground shadow-sm
+        hover:bg-primary/90 active:bg-primary/80;
+    }
+
+    .btn-secondary {
+        @apply text-secondary-foreground
+        hover:bg-secondary/80 active:bg-secondary/70;
+    }
+
+    .btn-outline-primary {
+        @apply border border-primary text-primary bg-transparent
+        hover:bg-primary/10;
+    }
+
+    .btn-outline {
+        @apply border border-border text-foreground bg-transparent
+        hover:bg-accent hover:text-accent-foreground;
+    }
+
+    .btn-ghost {
+        @apply bg-transparent text-foreground
+        hover:bg-accent hover:text-accent-foreground;
+    }
+
+    .btn-danger {
+        @apply bg-destructive text-destructive-foreground shadow-sm
+        hover:bg-destructive/90;
+    }
+
+    .btn-icon {
+        @apply h-9 w-9 rounded-lg border border-border bg-transparent p-0
+        hover:border-primary/40 hover:bg-accent;
+    }
+
+    .btn-sm {
+        @apply px-3 py-1.5 text-btn-sm;
+    }
+
+    .btn-lg {
+        @apply px-6 py-3 text-base;
+    }
+
+    .form-control {
+        @apply block w-full rounded-lg border border-input bg-background px-3 py-2 text-card-body
+        text-foreground
+        transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-ring/30
+        disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .form-label {
+        @apply mb-1.5 block text-label text-foreground;
+    }
+
+    .form-hint {
+        @apply mt-1 text-hint text-muted-foreground;
+    }
+
+    .form-error {
+        @apply mt-1 text-hint text-destructive;
+    }
+
+    .badge,
+    .badge-primary,
+    .badge-success,
+    .badge-warning,
+    .badge-danger,
+    .badge-info {
+        @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-badge;
+    }
+
+    .badge-primary {
+        @apply bg-primary/15 text-primary;
+    }
+
+    .badge-success {
+        @apply bg-(--success-muted) text-(--success);
+    }
+
+    .badge-warning {
+        @apply bg-(--warning-muted) text-(--warning);
+    }
+
+    .badge-danger {
+        @apply bg-destructive/15 text-destructive;
+    }
+
+    .badge-info {
+        @apply bg-(--info-muted) text-(--info);
+    }
+
+    .brand-gradient {
+        background-image: linear-gradient(135deg, var(--primary) 0%, var(--accent-dark) 100%);
+    }
+
+    /* From the GRMS style block — road-line SVG accent animation, kept as
+       a reusable utility rather than an inline <style> tag per component. */
+    .grms-road-line {
+        stroke-dasharray: 6 6;
+        animation: grms-road-draw 6s linear infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .grms-road-line {
+            animation: none !important;
+        }
+    }
+}
+
+@keyframes grms-road-draw {
+    from { stroke-dashoffset: 240; }
+    to { stroke-dashoffset: 0; }
+}

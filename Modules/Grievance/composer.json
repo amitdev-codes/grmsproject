@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/grievance",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Grievance\\": "app/",
+            "Modules\\Grievance\\Database\\Factories\\": "database/factories/",
+            "Modules\\Grievance\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Grievance\\Tests\\": "tests/"
+        }
+    }
+}
