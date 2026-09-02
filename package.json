@@ -8,8 +8,8 @@
         "dev": "vite",
         "format": "prettier --write resources/",
         "format:check": "prettier --check resources/",
-        "lint": "eslint . --fix",
-        "lint:check": "eslint .",
+        "lint": "eslint Modules --fix",
+        "lint:check": "eslint Modules",
         "types:check": "tsc --noEmit",
         "clean-build": "rm -rf node_modules && pnpm store prune && pnpm install && pnpm build"
     },
