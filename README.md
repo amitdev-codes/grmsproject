@@ -1,4 +1,4 @@
-# GRMS — [Full Project Name Here]
+# GRMS — [Grievance Redressal Management System]
 
 > Replace this line with a one-sentence description of what GRMS does and who it's for.
 
@@ -6,8 +6,7 @@
 
 ![Deploy Status](https://github.com/amitdev/grmsproject/actions/workflows/deploy.yml/badge.svg)
 
----
-
+--
 ## 📖 About
 
 GRMS (**G**___ **R**___ **M**anagement **S**ystem — expand the acronym here) is a web application built to [describe the core problem it solves in 2–3 sentences — who uses it, what it manages, why it exists].
