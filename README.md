@@ -1,4 +1,4 @@
-# GRMS — [Full Project Name Here]
+# GRMS — [Grievance Redressal Management System]
 
 > Replace this line with a one-sentence description of what GRMS does and who it's for.
 
