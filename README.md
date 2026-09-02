@@ -1,4 +1,4 @@
-# GRMS — [Grievance Redressal Management System]
+# GRMS — [Full Project Name Here]
 
 > Replace this line with a one-sentence description of what GRMS does and who it's for.
 
@@ -20,16 +20,16 @@ GRMS (**G**___ **R**___ **M**anagement **S**ystem — expand the acronym here) i
 - Role-based access (admin / staff / user, etc. — adjust to your app)
 - *(add more as the project grows)*
 
-## 🖼️ Screenshots
-
-> Add screenshots as you build them. Create a `docs/screenshots/` folder in the repo, drop images there, and reference them like below.
+## 🖼️ Screenshots![Screenshot from 2026-09-02 15-58-41.png](../../../../../home/devopsamit/Pictures/Screenshots/Screenshot%20from%202026-09-02%2015-58-41.png)
+![Screenshot from 2026-09-02 15-59-02.png](../../../../../home/devopsamit/Pictures/Screenshots/Screenshot%20from%202026-09-02%2015-59-02.png)
+> Add screenshots as you b![Screenshot from 2026-09-02 15-59-09.png](../../../../../home/devopsamit/Pictures/Screenshots/Screenshot%20from%202026-09-02%2015-59-09.png)uild them. Create a `docs/screenshots/` folder in the repo, drop images there, and reference them like below.
 
 | Dashboard | Login |
-|---|---|
+|--![Screenshot from 2026-09-02 15-59-33.png](../../../../../home/devopsamit/Pictures/Screenshots/Screenshot%20from%202026-09-02%2015-59-33.png)-|---|
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Login](docs/screenshots/login.png) |
 
 | Reports | Mobile View |
-|---|---|
+|---|---|![Screenshot from 2026-09-02 15-59-45.png](../../../../../home/devopsamit/Pictures/Screenshots/Screenshot%20from%202026-09-02%2015-59-45.png)
 | ![Reports](docs/screenshots/reports.png) | ![Mobile](docs/screenshots/mobile.png) |
 
 ## 🛠️ Tech Stack

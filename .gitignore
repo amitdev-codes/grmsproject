@@ -27,3 +27,4 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+grms_deploy_key*
