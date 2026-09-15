@@ -163,7 +163,7 @@ class GrievanceRepository implements GrievanceRepositoryInterface
     {
         return Grievance::query()
             ->with(['category', 'channel', 'district'])
-            ->where('status', 'submitted')
+            ->whereIn('status', ['submitted', 'reallocation_required'])
             ->whereNull('division_id')
             ->oldest() // FIFO — oldest unallocated first
             ->paginate($perPage);

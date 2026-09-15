@@ -29,16 +29,24 @@ class Grievance extends Model implements HasMedia
         'is_anonymous', 'description', 'location_description', 'metadata',
         'raw_payload', 'ussd_session_id', 'status', 'priority',
         'registered_by', 'acknowledged_at', 'sla_due_at', 'satisfaction_rating',
+        'project_id', 'source_grievance_id', 'is_previously_lodged', 'is_previously_finalized',
+        'latitude', 'longitude', 'location_accuracy_meters', 'preferred_language',
+        'grievance_sla_policy_id', 'first_response_due_at', 'resolution_due_at',
+        'closed_by', 'closed_reason', 'closed_at', 'tracking_access_expires_at', 'tracking_access_revoked_at',
     ];
 
     protected function casts(): array
     {
         return [
             'is_anonymous' => 'boolean',
+            'is_previously_lodged' => 'boolean',
             'metadata' => 'array',
             'raw_payload' => 'array',
             'acknowledged_at' => 'datetime',
             'sla_due_at' => 'datetime',
+            'first_response_due_at' => 'datetime',
+            'resolution_due_at' => 'datetime',
+            'closed_at' => 'datetime',
         ];
     }
 
@@ -48,6 +56,8 @@ class Grievance extends Model implements HasMedia
             ->acceptsMimeTypes([
                 'image/jpeg', 'image/png', 'image/webp',
                 'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 'video/mp4', 'video/quicktime',
                 'audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/x-m4a',
             ]);

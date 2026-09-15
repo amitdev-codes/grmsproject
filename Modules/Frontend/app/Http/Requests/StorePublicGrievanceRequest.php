@@ -8,8 +8,10 @@ use Illuminate\Validation\Rule;
 class StorePublicGrievanceRequest extends FormRequest
 {
     protected const MAX_ATTACHMENTS = 5;
+
     protected const MAX_ATTACHMENT_KB = 8 * 1024;
-    protected const ACCEPTED_MIMES = ['jpeg', 'png', 'webp', 'heic'];
+
+    protected const ACCEPTED_MIMES = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'mp3', 'wav', 'm4a', 'mp4', 'mov', 'avi'];
 
     public function authorize(): bool
     {
@@ -50,9 +52,9 @@ class StorePublicGrievanceRequest extends FormRequest
     {
         return [
             'description.min' => 'Please provide at least 20 characters describing what happened.',
-            'attachments.max' => 'You can attach up to '.self::MAX_ATTACHMENTS.' photos.',
-            'attachments.*.max' => 'Each photo must be '.(self::MAX_ATTACHMENT_KB / 1024).'MB or smaller.',
-            'attachments.*.mimes' => 'Photos must be JPG, PNG, WEBP, or HEIC.',
+            'attachments.max' => 'You can attach up to '.self::MAX_ATTACHMENTS.' files.',
+            'attachments.*.max' => 'Each file must be '.(self::MAX_ATTACHMENT_KB / 1024).'MB or smaller.',
+            'attachments.*.mimes' => 'Allowed files are images, PDF, DOC/DOCX, XLS/XLSX, audio, and video.',
             'contact_phone.required_without_if' => 'Please provide a phone number or an email so an officer can reach you.',
             'contact_name.required_if' => 'Please provide your name, or file anonymously instead.',
         ];

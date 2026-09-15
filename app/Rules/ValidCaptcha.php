@@ -3,25 +3,26 @@
 namespace App\Rules;
 
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Session;
 
 class ValidCaptcha implements ValidationRule
 {
     public function validate(string $attribute, mixed $value, \Closure $fail): void
     {
-        $secret = config('grievances.recaptcha_secret');
+        if (! is_string($value) || $value === '' || strlen($value) > 20) {
+            $fail('Please complete the security verification.');
 
-        if (!$secret) {
-            return; // not configured yet — no-op in local/dev; require before go-live
+            return;
         }
 
-        $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
-            'secret' => $secret,
-            'response' => $value,
-        ]);
+        $expected = Session::get('grievance_captcha_answer');
 
-        if (!$response->ok() || !($response->json('success') ?? false)) {
+        if (! $expected || ! hash_equals((string) $expected, trim($value))) {
             $fail('Captcha verification failed. Please try again.');
+
+            return;
         }
+
+        Session::forget('grievance_captcha_answer');
     }
 }

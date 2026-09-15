@@ -14,7 +14,9 @@ class MasterDatabaseSeeder extends Seeder
          $this->call([
              DistrictSeeder::class,
              DivisionSeeder::class,
-             SectionSeeder::class
+             SectionSeeder::class,
+             ProjectTypeSeeder::class,
+             GrievanceSlaPolicySeeder::class,
          ]);
     }
 }

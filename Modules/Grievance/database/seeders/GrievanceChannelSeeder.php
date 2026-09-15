@@ -19,8 +19,11 @@ class GrievanceChannelSeeder extends Seeder
             ['code' => 'ussd', 'name' => 'USSD'],
             ['code' => 'whatsapp', 'name' => 'WhatsApp'],
             ['code' => 'helpdesk', 'name' => 'Helpdesk Officer'],
+            ['code' => 'clo', 'name' => 'Community Liaison Officer'],
+            ['code' => 'rd_office', 'name' => 'Roads Directorate Office'],
             ['code' => 'box', 'name' => 'Grievance Box'],
             ['code' => 'grc', 'name' => 'Grievance Redress Committee'],
+            ['code' => 'community_forum', 'name' => 'Multi-stakeholder Community Forum'],
             ['code' => 'chief', 'name' => 'Chief / Community Councillor'],
             ['code' => 'social_media', 'name' => 'Social Media'],
         ])->each(fn ($c) => GrievanceChannel::updateOrCreate(['code' => $c['code']], $c));

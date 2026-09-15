@@ -4,7 +4,7 @@ namespace Modules\Grievance\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class AllocateDivisionRequest extends FormRequest
+class RejectGrievanceRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -13,8 +13,6 @@ class AllocateDivisionRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'division_id' => ['required', 'exists:divisions,id'],
-        ];
+        return ['reason' => ['required', 'string', 'min:10', 'max:1000']];
     }
 }

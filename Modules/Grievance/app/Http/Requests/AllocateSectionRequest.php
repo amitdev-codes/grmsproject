@@ -8,7 +8,7 @@ class AllocateSectionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('grievance.allocate_section', $this->route('grievance')) ?? false;
+        return $this->user()?->hasAnyRole(['division_director', 'super_admin']) ?? false;
     }
 
     public function rules(): array

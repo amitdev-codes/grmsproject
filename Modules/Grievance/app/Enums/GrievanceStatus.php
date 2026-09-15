@@ -6,6 +6,10 @@ enum GrievanceStatus: string
 {
     case Submitted = 'submitted';
     case Acknowledged = 'acknowledged';
+    case AllocatedDivision = 'allocated_division';
+    case AllocatedSection = 'allocated_section';
+    case ReallocationRequired = 'reallocation_required';
+    case AssignedOfficer = 'assigned_officer';
     case Assigned = 'assigned';
     case InProgress = 'in_progress';
     case Escalated = 'escalated';
@@ -19,6 +23,10 @@ enum GrievanceStatus: string
         return match ($this) {
             self::Submitted => 'Submitted',
             self::Acknowledged => 'Acknowledged',
+            self::AllocatedDivision => 'Allocated to division',
+            self::AllocatedSection => 'Allocated to section',
+            self::ReallocationRequired => 'Reallocation required',
+            self::AssignedOfficer => 'Assigned to investigating officer',
             self::Assigned => 'Assigned',
             self::InProgress => 'In progress',
             self::Escalated => 'Escalated',
@@ -39,8 +47,12 @@ enum GrievanceStatus: string
     public function allowedTransitions(): array
     {
         return match ($this) {
-            self::Submitted => [self::Acknowledged, self::Rejected],
-            self::Acknowledged => [self::Assigned, self::Rejected],
+            self::Submitted => [self::Acknowledged, self::AllocatedDivision, self::Rejected],
+            self::Acknowledged => [self::AllocatedDivision, self::Rejected],
+            self::AllocatedDivision => [self::AllocatedSection, self::ReallocationRequired, self::Rejected],
+            self::AllocatedSection => [self::AssignedOfficer, self::ReallocationRequired, self::Rejected],
+            self::ReallocationRequired => [self::AllocatedDivision, self::Rejected],
+            self::AssignedOfficer => [self::InProgress, self::Rejected],
             self::Assigned => [self::InProgress, self::Rejected],
             self::InProgress => [self::Escalated, self::Resolved, self::Rejected],
             self::Escalated => [self::InProgress, self::Resolved],

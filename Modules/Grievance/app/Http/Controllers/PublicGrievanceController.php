@@ -5,6 +5,7 @@ namespace Modules\Grievance\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Rules\ValidCaptcha;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Session;
 use Modules\Grievance\Http\Requests\RateGrievanceRequest;
 use Modules\Grievance\Http\Requests\StoreGrievanceMessageRequest;
 use Modules\Grievance\Http\Requests\StorePublicGrievanceRequest;
@@ -16,6 +17,15 @@ use Modules\Grievance\Services\GrievanceRegistrationService;
 class PublicGrievanceController extends Controller
 {
     public function __construct(protected GrievanceRegistrationService $service) {}
+
+    public function captcha(): JsonResponse
+    {
+        $left = random_int(2, 9);
+        $right = random_int(1, 9);
+        Session::put('grievance_captcha_answer', (string) ($left + $right));
+
+        return response()->json(['question' => "What is {$left} + {$right}?"]);
+    }
 
     public function store(StorePublicGrievanceRequest $request): JsonResponse
     {

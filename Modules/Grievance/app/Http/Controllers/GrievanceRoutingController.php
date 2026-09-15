@@ -11,6 +11,8 @@ use Modules\Grievance\Http\Requests\AllocateDivisionRequest;
 use Modules\Grievance\Http\Requests\AllocateSectionRequest;
 use Modules\Grievance\Http\Requests\AssignOfficerRequest;
 use Modules\Grievance\Http\Requests\RejectAllocationRequest;
+use Modules\Grievance\Http\Requests\RejectGrievanceRequest;
+use Modules\Grievance\Http\Requests\CloseGrievanceRequest;
 use Modules\Grievance\Models\Grievance;
 use Modules\Grievance\Services\GrievanceRoutingService;
 
@@ -66,5 +68,17 @@ class GrievanceRoutingController extends Controller
         $this->routing->assignOfficer($grievance, $request->validated('officer_id'), $request->user());
 
         return back()->with('success', 'Officer assigned.');
+    }
+
+    public function reject(RejectGrievanceRequest $request, Grievance $grievance): RedirectResponse
+    {
+        $this->routing->reject($grievance, $request->user(), $request->validated('reason'));
+        return back()->with('success', 'Grievance rejected with a recorded reason.');
+    }
+
+    public function close(CloseGrievanceRequest $request, Grievance $grievance): RedirectResponse
+    {
+        $this->routing->close($grievance, $request->user(), $request->validated('reason'));
+        return back()->with('success', 'Grievance closed with a recorded reason.');
     }
 }

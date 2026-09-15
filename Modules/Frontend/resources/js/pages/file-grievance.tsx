@@ -52,6 +52,10 @@ import { PageShell, NavBar, Footer } from './site-shared';
 type GrievanceStatus =
     | 'submitted'
     | 'acknowledged'
+    | 'allocated_division'
+    | 'allocated_section'
+    | 'reallocation_required'
+    | 'assigned_officer'
     | 'assigned'
     | 'in_progress'
     | 'escalated'
@@ -141,7 +145,23 @@ interface TrackedGrievance {
 
 const MAX_ATTACHMENTS = 5;
 const MAX_ATTACHMENT_MB = 8;
-const ACCEPTED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
+const ACCEPTED_MIME_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/heic',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'audio/mpeg',
+    'audio/wav',
+    'audio/x-m4a',
+    'video/mp4',
+    'video/quicktime',
+    'video/x-msvideo',
+];
 
 interface PendingFile {
     id: string;
@@ -171,6 +191,30 @@ const STATUS_VISUALS: Record<GrievanceStatus, StatusVisual> = {
         bg: 'var(--bg-raised)',
         description: 'A district officer has reviewed your case.',
         icon: ClipboardCheck,
+    },
+    allocated_division: {
+        color: 'var(--accent-dark)',
+        bg: 'var(--bg-raised)',
+        description: 'Sent to the responsible division.',
+        icon: UserCheck,
+    },
+    allocated_section: {
+        color: 'var(--accent-dark)',
+        bg: 'var(--bg-raised)',
+        description: 'Sent to the responsible section.',
+        icon: UserCheck,
+    },
+    reallocation_required: {
+        color: WARNING,
+        bg: 'rgba(184,134,11,0.08)',
+        description: 'The case is being reassigned to the appropriate office.',
+        icon: RefreshCw,
+    },
+    assigned_officer: {
+        color: 'var(--accent-dark)',
+        bg: 'var(--bg-raised)',
+        description: 'An investigating officer has been assigned.',
+        icon: UserCheck,
     },
     assigned: {
         color: 'var(--accent-dark)',
@@ -223,6 +267,10 @@ const STATUS_VISUALS: Record<GrievanceStatus, StatusVisual> = {
 const STATUS_LABELS: Record<GrievanceStatus, string> = {
     submitted: 'Submitted',
     acknowledged: 'Acknowledged',
+    allocated_division: 'Allocated to division',
+    allocated_section: 'Allocated to section',
+    reallocation_required: 'Reallocation required',
+    assigned_officer: 'Assigned to officer',
     assigned: 'Assigned',
     in_progress: 'In progress',
     escalated: 'Escalated',
@@ -239,6 +287,9 @@ const STATUS_LABELS: Record<GrievanceStatus, string> = {
 const STATUS_ORDER: GrievanceStatus[] = [
     'submitted',
     'acknowledged',
+    'allocated_division',
+    'allocated_section',
+    'assigned_officer',
     'assigned',
     'in_progress',
     'resolved',
@@ -247,7 +298,9 @@ const STATUS_ORDER: GrievanceStatus[] = [
 
 type StatusMetaMap = Record<GrievanceStatus, StatusVisual & { label: string }>;
 
-const STATUS_META: StatusMetaMap = (Object.keys(STATUS_VISUALS) as GrievanceStatus[]).reduce((acc, status) => {
+const STATUS_META: StatusMetaMap = (
+    Object.keys(STATUS_VISUALS) as GrievanceStatus[]
+).reduce((acc, status) => {
     acc[status] = { ...STATUS_VISUALS[status], label: STATUS_LABELS[status] };
 
     return acc;
@@ -337,13 +390,16 @@ interface GrievanceMetaContextValue {
     error: string | null;
 }
 
-const GrievanceMetaContext = React.createContext<GrievanceMetaContextValue | null>(null);
+const GrievanceMetaContext =
+    React.createContext<GrievanceMetaContextValue | null>(null);
 
 function useGrievanceMeta(): GrievanceMetaContextValue {
     const ctx = React.useContext(GrievanceMetaContext);
 
     if (!ctx) {
-        throw new Error('useGrievanceMeta must be used within GrievanceMetaProvider');
+        throw new Error(
+            'useGrievanceMeta must be used within GrievanceMetaProvider',
+        );
     }
 
     return ctx;
@@ -360,7 +416,10 @@ function GrievanceMetaProvider({ children }: { children: React.ReactNode }) {
 
         (async () => {
             try {
-                const [cats, dists] = await Promise.all([fetchCategories(), fetchDistricts()]);
+                const [cats, dists] = await Promise.all([
+                    fetchCategories(),
+                    fetchDistricts(),
+                ]);
 
                 if (cancelled) {
                     return;
@@ -370,7 +429,9 @@ function GrievanceMetaProvider({ children }: { children: React.ReactNode }) {
                 setDistricts(dists);
             } catch {
                 if (!cancelled) {
-                    setError("We couldn't load the form options. Please refresh the page.");
+                    setError(
+                        "We couldn't load the form options. Please refresh the page.",
+                    );
                 }
             } finally {
                 if (!cancelled) {
@@ -385,11 +446,22 @@ function GrievanceMetaProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const value = useMemo(
-        () => ({ categories, districts, statusMeta: STATUS_META, statusOrder: STATUS_ORDER, loading, error }),
+        () => ({
+            categories,
+            districts,
+            statusMeta: STATUS_META,
+            statusOrder: STATUS_ORDER,
+            loading,
+            error,
+        }),
         [categories, districts, loading, error],
     );
 
-    return <GrievanceMetaContext.Provider value={value}>{children}</GrievanceMetaContext.Provider>;
+    return (
+        <GrievanceMetaContext.Provider value={value}>
+            {children}
+        </GrievanceMetaContext.Provider>
+    );
 }
 
 function useDivisions(districtId: string): {
@@ -449,9 +521,16 @@ interface SubmitFields {
     contact_name: string;
     contact_phone: string;
     contact_email: string;
+    is_previously_lodged: boolean;
+    is_previously_finalized: boolean;
+    source_grievance_reference: string;
 }
 
-function buildSubmitFormData(fields: SubmitFields, files: File[]): FormData {
+function buildSubmitFormData(
+    fields: SubmitFields,
+    files: File[],
+    captchaToken: string,
+): FormData {
     const form = new FormData();
     form.append('category_id', String(fields.category_id));
 
@@ -470,6 +549,21 @@ function buildSubmitFormData(fields: SubmitFields, files: File[]): FormData {
     }
 
     form.append('is_anonymous', fields.is_anonymous ? '1' : '0');
+    form.append(
+        'is_previously_lodged',
+        fields.is_previously_lodged ? '1' : '0',
+    );
+    form.append(
+        'is_previously_finalized',
+        fields.is_previously_finalized ? '1' : '0',
+    );
+
+    if (fields.source_grievance_reference) {
+        form.append(
+            'source_grievance_reference',
+            fields.source_grievance_reference.toUpperCase(),
+        );
+    }
 
     if (!fields.is_anonymous) {
         if (fields.contact_name) {
@@ -492,6 +586,7 @@ function buildSubmitFormData(fields: SubmitFields, files: File[]): FormData {
         }
     });
     files.forEach((file) => form.append('attachments[]', file));
+    form.append('captcha_token', captchaToken);
 
     return form;
 }
@@ -505,13 +600,14 @@ function getCsrfToken(): string {
 async function submitGrievance(
     fields: SubmitFields,
     files: File[],
+    captchaToken: string,
 ): Promise<{ reference_number: string; sla_due_at: string }> {
     const res = await fetch('/grievances/add', {
         method: 'POST',
         headers: {
             'X-XSRF-TOKEN': getCsrfToken(),
         },
-        body: buildSubmitFormData(fields, files),
+        body: buildSubmitFormData(fields, files, captchaToken),
     });
 
     if (!res.ok) {
@@ -529,8 +625,40 @@ async function submitGrievance(
     };
 }
 
-async function trackGrievance(reference: string, contact: string): Promise<TrackedGrievance | null> {
-    const res = await fetch(`/grievances/track?ref=${encodeURIComponent(reference)}&contact=${encodeURIComponent(contact)}`);
+function CaptchaWidget({ onToken }: { onToken: (token: string) => void }) {
+    const [question, setQuestion] = useState('Loading verification...');
+
+    useEffect(() => {
+        fetch('/grievances/captcha')
+            .then((response) => response.json())
+            .then((data: { question: string }) => setQuestion(data.question))
+            .catch(() => setQuestion('Unable to load verification'));
+    }, []);
+
+    return (
+        <div className="flex items-center gap-3">
+            <Label htmlFor="captcha-answer" className="text-sm">
+                {question}
+            </Label>
+            <Input
+                id="captcha-answer"
+                inputMode="numeric"
+                autoComplete="off"
+                className="w-24"
+                onChange={(event) => onToken(event.target.value)}
+                aria-label="Security verification answer"
+            />
+        </div>
+    );
+}
+
+async function trackGrievance(
+    reference: string,
+    contact: string,
+): Promise<TrackedGrievance | null> {
+    const res = await fetch(
+        `/grievances/track?ref=${encodeURIComponent(reference)}&contact=${encodeURIComponent(contact)}`,
+    );
 
     if (!res.ok) {
         throw new Error('Not found');
@@ -539,7 +667,10 @@ async function trackGrievance(reference: string, contact: string): Promise<Track
     return await res.json();
 }
 
-async function sendCitizenMessage(reference: string, body: string): Promise<GrievanceMessageT> {
+async function sendCitizenMessage(
+    reference: string,
+    body: string,
+): Promise<GrievanceMessageT> {
     try {
         const res = await fetch(`grievances/${reference}/messages`, {
             method: 'POST',
@@ -553,7 +684,12 @@ async function sendCitizenMessage(reference: string, body: string): Promise<Grie
 
         return await res.json();
     } catch {
-        return { id: Date.now(), sender: 'citizen', body, created_at: new Date().toISOString() };
+        return {
+            id: Date.now(),
+            sender: 'citizen',
+            body,
+            created_at: new Date().toISOString(),
+        };
     }
 }
 
@@ -599,7 +735,11 @@ function StatusBadge({ status }: { status: GrievanceStatus }) {
         <Badge
             variant="outline"
             className="gap-1.5 font-mono text-xs"
-            style={{ borderColor: meta.color, color: meta.color, background: meta.bg }}
+            style={{
+                borderColor: meta.color,
+                color: meta.color,
+                background: meta.bg,
+            }}
         >
             <Icon className="h-3 w-3" />
             {meta.label}
@@ -608,28 +748,54 @@ function StatusBadge({ status }: { status: GrievanceStatus }) {
 }
 
 function PriorityBadge({ priority }: { priority: Priority }) {
-    const label = priority === 'high' ? 'High priority' : priority === 'low' ? 'Low priority' : 'Normal priority';
+    const label =
+        priority === 'high'
+            ? 'High priority'
+            : priority === 'low'
+              ? 'Low priority'
+              : 'Normal priority';
     const color = priority === 'high' ? DANGER : 'var(--text-secondary)';
 
     return (
-        <Badge variant="outline" className="font-mono text-xs" style={{ borderColor: color, color }}>
+        <Badge
+            variant="outline"
+            className="font-mono text-xs"
+            style={{ borderColor: color, color }}
+        >
             {label}
         </Badge>
     );
 }
 
-function SectionHeader({ eyebrow, title, sub }: { eyebrow: string; title: string; sub: string }) {
+function SectionHeader({
+    eyebrow,
+    title,
+    sub,
+}: {
+    eyebrow: string;
+    title: string;
+    sub: string;
+}) {
     return (
         <div className="mb-8 text-center">
             <Badge
                 variant="outline"
                 className="mb-4 font-mono text-xs"
-                style={{ borderColor: 'var(--accent)', color: 'var(--accent-dark)', background: 'var(--bg-raised)' }}
+                style={{
+                    borderColor: 'var(--accent)',
+                    color: 'var(--accent-dark)',
+                    background: 'var(--bg-raised)',
+                }}
             >
                 {eyebrow}
             </Badge>
-            <h1 className="font-display mb-2 text-3xl font-semibold md:text-4xl">{title}</h1>
-            <p className="mx-auto max-w-lg text-sm" style={{ color: 'var(--text-secondary)' }}>
+            <h1 className="mb-2 font-display text-3xl font-semibold md:text-4xl">
+                {title}
+            </h1>
+            <p
+                className="mx-auto max-w-lg text-sm"
+                style={{ color: 'var(--text-secondary)' }}
+            >
                 {sub}
             </p>
         </div>
@@ -639,7 +805,10 @@ function SectionHeader({ eyebrow, title, sub }: { eyebrow: string; title: string
 function MetaLoadingState() {
     return (
         <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-            <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--text-secondary)' }} />
+            <Loader2
+                className="h-6 w-6 animate-spin"
+                style={{ color: 'var(--text-secondary)' }}
+            />
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 Loading form options...
             </p>
@@ -649,9 +818,13 @@ function MetaLoadingState() {
 
 function MetaErrorState({ message }: { message: string }) {
     return (
-        <Alert style={{ borderColor: DANGER, background: 'rgba(179,38,30,0.06)' }}>
+        <Alert
+            style={{ borderColor: DANGER, background: 'rgba(179,38,30,0.06)' }}
+        >
             <AlertTriangle className="h-4 w-4" style={{ color: DANGER }} />
-            <AlertDescription style={{ color: DANGER }}>{message}</AlertDescription>
+            <AlertDescription style={{ color: DANGER }}>
+                {message}
+            </AlertDescription>
         </Alert>
     );
 }
@@ -660,7 +833,7 @@ function MetaErrorState({ message }: { message: string }) {
 // Filing wizard
 // ---------------------------------------------------------------------------
 
-const STEP_LABELS = ['Category', 'Details', 'Photos', 'Contact', 'Review'];
+const STEP_LABELS = ['Category', 'Details', 'Files', 'Contact', 'Review'];
 
 function StepIndicator({ step }: { step: number }) {
     return (
@@ -676,16 +849,28 @@ function StepIndicator({ step }: { step: number }) {
                             <div
                                 className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300"
                                 style={{
-                                    background: active ? 'var(--accent)' : 'transparent',
+                                    background: active
+                                        ? 'var(--accent)'
+                                        : 'transparent',
                                     border: `1.5px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-                                    color: active ? '#14213D' : 'var(--text-secondary)',
+                                    color: active
+                                        ? '#14213D'
+                                        : 'var(--text-secondary)',
                                 }}
                             >
-                                {n < step ? <CheckCircle2 className="h-3.5 w-3.5" /> : n}
+                                {n < step ? (
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                ) : (
+                                    n
+                                )}
                             </div>
                             <span
                                 className="hidden text-[11px] sm:block"
-                                style={{ color: active ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                                style={{
+                                    color: active
+                                        ? 'var(--text-primary)'
+                                        : 'var(--text-secondary)',
+                                }}
                             >
                                 {label}
                             </span>
@@ -693,7 +878,12 @@ function StepIndicator({ step }: { step: number }) {
                         {!isLast && (
                             <div
                                 className="mx-2 h-px flex-1 transition-colors duration-300"
-                                style={{ background: n < step ? 'var(--accent)' : 'var(--border)' }}
+                                style={{
+                                    background:
+                                        n < step
+                                            ? 'var(--accent)'
+                                            : 'var(--border)',
+                                }}
                             />
                         )}
                     </React.Fragment>
@@ -704,10 +894,10 @@ function StepIndicator({ step }: { step: number }) {
 }
 
 function AttachmentsStep({
-                             files,
-                             onAdd,
-                             onRemove,
-                         }: {
+    files,
+    onAdd,
+    onRemove,
+}: {
     files: PendingFile[];
     onAdd: (list: FileList | null) => void;
     onRemove: (id: string) => void;
@@ -718,16 +908,24 @@ function AttachmentsStep({
     return (
         <div className="space-y-4">
             <div>
-                <Label className="mb-1 block text-sm font-semibold">Add photos (optional)</Label>
-                <p className="mb-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    Photos of the issue help the responsible office act faster. Up to {MAX_ATTACHMENTS} files, JPG,
-                    PNG, WEBP or HEIC, {MAX_ATTACHMENT_MB}MB each.
+                <Label className="mb-1 block text-sm font-semibold">
+                    Add supporting files (optional)
+                </Label>
+                <p
+                    className="mb-3 text-xs"
+                    style={{ color: 'var(--text-secondary)' }}
+                >
+                    Supporting files help the responsible office act faster. Up
+                    to {MAX_ATTACHMENTS} files, including images, audio, video,
+                    PDF, DOCX and XLSX, {MAX_ATTACHMENT_MB}MB each.
                 </p>
                 <div
                     role="button"
                     tabIndex={0}
                     onClick={() => inputRef.current?.click()}
-                    onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
+                    onKeyDown={(e) =>
+                        e.key === 'Enter' && inputRef.current?.click()
+                    }
                     onDragOver={(e) => {
                         e.preventDefault();
                         setDragOver(true);
@@ -740,13 +938,25 @@ function AttachmentsStep({
                     }}
                     className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed px-6 py-10 text-center transition-colors"
                     style={{
-                        borderColor: dragOver ? 'var(--accent)' : 'var(--border)',
-                        background: dragOver ? 'var(--bg-page)' : 'var(--bg-raised)',
+                        borderColor: dragOver
+                            ? 'var(--accent)'
+                            : 'var(--border)',
+                        background: dragOver
+                            ? 'var(--bg-page)'
+                            : 'var(--bg-raised)',
                     }}
                 >
-                    <UploadCloud className="h-6 w-6" style={{ color: 'var(--text-secondary)' }} />
-                    <p className="text-sm font-medium">Drag photos here, or click to browse</p>
-                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <UploadCloud
+                        className="h-6 w-6"
+                        style={{ color: 'var(--text-secondary)' }}
+                    />
+                    <p className="text-sm font-medium">
+                        Drag files here, or click to browse
+                    </p>
+                    <p
+                        className="text-xs"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
                         {files.length}/{MAX_ATTACHMENTS} added
                     </p>
                     <input
@@ -769,9 +979,15 @@ function AttachmentsStep({
                         <div
                             key={f.id}
                             className="group relative overflow-hidden rounded-md border"
-                            style={{ borderColor: f.error ? DANGER : 'var(--border)' }}
+                            style={{
+                                borderColor: f.error ? DANGER : 'var(--border)',
+                            }}
                         >
-                            <img src={f.previewUrl} alt={f.file.name} className="h-24 w-full object-cover" />
+                            <img
+                                src={f.previewUrl}
+                                alt={f.file.name}
+                                className="h-24 w-full object-cover"
+                            />
                             <button
                                 type="button"
                                 aria-label={`Remove ${f.file.name}`}
@@ -782,13 +998,19 @@ function AttachmentsStep({
                                 <X className="h-3 w-3 text-white" />
                             </button>
                             {f.error ? (
-                                <p className="truncate p-1.5 text-[10px]" style={{ color: DANGER }}>
+                                <p
+                                    className="truncate p-1.5 text-[10px]"
+                                    style={{ color: DANGER }}
+                                >
                                     {f.error}
                                 </p>
                             ) : (
                                 <p
                                     className="truncate p-1.5 text-[10px]"
-                                    style={{ color: 'var(--text-secondary)', background: 'var(--bg-raised)' }}
+                                    style={{
+                                        color: 'var(--text-secondary)',
+                                        background: 'var(--bg-raised)',
+                                    }}
                                 >
                                     {f.file.name}
                                 </p>
@@ -807,7 +1029,10 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
     const [step, setStep] = useState(1);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [confirmation, setConfirmation] = useState<{ ref: string; slaDue: string } | null>(null);
+    const [confirmation, setConfirmation] = useState<{
+        ref: string;
+        slaDue: string;
+    } | null>(null);
 
     const [categoryId, setCategoryId] = useState<string>('');
     const [districtId, setDistrictId] = useState<string>('');
@@ -820,16 +1045,26 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
     const [contactName, setContactName] = useState('');
     const [contactPhone, setContactPhone] = useState('');
     const [contactEmail, setContactEmail] = useState('');
+    const [captchaToken, setCaptchaToken] = useState('');
+    const [isPreviouslyLodged, setIsPreviouslyLodged] = useState(false);
+    const [isPreviouslyFinalized, setIsPreviouslyFinalized] = useState(false);
+    const [sourceGrievanceReference, setSourceGrievanceReference] =
+        useState('');
 
-    const category = categories.find((c) => String(c.id) === categoryId) ?? null;
-    const { divisions: divisionsForDistrict, loading: divisionsLoading } = useDivisions(districtId);
+    const category =
+        categories.find((c) => String(c.id) === categoryId) ?? null;
+    const { divisions: divisionsForDistrict, loading: divisionsLoading } =
+        useDivisions(districtId);
 
     function addPhotos(list: FileList | null) {
         if (!list) {
             return;
         }
 
-        const incoming = Array.from(list).slice(0, MAX_ATTACHMENTS - photos.length);
+        const incoming = Array.from(list).slice(
+            0,
+            MAX_ATTACHMENTS - photos.length,
+        );
         const next: PendingFile[] = incoming.map((file) => {
             let error: string | null = null;
 
@@ -875,11 +1110,24 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
         }
 
         if (step === 4) {
-            return isAnonymous || contactPhone.trim().length > 0 || contactEmail.trim().length > 0;
+            return (
+                isAnonymous ||
+                contactPhone.trim().length > 0 ||
+                contactEmail.trim().length > 0
+            );
         }
 
         return true;
-    }, [step, categoryId, districtId, description, photos, isAnonymous, contactPhone, contactEmail]);
+    }, [
+        step,
+        categoryId,
+        districtId,
+        description,
+        photos,
+        isAnonymous,
+        contactPhone,
+        contactEmail,
+    ]);
 
     async function handleSubmit() {
         setSubmitting(true);
@@ -898,12 +1146,21 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                     contact_name: contactName,
                     contact_phone: contactPhone,
                     contact_email: contactEmail,
+                    is_previously_lodged: isPreviouslyLodged,
+                    is_previously_finalized: isPreviouslyFinalized,
+                    source_grievance_reference: sourceGrievanceReference,
                 },
                 photos.filter((p) => !p.error).map((p) => p.file),
+                captchaToken,
             );
-            setConfirmation({ ref: result.reference_number, slaDue: result.sla_due_at });
+            setConfirmation({
+                ref: result.reference_number,
+                slaDue: result.sla_due_at,
+            });
         } catch {
-            setError("We couldn't submit your grievance. Please check your connection and try again.");
+            setError(
+                "We couldn't submit your grievance. Please check your connection and try again.",
+            );
         } finally {
             setSubmitting(false);
         }
@@ -924,44 +1181,83 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
         setContactName('');
         setContactPhone('');
         setContactEmail('');
+        setCaptchaToken('');
+        setIsPreviouslyLodged(false);
+        setIsPreviouslyFinalized(false);
+        setSourceGrievanceReference('');
     }
 
     if (confirmation) {
         return (
-            <Card className="border" style={{ borderColor: 'var(--resolved)', background: 'var(--resolved-bg)' }}>
+            <Card
+                className="border"
+                style={{
+                    borderColor: 'var(--resolved)',
+                    background: 'var(--resolved-bg)',
+                }}
+            >
                 <CardContent className="p-8 text-center">
-                    <CheckCircle2 className="mx-auto mb-4 h-10 w-10" style={{ color: 'var(--resolved)' }} />
-                    <h2 className="font-display mb-2 text-2xl font-semibold">Grievance received</h2>
-                    <p className="mb-6 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                        Keep this reference number safe. You'll need it to check the status of your case.
+                    <CheckCircle2
+                        className="mx-auto mb-4 h-10 w-10"
+                        style={{ color: 'var(--resolved)' }}
+                    />
+                    <h2 className="mb-2 font-display text-2xl font-semibold">
+                        Grievance received
+                    </h2>
+                    <p
+                        className="mb-6 text-sm"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
+                        Keep this reference number safe. You'll need it to check
+                        the status of your case.
                     </p>
                     <div
                         className="mx-auto mb-6 flex max-w-xs items-center justify-between rounded-md border px-4 py-3"
-                        style={{ borderColor: 'var(--border)', background: 'var(--bg-page)' }}
+                        style={{
+                            borderColor: 'var(--border)',
+                            background: 'var(--bg-page)',
+                        }}
                     >
-                        <span className="font-mono text-lg font-semibold">{confirmation.ref}</span>
+                        <span className="font-mono text-lg font-semibold">
+                            {confirmation.ref}
+                        </span>
                         <button
                             type="button"
                             aria-label="Copy reference number"
-                            onClick={() => navigator.clipboard?.writeText(confirmation.ref)}
+                            onClick={() =>
+                                navigator.clipboard?.writeText(confirmation.ref)
+                            }
                             className="rounded p-1.5 transition-colors hover:bg-black/5"
                         >
-                            <Copy className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
+                            <Copy
+                                className="h-4 w-4"
+                                style={{ color: 'var(--text-secondary)' }}
+                            />
                         </button>
                     </div>
-                    <p className="mb-6 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <p
+                        className="mb-6 text-xs"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
                         Target response by {formatDate(confirmation.slaDue)}.
                     </p>
                     <div className="flex flex-wrap justify-center gap-3">
                         <Button
                             onClick={() => onFiled(confirmation.ref)}
-                            style={{ background: 'var(--accent)', color: '#14213D' }}
+                            style={{
+                                background: 'var(--accent)',
+                                color: '#14213D',
+                            }}
                         >
-                            Track this grievance <ArrowRight className="ml-1 h-4 w-4" />
+                            Track this grievance{' '}
+                            <ArrowRight className="ml-1 h-4 w-4" />
                         </Button>
                         <Button
                             variant="outline"
-                            style={{ borderColor: 'var(--text-primary)', color: 'var(--text-primary)' }}
+                            style={{
+                                borderColor: 'var(--text-primary)',
+                                color: 'var(--text-primary)',
+                            }}
                             onClick={resetForm}
                         >
                             File another
@@ -973,42 +1269,67 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
     }
 
     return (
-        <Card className="border" style={{ borderColor: 'var(--border)', background: 'var(--bg-raised)' }}>
+        <Card
+            className="border"
+            style={{
+                borderColor: 'var(--border)',
+                background: 'var(--bg-raised)',
+            }}
+        >
             <CardContent className="p-6 md:p-8">
                 <StepIndicator step={step} />
 
                 {step === 1 && (
                     <div className="space-y-6">
                         <div>
-                            <Label className="mb-2 block text-sm font-semibold">What is this about?</Label>
+                            <Label className="mb-2 block text-sm font-semibold">
+                                What is this about?
+                            </Label>
                             <div className="grid gap-2.5 sm:grid-cols-2">
                                 {categories.map((c) => {
-                                    const CategoryIcon = resolveCategoryIcon(c.icon);
-                                    const selected = categoryId === String(c.id);
+                                    const CategoryIcon = resolveCategoryIcon(
+                                        c.icon,
+                                    );
+                                    const selected =
+                                        categoryId === String(c.id);
 
                                     return (
                                         <button
                                             key={c.id}
                                             type="button"
-                                            onClick={() => setCategoryId(String(c.id))}
+                                            onClick={() =>
+                                                setCategoryId(String(c.id))
+                                            }
                                             className="flex items-start gap-2.5 rounded-md border p-3.5 text-left transition-colors"
                                             style={{
-                                                borderColor: selected ? 'var(--accent)' : 'var(--border)',
-                                                background: selected ? 'var(--bg-page)' : 'transparent',
+                                                borderColor: selected
+                                                    ? 'var(--accent)'
+                                                    : 'var(--border)',
+                                                background: selected
+                                                    ? 'var(--bg-page)'
+                                                    : 'transparent',
                                             }}
                                         >
                                             <CategoryIcon
                                                 className="mt-0.5 h-4 w-4 shrink-0"
-                                                style={{ color: 'var(--text-secondary)' }}
+                                                style={{
+                                                    color: 'var(--text-secondary)',
+                                                }}
                                             />
                                             <span>
                                                 <span className="flex items-center gap-1.5">
-                                                    <span className="text-sm font-semibold">{c.name}</span>
+                                                    <span className="text-sm font-semibold">
+                                                        {c.name}
+                                                    </span>
                                                     {c.is_sensitive && (
                                                         <Badge
                                                             variant="outline"
                                                             className="font-mono text-[10px]"
-                                                            style={{ borderColor: DANGER, color: DANGER }}
+                                                            style={{
+                                                                borderColor:
+                                                                    DANGER,
+                                                                color: DANGER,
+                                                            }}
                                                         >
                                                             Sensitive
                                                         </Badge>
@@ -1017,7 +1338,9 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                                 {c.name_st && (
                                                     <span
                                                         className="mt-0.5 block text-xs"
-                                                        style={{ color: 'var(--text-secondary)' }}
+                                                        style={{
+                                                            color: 'var(--text-secondary)',
+                                                        }}
                                                     >
                                                         {c.name_st}
                                                     </span>
@@ -1031,7 +1354,9 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
 
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div>
-                                <Label className="mb-2 block text-sm font-semibold">District</Label>
+                                <Label className="mb-2 block text-sm font-semibold">
+                                    District
+                                </Label>
                                 <Select
                                     value={districtId}
                                     onValueChange={(v) => {
@@ -1044,7 +1369,10 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {districts.map((d) => (
-                                            <SelectItem key={d.id} value={String(d.id)}>
+                                            <SelectItem
+                                                key={d.id}
+                                                value={String(d.id)}
+                                            >
                                                 {d.name}
                                             </SelectItem>
                                         ))}
@@ -1052,22 +1380,31 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                 </Select>
                             </div>
                             <div>
-                                <Label className="mb-2 block text-sm font-semibold">Office (optional)</Label>
-                                <Select value={divisionId} onValueChange={setDivisionId} disabled={!districtId}>
+                                <Label className="mb-2 block text-sm font-semibold">
+                                    Office (optional)
+                                </Label>
+                                <Select
+                                    value={divisionId}
+                                    onValueChange={setDivisionId}
+                                    disabled={!districtId}
+                                >
                                     <SelectTrigger>
                                         <SelectValue
                                             placeholder={
                                                 !districtId
                                                     ? 'Choose a district first'
                                                     : divisionsLoading
-                                                        ? 'Loading offices...'
-                                                        : 'If you know it'
+                                                      ? 'Loading offices...'
+                                                      : 'If you know it'
                                             }
                                         />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {divisionsForDistrict.map((d) => (
-                                            <SelectItem key={d.id} value={String(d.id)}>
+                                            <SelectItem
+                                                key={d.id}
+                                                value={String(d.id)}
+                                            >
                                                 {d.name}
                                             </SelectItem>
                                         ))}
@@ -1081,14 +1418,19 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                 {step === 2 && (
                     <div className="space-y-5">
                         <div>
-                            <Label className="mb-2 block text-sm font-semibold">Tell us what happened</Label>
+                            <Label className="mb-2 block text-sm font-semibold">
+                                Tell us what happened
+                            </Label>
                             <Textarea
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 placeholder="Describe what happened, when, and who or what was involved. The more detail, the faster we can act."
                                 className="min-h-35"
                             />
-                            <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                            <p
+                                className="mt-1 text-xs"
+                                style={{ color: 'var(--text-secondary)' }}
+                            >
                                 {description.trim().length < 20
                                     ? `${20 - description.trim().length} more characters needed`
                                     : 'Looks good'}
@@ -1101,9 +1443,56 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             </Label>
                             <Input
                                 value={locationDescription}
-                                onChange={(e) => setLocationDescription(e.target.value)}
+                                onChange={(e) =>
+                                    setLocationDescription(e.target.value)
+                                }
                                 placeholder="e.g. Main North 1, near Ha Abia junction"
                             />
+                        </div>
+
+                        <div
+                            className="rounded-md border p-4"
+                            style={{ borderColor: 'var(--border)' }}
+                        >
+                            <p className="mb-3 text-sm font-semibold">
+                                Is this related to an earlier grievance?
+                            </p>
+                            <label className="mb-2 flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={isPreviouslyLodged}
+                                    onChange={(event) =>
+                                        setIsPreviouslyLodged(
+                                            event.target.checked,
+                                        )
+                                    }
+                                />
+                                It was previously lodged.
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={isPreviouslyFinalized}
+                                    onChange={(event) =>
+                                        setIsPreviouslyFinalized(
+                                            event.target.checked,
+                                        )
+                                    }
+                                />
+                                It was previously finalized.
+                            </label>
+                            {(isPreviouslyLodged || isPreviouslyFinalized) && (
+                                <Input
+                                    className="mt-3"
+                                    value={sourceGrievanceReference}
+                                    onChange={(event) =>
+                                        setSourceGrievanceReference(
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder="Earlier reference number, if known (e.g. GRM-2026-000001)"
+                                />
+                            )}
                         </div>
 
                         {/* Category-specific extra fields — populated only if the backend
@@ -1111,10 +1500,17 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             name to grievance_categories to enable this). */}
                         {category?.form_fields?.map((f) => (
                             <div key={f.key}>
-                                <Label className="mb-2 block text-sm font-semibold">{f.label}</Label>
+                                <Label className="mb-2 block text-sm font-semibold">
+                                    {f.label}
+                                </Label>
                                 <Input
                                     value={metadata[f.key] ?? ''}
-                                    onChange={(e) => setMetadata((m) => ({ ...m, [f.key]: e.target.value }))}
+                                    onChange={(e) =>
+                                        setMetadata((m) => ({
+                                            ...m,
+                                            [f.key]: e.target.value,
+                                        }))
+                                    }
                                     placeholder={f.placeholder}
                                 />
                             </div>
@@ -1122,40 +1518,86 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                     </div>
                 )}
 
-                {step === 3 && <AttachmentsStep files={photos} onAdd={addPhotos} onRemove={removePhoto} />}
+                {step === 3 && (
+                    <AttachmentsStep
+                        files={photos}
+                        onAdd={addPhotos}
+                        onRemove={removePhoto}
+                    />
+                )}
 
                 {step === 4 && (
                     <div className="space-y-6">
                         <div>
-                            <Label className="mb-3 block text-sm font-semibold">How should we reach you?</Label>
+                            <Label className="mb-3 block text-sm font-semibold">
+                                How should we reach you?
+                            </Label>
                             <RadioGroup
                                 value={isAnonymous ? 'anonymous' : 'contact'}
-                                onValueChange={(v) => setIsAnonymous(v === 'anonymous')}
+                                onValueChange={(v) =>
+                                    setIsAnonymous(v === 'anonymous')
+                                }
                                 className="space-y-2.5"
                             >
                                 <label
                                     className="flex cursor-pointer items-start gap-3 rounded-md border p-3.5"
-                                    style={{ borderColor: !isAnonymous ? 'var(--accent)' : 'var(--border)' }}
+                                    style={{
+                                        borderColor: !isAnonymous
+                                            ? 'var(--accent)'
+                                            : 'var(--border)',
+                                    }}
                                 >
-                                    <RadioGroupItem value="contact" className="mt-0.5" />
+                                    <RadioGroupItem
+                                        value="contact"
+                                        className="mt-0.5"
+                                    />
                                     <div>
-                                        <p className="text-sm font-semibold">Share my contact details</p>
-                                        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                            An officer can follow up and you'll get updates as your case moves.
+                                        <p className="text-sm font-semibold">
+                                            Share my contact details
+                                        </p>
+                                        <p
+                                            className="text-xs"
+                                            style={{
+                                                color: 'var(--text-secondary)',
+                                            }}
+                                        >
+                                            An officer can follow up and you'll
+                                            get updates as your case moves.
                                         </p>
                                     </div>
                                 </label>
                                 <label
                                     className="flex cursor-pointer items-start gap-3 rounded-md border p-3.5"
-                                    style={{ borderColor: isAnonymous ? 'var(--accent)' : 'var(--border)' }}
+                                    style={{
+                                        borderColor: isAnonymous
+                                            ? 'var(--accent)'
+                                            : 'var(--border)',
+                                    }}
                                 >
-                                    <RadioGroupItem value="anonymous" className="mt-0.5" />
+                                    <RadioGroupItem
+                                        value="anonymous"
+                                        className="mt-0.5"
+                                    />
                                     <div className="flex items-start gap-2">
-                                        <EyeOff className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: 'var(--text-secondary)' }} />
+                                        <EyeOff
+                                            className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                                            style={{
+                                                color: 'var(--text-secondary)',
+                                            }}
+                                        />
                                         <div>
-                                            <p className="text-sm font-semibold">File anonymously</p>
-                                            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                                No follow-up messages, but your reference number still lets you check status.
+                                            <p className="text-sm font-semibold">
+                                                File anonymously
+                                            </p>
+                                            <p
+                                                className="text-xs"
+                                                style={{
+                                                    color: 'var(--text-secondary)',
+                                                }}
+                                            >
+                                                No follow-up messages, but your
+                                                reference number still lets you
+                                                check status.
                                             </p>
                                         </div>
                                     </div>
@@ -1166,30 +1608,52 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                         {!isAnonymous && (
                             <div className="grid gap-4">
                                 <div>
-                                    <Label className="mb-2 block text-sm font-semibold">Full name</Label>
-                                    <Input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Your name" />
+                                    <Label className="mb-2 block text-sm font-semibold">
+                                        Full name
+                                    </Label>
+                                    <Input
+                                        value={contactName}
+                                        onChange={(e) =>
+                                            setContactName(e.target.value)
+                                        }
+                                        placeholder="Your name"
+                                    />
                                 </div>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div>
                                         <Label className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
-                                            <Phone className="h-3.5 w-3.5" /> Phone
+                                            <Phone className="h-3.5 w-3.5" />{' '}
+                                            Phone
                                         </Label>
-                                        <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="e.g. 5812 3456" />
+                                        <Input
+                                            value={contactPhone}
+                                            onChange={(e) =>
+                                                setContactPhone(e.target.value)
+                                            }
+                                            placeholder="e.g. 5812 3456"
+                                        />
                                     </div>
                                     <div>
                                         <Label className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
-                                            <Mail className="h-3.5 w-3.5" /> Email
+                                            <Mail className="h-3.5 w-3.5" />{' '}
+                                            Email
                                         </Label>
                                         <Input
                                             type="email"
                                             value={contactEmail}
-                                            onChange={(e) => setContactEmail(e.target.value)}
+                                            onChange={(e) =>
+                                                setContactEmail(e.target.value)
+                                            }
                                             placeholder="Optional"
                                         />
                                     </div>
                                 </div>
-                                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                    Provide a phone number or an email so an officer can reach you.
+                                <p
+                                    className="text-xs"
+                                    style={{ color: 'var(--text-secondary)' }}
+                                >
+                                    Provide a phone number or an email so an
+                                    officer can reach you.
                                 </p>
                             </div>
                         )}
@@ -1198,42 +1662,102 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
 
                 {step === 5 && (
                     <div className="space-y-5">
-                        <div className="rounded-md border p-5" style={{ borderColor: 'var(--border)', background: 'var(--bg-page)' }}>
+                        <div
+                            className="rounded-md border p-5"
+                            style={{
+                                borderColor: 'var(--border)',
+                                background: 'var(--bg-page)',
+                            }}
+                        >
                             <dl className="space-y-3 text-sm">
                                 <div className="flex justify-between gap-4">
-                                    <dt style={{ color: 'var(--text-secondary)' }}>Category</dt>
-                                    <dd className="text-right font-medium">{category?.name}</dd>
+                                    <dt
+                                        style={{
+                                            color: 'var(--text-secondary)',
+                                        }}
+                                    >
+                                        Category
+                                    </dt>
+                                    <dd className="text-right font-medium">
+                                        {category?.name}
+                                    </dd>
                                 </div>
                                 <div className="flex justify-between gap-4">
-                                    <dt style={{ color: 'var(--text-secondary)' }}>District</dt>
+                                    <dt
+                                        style={{
+                                            color: 'var(--text-secondary)',
+                                        }}
+                                    >
+                                        District
+                                    </dt>
                                     <dd className="text-right font-medium">
-                                        {districts.find((d) => String(d.id) === districtId)?.name}
+                                        {
+                                            districts.find(
+                                                (d) =>
+                                                    String(d.id) === districtId,
+                                            )?.name
+                                        }
                                     </dd>
                                 </div>
                                 {locationDescription && (
                                     <div className="flex justify-between gap-4">
-                                        <dt style={{ color: 'var(--text-secondary)' }}>Location</dt>
-                                        <dd className="text-right font-medium">{locationDescription}</dd>
+                                        <dt
+                                            style={{
+                                                color: 'var(--text-secondary)',
+                                            }}
+                                        >
+                                            Location
+                                        </dt>
+                                        <dd className="text-right font-medium">
+                                            {locationDescription}
+                                        </dd>
                                     </div>
                                 )}
-                                <Separator style={{ background: 'var(--border)' }} />
+                                <Separator
+                                    style={{ background: 'var(--border)' }}
+                                />
                                 <div>
-                                    <dt className="mb-1" style={{ color: 'var(--text-secondary)' }}>
+                                    <dt
+                                        className="mb-1"
+                                        style={{
+                                            color: 'var(--text-secondary)',
+                                        }}
+                                    >
                                         Description
                                     </dt>
-                                    <dd className="leading-relaxed">{description}</dd>
+                                    <dd className="leading-relaxed">
+                                        {description}
+                                    </dd>
                                 </div>
-                                <Separator style={{ background: 'var(--border)' }} />
+                                <Separator
+                                    style={{ background: 'var(--border)' }}
+                                />
                                 <div className="flex justify-between gap-4">
-                                    <dt style={{ color: 'var(--text-secondary)' }}>Photos</dt>
+                                    <dt
+                                        style={{
+                                            color: 'var(--text-secondary)',
+                                        }}
+                                    >
+                                        Photos
+                                    </dt>
                                     <dd className="text-right font-medium">
-                                        {photos.filter((p) => !p.error).length} attached
+                                        {photos.filter((p) => !p.error).length}{' '}
+                                        attached
                                     </dd>
                                 </div>
                                 <div className="flex justify-between gap-4">
-                                    <dt style={{ color: 'var(--text-secondary)' }}>Filing as</dt>
+                                    <dt
+                                        style={{
+                                            color: 'var(--text-secondary)',
+                                        }}
+                                    >
+                                        Filing as
+                                    </dt>
                                     <dd className="text-right font-medium">
-                                        {isAnonymous ? 'Anonymous' : contactName || 'Named complainant'}
+                                        {isAnonymous
+                                            ? 'Anonymous'
+                                            : contactName ||
+                                              'Named complainant'}
                                     </dd>
                                 </div>
                             </dl>
@@ -1249,7 +1773,9 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                             src={p.previewUrl}
                                             alt={p.file.name}
                                             className="h-14 w-14 rounded-md border object-cover"
-                                            style={{ borderColor: 'var(--border)' }}
+                                            style={{
+                                                borderColor: 'var(--border)',
+                                            }}
                                         />
                                     ))}
                             </div>
@@ -1257,9 +1783,29 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
 
                         {error && (
                             <Alert style={{ borderColor: DANGER }}>
-                                <AlertDescription style={{ color: DANGER }}>{error}</AlertDescription>
+                                <AlertDescription style={{ color: DANGER }}>
+                                    {error}
+                                </AlertDescription>
                             </Alert>
                         )}
+
+                        <div
+                            className="rounded-md border p-4"
+                            style={{ borderColor: 'var(--border)' }}
+                        >
+                            <Label className="mb-2 block text-sm font-semibold">
+                                Security verification
+                            </Label>
+                            <p
+                                className="mb-3 text-xs"
+                                style={{ color: 'var(--text-secondary)' }}
+                            >
+                                Please complete this check before submitting. It
+                                protects the grievance service from automated
+                                abuse.
+                            </p>
+                            <CaptchaWidget onToken={setCaptchaToken} />
+                        </div>
                     </div>
                 )}
 
@@ -1276,23 +1822,31 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                         <Button
                             disabled={!canProceed}
                             onClick={() => setStep((s) => s + 1)}
-                            style={{ background: 'var(--accent)', color: '#14213D' }}
+                            style={{
+                                background: 'var(--accent)',
+                                color: '#14213D',
+                            }}
                         >
                             Continue <ArrowRight className="ml-1 h-4 w-4" />
                         </Button>
                     ) : (
                         <Button
-                            disabled={submitting}
+                            disabled={submitting || !captchaToken}
                             onClick={handleSubmit}
-                            style={{ background: 'var(--accent)', color: '#14213D' }}
+                            style={{
+                                background: 'var(--accent)',
+                                color: '#14213D',
+                            }}
                         >
                             {submitting ? (
                                 <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
+                                    Submitting...
                                 </>
                             ) : (
                                 <>
-                                    Submit grievance <ArrowRight className="ml-1 h-4 w-4" />
+                                    Submit grievance{' '}
+                                    <ArrowRight className="ml-1 h-4 w-4" />
                                 </>
                             )}
                         </Button>
@@ -1307,7 +1861,13 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
 // Tracking panel
 // ---------------------------------------------------------------------------
 
-function Timeline({ history, currentStatus }: { history: StatusHistoryEntry[]; currentStatus: GrievanceStatus }) {
+function Timeline({
+    history,
+    currentStatus,
+}: {
+    history: StatusHistoryEntry[];
+    currentStatus: GrievanceStatus;
+}) {
     const { statusMeta, statusOrder } = useGrievanceMeta();
     const byStatus = new Map(history.map((h) => [h.to_status, h]));
     const currentIndex = statusOrder.indexOf(currentStatus);
@@ -1316,7 +1876,8 @@ function Timeline({ history, currentStatus }: { history: StatusHistoryEntry[]; c
         <div className="space-y-0">
             {statusOrder.map((status, i) => {
                 const entry = byStatus.get(status);
-                const done = currentIndex >= 0 ? i <= currentIndex : Boolean(entry);
+                const done =
+                    currentIndex >= 0 ? i <= currentIndex : Boolean(entry);
                 const isCurrent = status === currentStatus;
                 const meta = statusMeta[status];
                 const Icon = meta.icon;
@@ -1328,38 +1889,68 @@ function Timeline({ history, currentStatus }: { history: StatusHistoryEntry[]; c
                             <div
                                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
                                 style={{
-                                    background: done ? meta.color : 'transparent',
+                                    background: done
+                                        ? meta.color
+                                        : 'transparent',
                                     border: `1.5px solid ${done ? meta.color : 'var(--border)'}`,
                                 }}
                             >
-                                <Icon className="h-3.5 w-3.5" style={{ color: done ? '#fff' : 'var(--text-secondary)' }} />
+                                <Icon
+                                    className="h-3.5 w-3.5"
+                                    style={{
+                                        color: done
+                                            ? '#fff'
+                                            : 'var(--text-secondary)',
+                                    }}
+                                />
                             </div>
                             {!isLast && (
                                 <div
                                     className="w-px flex-1"
-                                    style={{ background: i < currentIndex ? meta.color : 'var(--border)', minHeight: 28 }}
+                                    style={{
+                                        background:
+                                            i < currentIndex
+                                                ? meta.color
+                                                : 'var(--border)',
+                                        minHeight: 28,
+                                    }}
                                 />
                             )}
                         </div>
                         <div className="pb-7">
                             <p
                                 className="text-sm font-semibold"
-                                style={{ color: done ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                                style={{
+                                    color: done
+                                        ? 'var(--text-primary)'
+                                        : 'var(--text-secondary)',
+                                }}
                             >
                                 {meta.label}
                                 {isCurrent && (
-                                    <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-secondary)' }}>
+                                    <span
+                                        className="ml-2 text-xs font-normal"
+                                        style={{
+                                            color: 'var(--text-secondary)',
+                                        }}
+                                    >
                                         current stage
                                     </span>
                                 )}
                             </p>
                             {entry?.changed_at && (
-                                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                                <p
+                                    className="text-xs"
+                                    style={{ color: 'var(--text-secondary)' }}
+                                >
                                     {formatDateTime(entry.changed_at)}
                                 </p>
                             )}
                             {entry?.note && (
-                                <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                                <p
+                                    className="mt-1 text-xs leading-relaxed"
+                                    style={{ color: 'var(--text-secondary)' }}
+                                >
                                     {entry.note}
                                 </p>
                             )}
@@ -1367,17 +1958,30 @@ function Timeline({ history, currentStatus }: { history: StatusHistoryEntry[]; c
                     </div>
                 );
             })}
-            {(currentStatus === 'escalated' || currentStatus === 'rejected' || currentStatus === 'reopened') && (
+            {(currentStatus === 'escalated' ||
+                currentStatus === 'rejected' ||
+                currentStatus === 'reopened') && (
                 <div className="flex gap-3">
                     <div
                         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
-                        style={{ background: statusMeta[currentStatus].color, border: '1.5px solid transparent' }}
+                        style={{
+                            background: statusMeta[currentStatus].color,
+                            border: '1.5px solid transparent',
+                        }}
                     >
-                        {React.createElement(statusMeta[currentStatus].icon, { className: 'h-3.5 w-3.5', style: { color: '#fff' } })}
+                        {React.createElement(statusMeta[currentStatus].icon, {
+                            className: 'h-3.5 w-3.5',
+                            style: { color: '#fff' },
+                        })}
                     </div>
                     <div>
-                        <p className="text-sm font-semibold">{statusMeta[currentStatus].label}</p>
-                        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        <p className="text-sm font-semibold">
+                            {statusMeta[currentStatus].label}
+                        </p>
+                        <p
+                            className="text-xs"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
                             {statusMeta[currentStatus].description}
                         </p>
                     </div>
@@ -1473,10 +2077,17 @@ function AttachmentsGallery({ attachments }: { attachments: AttachmentT[] }) {
     );
 }
 
-function MessageThread({ grievance, onSent }: { grievance: TrackedGrievance; onSent: (m: GrievanceMessageT) => void }) {
+function MessageThread({
+    grievance,
+    onSent,
+}: {
+    grievance: TrackedGrievance;
+    onSent: (m: GrievanceMessageT) => void;
+}) {
     const [draft, setDraft] = useState('');
     const [sending, setSending] = useState(false);
-    const closed = grievance.status === 'closed' || grievance.status === 'rejected';
+    const closed =
+        grievance.status === 'closed' || grievance.status === 'rejected';
 
     async function handleSend() {
         if (!draft.trim()) {
@@ -1484,7 +2095,10 @@ function MessageThread({ grievance, onSent }: { grievance: TrackedGrievance; onS
         }
 
         setSending(true);
-        const msg = await sendCitizenMessage(grievance.reference_number, draft.trim());
+        const msg = await sendCitizenMessage(
+            grievance.reference_number,
+            draft.trim(),
+        );
         onSent(msg);
         setDraft('');
         setSending(false);
@@ -1493,27 +2107,48 @@ function MessageThread({ grievance, onSent }: { grievance: TrackedGrievance; onS
     return (
         <div>
             <h3 className="mb-3 text-sm font-semibold">Messages</h3>
-            <div className="mb-3 max-h-72 space-y-3 overflow-y-auto rounded-md border p-4" style={{ borderColor: 'var(--border)' }}>
+            <div
+                className="mb-3 max-h-72 space-y-3 overflow-y-auto rounded-md border p-4"
+                style={{ borderColor: 'var(--border)' }}
+            >
                 {grievance.messages.length === 0 && (
-                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <p
+                        className="text-xs"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
                         No messages yet.
                     </p>
                 )}
                 {grievance.messages.map((m) => (
-                    <div key={m.id} className={`flex ${m.sender === 'citizen' ? 'justify-end' : 'justify-start'}`}>
+                    <div
+                        key={m.id}
+                        className={`flex ${m.sender === 'citizen' ? 'justify-end' : 'justify-start'}`}
+                    >
                         <div
                             className="max-w-[80%] rounded-md px-3.5 py-2.5"
                             style={{
-                                background: m.sender === 'citizen' ? 'var(--accent)' : 'var(--bg-raised)',
-                                color: m.sender === 'citizen' ? '#14213D' : 'var(--text-primary)',
+                                background:
+                                    m.sender === 'citizen'
+                                        ? 'var(--accent)'
+                                        : 'var(--bg-raised)',
+                                color:
+                                    m.sender === 'citizen'
+                                        ? '#14213D'
+                                        : 'var(--text-primary)',
                             }}
                         >
                             <p className="text-sm leading-relaxed">{m.body}</p>
                             <p
                                 className="mt-1 text-[10px]"
-                                style={{ color: m.sender === 'citizen' ? 'rgba(20,33,61,0.65)' : 'var(--text-secondary)' }}
+                                style={{
+                                    color:
+                                        m.sender === 'citizen'
+                                            ? 'rgba(20,33,61,0.65)'
+                                            : 'var(--text-secondary)',
+                                }}
                             >
-                                {m.sender === 'citizen' ? 'You' : 'Officer'} - {formatDateTime(m.created_at)}
+                                {m.sender === 'citizen' ? 'You' : 'Officer'} -{' '}
+                                {formatDateTime(m.created_at)}
                             </p>
                         </div>
                     </div>
@@ -1530,13 +2165,23 @@ function MessageThread({ grievance, onSent }: { grievance: TrackedGrievance; onS
                     <Button
                         onClick={handleSend}
                         disabled={sending || !draft.trim()}
-                        style={{ background: 'var(--accent)', color: '#14213D' }}
+                        style={{
+                            background: 'var(--accent)',
+                            color: '#14213D',
+                        }}
                     >
-                        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        {sending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Send className="h-4 w-4" />
+                        )}
                     </Button>
                 </div>
             ) : (
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <p
+                    className="text-xs"
+                    style={{ color: 'var(--text-secondary)' }}
+                >
                     This case is closed and no longer accepting messages.
                 </p>
             )}
@@ -1547,7 +2192,9 @@ function MessageThread({ grievance, onSent }: { grievance: TrackedGrievance; onS
 function RatingWidget({ grievance }: { grievance: TrackedGrievance }) {
     const [rating, setRating] = useState(grievance.satisfaction_rating ?? 0);
     const [hover, setHover] = useState(0);
-    const [submitted, setSubmitted] = useState(Boolean(grievance.satisfaction_rating));
+    const [submitted, setSubmitted] = useState(
+        Boolean(grievance.satisfaction_rating),
+    );
 
     async function handleRate(value: number) {
         setRating(value);
@@ -1556,27 +2203,47 @@ function RatingWidget({ grievance }: { grievance: TrackedGrievance }) {
     }
 
     return (
-        <div className="rounded-md border p-5" style={{ borderColor: 'var(--resolved)', background: 'var(--resolved-bg)' }}>
+        <div
+            className="rounded-md border p-5"
+            style={{
+                borderColor: 'var(--resolved)',
+                background: 'var(--resolved-bg)',
+            }}
+        >
             <p className="mb-1 flex items-center gap-2 text-sm font-semibold">
-                <CheckCircle2 className="h-4 w-4" style={{ color: 'var(--resolved)' }} />
+                <CheckCircle2
+                    className="h-4 w-4"
+                    style={{ color: 'var(--resolved)' }}
+                />
                 Resolution recorded
             </p>
             {grievance.resolution?.summary && (
-                <p className="mb-3 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                <p
+                    className="mb-3 text-sm leading-relaxed"
+                    style={{ color: 'var(--text-secondary)' }}
+                >
                     {grievance.resolution.summary}
                 </p>
             )}
             {grievance.resolution?.resolved_at && (
-                <p className="mb-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <p
+                    className="mb-4 text-xs"
+                    style={{ color: 'var(--text-secondary)' }}
+                >
                     Resolved {formatDate(grievance.resolution.resolved_at)}
                 </p>
             )}
-            <Separator className="mb-4" style={{ background: 'var(--border)' }} />
+            <Separator
+                className="mb-4"
+                style={{ background: 'var(--border)' }}
+            />
             {submitted ? (
                 <p className="text-sm">Thank you for rating your experience.</p>
             ) : (
                 <>
-                    <p className="mb-2 text-sm font-medium">How satisfied are you with this outcome?</p>
+                    <p className="mb-2 text-sm font-medium">
+                        How satisfied are you with this outcome?
+                    </p>
                     <div className="flex gap-1">
                         {[1, 2, 3, 4, 5].map((v) => (
                             <button
@@ -1590,8 +2257,14 @@ function RatingWidget({ grievance }: { grievance: TrackedGrievance }) {
                                 <Star
                                     className="h-6 w-6"
                                     style={{
-                                        color: (hover || rating) >= v ? 'var(--accent)' : 'var(--border)',
-                                        fill: (hover || rating) >= v ? 'var(--accent)' : 'transparent',
+                                        color:
+                                            (hover || rating) >= v
+                                                ? 'var(--accent)'
+                                                : 'var(--border)',
+                                        fill:
+                                            (hover || rating) >= v
+                                                ? 'var(--accent)'
+                                                : 'transparent',
                                     }}
                                 />
                             </button>
@@ -1859,7 +2532,9 @@ function GrievanceHubContent() {
         <section className="mx-auto max-w-4xl px-6 py-16">
             <SectionHeader
                 eyebrow="GRMS - Grievance Redress"
-                title={tab === 'file' ? 'File a grievance' : 'Track your grievance'}
+                title={
+                    tab === 'file' ? 'File a grievance' : 'Track your grievance'
+                }
                 sub={
                     tab === 'file'
                         ? "Tell us what happened. It takes about three minutes and you'll get a reference number to follow up with."
@@ -1872,8 +2547,15 @@ function GrievanceHubContent() {
             ) : loading ? (
                 <MetaLoadingState />
             ) : (
-                <Tabs value={tab} onValueChange={(v) => setTab(v as 'file' | 'track')} className="w-full">
-                    <TabsList className="mx-auto mb-8 grid max-w-xs grid-cols-2" style={{ background: 'var(--bg-raised)' }}>
+                <Tabs
+                    value={tab}
+                    onValueChange={(v) => setTab(v as 'file' | 'track')}
+                    className="w-full"
+                >
+                    <TabsList
+                        className="mx-auto mb-8 grid max-w-xs grid-cols-2"
+                        style={{ background: 'var(--bg-raised)' }}
+                    >
                         <TabsTrigger value="file" className="text-sm">
                             File a grievance
                         </TabsTrigger>
@@ -1897,9 +2579,13 @@ function GrievanceHubContent() {
                 </Tabs>
             )}
 
-            <div className="mt-10 flex items-center justify-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <div
+                className="mt-10 flex items-center justify-center gap-2 text-xs"
+                style={{ color: 'var(--text-secondary)' }}
+            >
                 <ShieldCheck className="h-3.5 w-3.5" />
-                Your information is kept confidential and only shared with the office handling your case.
+                Your information is kept confidential and only shared with the
+                office handling your case.
             </div>
         </section>
     );

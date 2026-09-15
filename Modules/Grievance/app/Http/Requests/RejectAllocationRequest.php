@@ -8,7 +8,7 @@ class RejectAllocationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('grievance.reject_allocation', $this->route('grievance')) ?? false;
+        return $this->user()?->hasAnyRole(['section_manager', 'super_admin']) ?? false;
     }
 
     public function rules(): array
