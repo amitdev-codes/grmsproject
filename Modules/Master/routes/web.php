@@ -5,6 +5,11 @@ use Modules\Master\Http\Controllers\DistrictController;
 use Modules\Master\Http\Controllers\DivisionController;
 use Modules\Master\Http\Controllers\LocationController;
 use Modules\Master\Http\Controllers\SectionController;
+use Modules\Master\Http\Controllers\ProjectTypeController;
+use Modules\Master\Http\Controllers\ServiceProviderController;
+use Modules\Master\Http\Controllers\ProjectController;
+use Modules\Master\Http\Controllers\GrievanceSlaPolicyController;
+use Modules\Master\Http\Controllers\GrievanceEscalationRuleController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/locations/divisions', [LocationController::class, 'divisions'])->name('locations.divisions');
@@ -27,4 +32,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/sections/export', [SectionController::class, 'export'])->name('sections.export');
     Route::post('/sections/import', [SectionController::class, 'import'])->name('sections.import');
     Route::resource('sections', SectionController::class)->names('sections');
+
+    // GRMS reference data defined in the Master module migrations.
+    Route::resource('project-types', ProjectTypeController::class)->parameters(['project-types' => 'record'])->names('project-types');
+    Route::resource('service-providers', ServiceProviderController::class)->parameters(['service-providers' => 'record'])->names('service-providers');
+    Route::resource('projects', ProjectController::class)->parameters(['projects' => 'record'])->names('projects');
+    Route::resource('grievance-sla-policies', GrievanceSlaPolicyController::class)->parameters(['grievance-sla-policies' => 'record'])->names('grievance-sla-policies');
+    Route::resource('grievance-escalation-rules', GrievanceEscalationRuleController::class)->parameters(['grievance-escalation-rules' => 'record'])->names('grievance-escalation-rules');
 });

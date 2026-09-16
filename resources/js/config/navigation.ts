@@ -18,6 +18,10 @@ import {
     MapPinned,
     Network,
     LayoutList,
+    BriefcaseBusiness,
+    Building2,
+    Timer,
+    ArrowUpRight,
 } from 'lucide-react';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
@@ -104,6 +108,31 @@ export const masterNavItems: NavItem[] = [
                 title: 'menu.sections',
                 href: '/sections',
                 icon: LayoutList, // Clean for Sections / Lists
+            },
+            {
+                title: 'menu.project_types',
+                href: '/project-types',
+                icon: FolderKanban,
+            },
+            {
+                title: 'menu.service_providers',
+                href: '/service-providers',
+                icon: Building2,
+            },
+            {
+                title: 'menu.projects',
+                href: '/projects',
+                icon: BriefcaseBusiness,
+            },
+            {
+                title: 'menu.sla_policies',
+                href: '/grievance-sla-policies',
+                icon: Timer,
+            },
+            {
+                title: 'menu.escalation_rules',
+                href: '/grievance-escalation-rules',
+                icon: ArrowUpRight,
             },
         ],
     },

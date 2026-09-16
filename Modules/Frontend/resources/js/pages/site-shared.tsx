@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Link } from '@inertiajs/react';
-import { MapPinned, Menu, X, Sun, Moon } from 'lucide-react';
+import { Menu, X, Sun, Moon } from 'lucide-react';
+import AppLogoIcon from '@/components/app-logo-icon';
 import React, { createContext, useContext, useState } from 'react';
 import {route} from 'ziggy-js';
 
@@ -741,22 +742,22 @@ export function FontStyles() {
         <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
       .grms-root {
-        --bg-page: #EFEFE6;
-        --bg-raised: #F8F8F2;
-        --bg-inverse: #14213D;
-        --bg-page-translucent: rgba(239,239,230,0.92);
-        --text-primary: #14213D;
-        --text-secondary: #4E5A72;
-        --text-on-inverse: #ECEAE0;
-        --text-on-inverse-secondary: #A9B4C9;
-        --border: #D6D5C7;
-        --accent: #B8763A;
-        --accent-dark: #8F5A28;
+        --bg-page: #F5F8FC;
+        --bg-raised: #FFFFFF;
+        --bg-inverse: #002B70;
+        --bg-page-translucent: rgba(245,248,252,0.94);
+        --text-primary: #102A43;
+        --text-secondary: #486581;
+        --text-on-inverse: #FFFFFF;
+        --text-on-inverse-secondary: #D9E8FF;
+        --border: #C9D8EA;
+        --accent: #003DA5;
+        --accent-dark: #007A3D;
         --resolved: #1E7145;
         --resolved-bg: #E1EFE6;
-        --ridge-1: #C7CBBE;
-        --ridge-2: #B3B8A6;
-        --ridge-3: #9CA290;
+        --ridge-1: #DCEBFA;
+        --ridge-2: #B9D4F1;
+        --ridge-3: #8DB8E3;
         font-family: 'IBM Plex Sans', sans-serif;
         color: var(--text-primary);
         background: var(--bg-page);
@@ -765,20 +766,20 @@ export function FontStyles() {
       .grms-root.dark {
         --bg-page: #10182B;
         --bg-raised: #182238;
-        --bg-inverse: #080C16;
+        --bg-inverse: #061A3A;
         --bg-page-translucent: rgba(16,24,43,0.92);
         --text-primary: #ECEAE0;
         --text-secondary: #A7B0C4;
         --text-on-inverse: #ECEAE0;
         --text-on-inverse-secondary: #8790A6;
         --border: #2A3350;
-        --accent: #D89552;
-        --accent-dark: #EAB273;
+        --accent: #6CA8FF;
+        --accent-dark: #43B66D;
         --resolved: #4CA37A;
         --resolved-bg: #16281F;
-        --ridge-1: #1C2540;
-        --ridge-2: #212C4A;
-        --ridge-3: #263254;
+        --ridge-1: #102A4C;
+        --ridge-2: #12355F;
+        --ridge-3: #1D559C;
       }
       .grms-root .font-display { font-family: 'Source Serif 4', serif; }
       .grms-root .font-mono { font-family: 'IBM Plex Mono', monospace; }
@@ -799,7 +800,7 @@ export function FontStyles() {
         color: var(--text-primary);
         border-radius: 6px;
         padding: 10px 12px;
-        font-size: 14px;
+        font-size: 0.875rem;
         width: 100%;
         outline: none;
       }
@@ -1000,13 +1001,20 @@ export function LanguageToggle() {
 
     return (
         <button
+            type="button"
+            role="switch"
+            aria-checked={lang === 'st'}
             onClick={toggle}
-            className="flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-medium"
+            className="flex h-9 min-w-16 items-center justify-center gap-1.5 rounded-full border px-2 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
             style={{
                 borderColor: 'var(--border)',
                 color: 'var(--text-secondary)',
             }}
-            aria-label="Switch language"
+            aria-label={
+                lang === 'en'
+                    ? 'Switch language to Sesotho'
+                    : 'Switch language to English'
+            }
         >
             <span style={{ opacity: lang === 'en' ? 1 : 0.4 }}>🇬🇧 EN</span>
             <span style={{ color: 'var(--border)' }}>/</span>
@@ -1075,11 +1083,11 @@ export function NavBar() {
                 >
                     <div
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm"
-                        style={{ background: '#14213D' }}
+                            style={{ background: 'var(--bg-inverse)' }}
                     >
-                        <MapPinned
+                        <AppLogoIcon
                             className="h-4.5 w-4.5"
-                            style={{ color: '#EFEFE6' }}
+                            style={{ color: '#FFFFFF' }}
                         />
                     </div>
                     <div className="hidden leading-tight sm:block">
@@ -1112,13 +1120,12 @@ export function NavBar() {
                 {/* Right: sign in, theme, language */}
                 <div className="hidden shrink-0 items-center gap-3 justify-self-end lg:flex">
                     <Button
+                        asChild
                         variant="ghost"
-                        className="text-sm whitespace-nowrap"
+                        className="h-9 text-sm whitespace-nowrap"
                         style={{ color: 'var(--text-primary)' }}
                     >
-                        <Link href={LOGIN_URL}>
-                        {t.nav.signIn}
-                        </Link>
+                        <Link href={LOGIN_URL}>{t.nav.signIn}</Link>
                     </Button>
 
                     <Separator
@@ -1134,8 +1141,12 @@ export function NavBar() {
                     <ThemeToggle />
                     <LanguageToggle />
                     <button
+                        type="button"
                         onClick={() => setOpen(!open)}
-                        aria-label="Toggle menu"
+                        aria-label={open ? 'Close menu' : 'Open menu'}
+                        aria-expanded={open}
+                        className="flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                        style={{ color: 'var(--text-primary)' }}
                     >
                         {open ? (
                             <X className="h-5 w-5" />
@@ -1165,12 +1176,12 @@ export function NavBar() {
                         </Link>
                     ))}
                         <Button
+                            asChild
                             variant="outline"
                             className="w-full"
                             style={{ borderColor: 'var(--border)' }}
-                        >      <Link href={LOGIN_URL}>
-                            {t.nav.signIn}
-                        </Link>
+                        >
+                            <Link href={LOGIN_URL}>{t.nav.signIn}</Link>
                         </Button>
                 </div>
             )}
@@ -1188,7 +1199,7 @@ export function Footer() {
             <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-6 py-12 md:grid-cols-4">
                 <div className="col-span-2 md:col-span-1">
                     <div className="mb-3 flex items-center gap-2">
-                        <MapPinned
+                        <AppLogoIcon
                             className="h-4 w-4"
                             style={{ color: 'var(--accent)' }}
                         />

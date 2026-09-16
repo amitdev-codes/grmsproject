@@ -1,8 +1,9 @@
 "use client"
 
-import * as React from "react"
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
+import { Slot } from "radix-ui/slot"
+import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -63,13 +64,17 @@ function DropdownMenuItem({
   className,
   inset,
   variant = "default",
+  asChild = false,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
   inset?: boolean
   variant?: "default" | "destructive"
+  asChild?: boolean
 }) {
+  const Comp = asChild ? Slot : DropdownMenuPrimitive.Item
+
   return (
-    <DropdownMenuPrimitive.Item
+    <Comp
       data-slot="dropdown-menu-item"
       data-inset={inset}
       data-variant={variant}

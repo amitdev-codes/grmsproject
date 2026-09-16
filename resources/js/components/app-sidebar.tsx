@@ -21,7 +21,11 @@ import {
 import { dashboard } from '@/routes';
 export function AppSidebar() {
     return (
-        <Sidebar collapsible="icon" variant="inset">
+        <Sidebar
+            collapsible="icon"
+            variant="inset"
+            className="app-sidebar-below-header"
+        >
             <SidebarHeader className="border-b border-sidebar-border/70 pb-0">
                 <SidebarMenu className="border-b border-sidebar-border/70 pb-3">
                     <SidebarMenuItem>

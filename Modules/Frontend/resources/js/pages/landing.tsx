@@ -180,7 +180,7 @@ function TicketMockup() {
                                     className="h-3.5 w-3.5"
                                     style={{
                                         color: active
-                                            ? '#fff'
+                                            ? '#FFFFFF'
                                             : 'var(--text-secondary)',
                                     }}
                                 />
@@ -280,7 +280,7 @@ function Hero() {
                             size="lg"
                             style={{
                                 background: 'var(--accent)',
-                                color: '#14213D',
+                                color: '#FFFFFF',
                             }}
                         >
                             <Link href={FILE_GRIEVANCE_URL}>
@@ -941,7 +941,7 @@ function CTA() {
                         size="lg"
                         style={{
                             background: 'var(--accent)',
-                            color: '#14213D',
+                            color: '#FFFFFF',
                         }}
                     >
                         {t.cta.button} <ArrowRight className="ml-1 h-4 w-4" />
@@ -956,14 +956,16 @@ function LandingContent() {
     return (
         <>
             <NavBar />
-            <Hero />
-            <ResolutionChart />
-            <ProblemSolution />
-            <Features />
-            <HowItWorks />
-            <Audiences />
-            <Security />
-            <CTA />
+            <main id="main-content" tabIndex={-1}>
+                <Hero />
+                <ResolutionChart />
+                <ProblemSolution />
+                <Features />
+                <HowItWorks />
+                <Audiences />
+                <Security />
+                <CTA />
+            </main>
             <Footer />
         </>
     );

@@ -22,8 +22,8 @@ class ApplicationSettingSeeder extends Seeder
                 // Branding
                 'logo_path' => null,
                 'favicon_path' => null,
-                'primary_color' => '#1D4ED8',
-                'secondary_color' => '#64748B',
+                'primary_color' => '#002B7F',
+                'secondary_color' => '#006233',
 
                 // Location
                 'address_line' => 'Ministry Complex, Maseru',

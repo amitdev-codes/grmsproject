@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
-import { Landmark, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
+import AppLogoIcon from '@/components/app-logo-icon';
 import type { PropsWithChildren } from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -78,7 +79,7 @@ export default function AuthSplitLayout({
                             className="flex h-10 w-10 items-center justify-center rounded-full"
                             style={{ background: ACCENT }}
                         >
-                            <Landmark
+                            <AppLogoIcon
                                 className="h-5 w-5"
                                 style={{ color: '#10203D' }}
                             />
@@ -132,7 +133,7 @@ export default function AuthSplitLayout({
             </div>
 
             {/* Form panel */}
-            <div className="relative flex flex-col justify-center px-6 py-10 sm:px-10 md:px-16">
+            <main id="main-content" tabIndex={-1} className="relative flex flex-col justify-center px-6 py-10 sm:px-10 md:px-16">
                 <div className="mx-auto w-full max-w-md">
                     <Link
                         href={home()}
@@ -142,7 +143,7 @@ export default function AuthSplitLayout({
                             className="flex h-9 w-9 items-center justify-center rounded-full"
                             style={{ background: ACCENT_DARK }}
                         >
-                            <Landmark
+                            <AppLogoIcon
                                 className="h-4.5 w-4.5"
                                 style={{ color: '#fff' }}
                             />
@@ -175,7 +176,7 @@ export default function AuthSplitLayout({
                         </CardContent>
                     </Card>
                 </div>
-            </div>
+            </main>
         </div>
     );
 }

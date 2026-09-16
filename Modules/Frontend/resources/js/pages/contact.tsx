@@ -293,7 +293,7 @@ function ContactForm() {
                 <Button
                     type="submit"
                     className="w-full"
-                    style={{ background: 'var(--accent)', color: '#14213D' }}
+                    style={{ background: 'var(--accent)', color: '#FFFFFF' }}
                 >
                     {t.contactPage.submit} <Send className="ml-1 h-4 w-4" />
                 </Button>
@@ -306,13 +306,15 @@ function ContactContent() {
     return (
         <>
             <NavBar />
-            <ContactHeader />
-            <section className="mx-auto max-w-6xl px-6 py-16">
-                <div className="grid gap-10 md:grid-cols-2">
-                    <AddressAndMap />
-                    <ContactForm />
-                </div>
-            </section>
+            <main id="main-content" tabIndex={-1}>
+                <ContactHeader />
+                <section className="mx-auto max-w-6xl px-6 py-16">
+                    <div className="grid gap-10 md:grid-cols-2">
+                        <AddressAndMap />
+                        <ContactForm />
+                    </div>
+                </section>
+            </main>
             <Footer />
         </>
     );

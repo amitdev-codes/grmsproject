@@ -78,8 +78,10 @@ function FAQContent() {
     return (
         <>
             <NavBar />
-            <FAQHeader />
-            <FAQList />
+            <main id="main-content" tabIndex={-1}>
+                <FAQHeader />
+                <FAQList />
+            </main>
             <Footer />
         </>
     );
