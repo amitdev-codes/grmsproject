@@ -180,7 +180,7 @@ function TicketMockup() {
                                     className="h-3.5 w-3.5"
                                     style={{
                                         color: active
-                                            ? '#fff'
+                                            ? 'var(--text-on-inverse)'
                                             : 'var(--text-secondary)',
                                     }}
                                 />
@@ -280,7 +280,7 @@ function Hero() {
                             size="lg"
                             style={{
                                 background: 'var(--accent)',
-                                color: '#14213D',
+color: 'var(--accent-foreground)',
                             }}
                         >
                             <Link href={FILE_GRIEVANCE_URL}>
@@ -764,7 +764,7 @@ function HowItWorks() {
                                 >
                                     <Icon
                                         className="h-4.5 w-4.5"
-                                        style={{ color: '#fff' }}
+                                        style={{ color: 'var(--accent-foreground)' }}
                                     />
                                 </div>
                                 <span
@@ -941,7 +941,7 @@ function CTA() {
                         size="lg"
                         style={{
                             background: 'var(--accent)',
-                            color: '#14213D',
+                            color: 'var(--accent-foreground)',
                         }}
                     >
                         {t.cta.button} <ArrowRight className="ml-1 h-4 w-4" />

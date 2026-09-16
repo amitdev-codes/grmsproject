@@ -85,7 +85,7 @@ export interface Translations {
         heading: string;
         withoutTitle: string;
         withTitle: string;
-        rows: { old: string; grms: string }[];
+        rows: { old: string; grv: string }[];
     };
     features: {
         heading: string;
@@ -361,10 +361,6 @@ export const translations: Record<Lang, Translations> = {
                     a: "They route directly to the safeguards officer and link to the project's land acquisition and resettlement register.",
                 },
                 {
-                    q: 'Does the system work without a smartphone or internet access?',
-                    a: 'Yes. Complaints can be filed by SMS, toll-free hotline, or in person at a site office or suggestion box.',
-                },
-                {
                     q: 'How does the World Bank review grievance data?',
                     a: 'Consolidated, exportable reports are available for implementation support missions and safeguards supervision.',
                 },
@@ -430,13 +426,14 @@ export const translations: Record<Lang, Translations> = {
                 subtitle: 'Enter your details below to create your account',
                 nameLabel: 'Name',
                 emailLabel: 'Email address',
-                passwordLabel: 'Password',
-                confirmPasswordLabel: 'Confirm password',
-                submit: 'Create account',
-                haveAccount: 'Already have an account?',
-                signIn: 'Log in',
-            },
-        },
+                email: string;
+                passwordLabel: 'Password';
+                confirmPasswordLabel: 'Confirm password';
+                submit: 'Create account';
+                haveAccount: 'Already have an account?';
+                signIn: 'Log in';
+            };
+        };
     },
     st: {
         funding:
@@ -579,7 +576,7 @@ export const translations: Record<Lang, Translations> = {
                 {
                     label: 'Mobu le ho tlosoa',
                     points: [
-                        "Romela lipotso tsa tefo le ho tlosoa moofisiring ea ts'ireletso ea khethiloeng.",
+                        "Romela lipotso tsa tefo le ho tlosoa moofisiring ea ts'ireletso mosebetsing ka thoko ho tse tsoang ho sechaba.",
                         'Hokahanya nyeoe le lengolo la morero la ho fumana mobu le ho tlosoa.',
                         'Litletlebo tse bohlokoa li tšoaroa ka mocha o arohaneng, o sirelelitsoeng.',
                     ],
@@ -596,7 +593,7 @@ export const translations: Record<Lang, Translations> = {
                     label: 'Roads Directorate le tlhahlobo',
                     points: [
                         "Dashboard e le 'ngoe bakeng sa basebetsi mererong yohle le litereke.",
-                        "Tlaleho e kopantsoeng bakeng sa maeto a tšehetso ea ts'ebetsong ea World Bank.",
+                        "Tlaleho e kopantsoeng bakeng sa maeto a tšehetso ea ts'ebetso ea World Bank.",
                         "Litlaleho tse ntšoang bakeng sa tlhahlobo ea ts'ireletso le ea morero.",
                     ],
                 },
@@ -622,7 +619,7 @@ export const translations: Record<Lang, Translations> = {
         cta: {
             heading:
                 "Na u loketse ho fa tletlebo e 'ngoe le e 'ngoe nomoro ea nyeoe?",
-            sub: 'Ngola tletlebo ka metsotso, kapa u kene ho latela nyeoe eo u seng u e ile ua e romela.',
+            sub: 'Ngola tletlebo ka metsotso, kapa u kene ho latela nyeoe eo u seng u e ile ua e ile ua e romela.',
             button: 'Ngola tletlebo',
         },
         faqPage: {
@@ -739,74 +736,78 @@ export const useI18n = () => useContext(LanguageContext);
 export function FontStyles() {
     return (
         <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
-      .grms-root {
-        --bg-page: #EFEFE6;
-        --bg-raised: #F8F8F2;
-        --bg-inverse: #14213D;
-        --bg-page-translucent: rgba(239,239,230,0.92);
-        --text-primary: #14213D;
-        --text-secondary: #4E5A72;
-        --text-on-inverse: #ECEAE0;
-        --text-on-inverse-secondary: #A9B4C9;
-        --border: #D6D5C7;
-        --accent: #B8763A;
-        --accent-dark: #8F5A28;
-        --resolved: #1E7145;
-        --resolved-bg: #E1EFE6;
-        --ridge-1: #C7CBBE;
-        --ridge-2: #B3B8A6;
-        --ridge-3: #9CA290;
-        font-family: 'IBM Plex Sans', sans-serif;
-        color: var(--text-primary);
-        background: var(--bg-page);
-        transition: background 0.2s ease, color 0.2s ease;
-      }
-      .grms-root.dark {
-        --bg-page: #10182B;
-        --bg-raised: #182238;
-        --bg-inverse: #080C16;
-        --bg-page-translucent: rgba(16,24,43,0.92);
-        --text-primary: #ECEAE0;
-        --text-secondary: #A7B0C4;
-        --text-on-inverse: #ECEAE0;
-        --text-on-inverse-secondary: #8790A6;
-        --border: #2A3350;
-        --accent: #D89552;
-        --accent-dark: #EAB273;
-        --resolved: #4CA37A;
-        --resolved-bg: #16281F;
-        --ridge-1: #1C2540;
-        --ridge-2: #212C4A;
-        --ridge-3: #263254;
-      }
-      .grms-root .font-display { font-family: 'Source Serif 4', serif; }
-      .grms-root .font-mono { font-family: 'IBM Plex Mono', monospace; }
-      @media (prefers-reduced-motion: reduce) {
-        .grms-road-line { animation: none !important; }
-      }
-      @keyframes grms-road-draw {
-        from { stroke-dashoffset: 240; }
-        to { stroke-dashoffset: 0; }
-      }
-      .grms-road-line {
-        stroke-dasharray: 6 6;
-        animation: grms-road-draw 6s linear infinite;
-      }
-      .grms-root input, .grms-root textarea {
-        background: var(--bg-raised);
-        border: 1px solid var(--border);
-        color: var(--text-primary);
-        border-radius: 6px;
-        padding: 10px 12px;
-        font-size: 14px;
-        width: 100%;
-        outline: none;
-      }
-      .grms-root input:focus, .grms-root textarea:focus {
-        border-color: var(--accent);
-      }
-    `}</style>
+       @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+       .grms-root {
+         --bg-page: #FFFFFF;
+         --bg-raised: #F8F8F2;
+         --bg-inverse: #002B7F;
+         --bg-page-translucent: rgba(255,255,255,0.92);
+         --text-primary: #002B7F;
+         --text-secondary: #006233;
+         --text-on-inverse: #FFFFFF;
+         --text-on-inverse-secondary: #FFFFFF;
+         --border: #D6D5C7;
+         --accent: #000000;
+         --accent-dark: #FFFFFF;
+         --resolved: #006233;
+         --resolved-bg: #E0F2E9;
+         --ridge-1: #E5E4D6;
+         --ridge-2: #F8F8F2;
+         --ridge-3: #D6D5C7;
+         font-family: 'IBM Plex Sans', sans-serif;
+         color: var(--text-primary);
+         background: var(--bg-page);
+         transition: background 0.2s ease, color 0.2s ease;
+       }
+       .grms-root.dark {
+         --bg-page: #000000;
+         --bg-raised: #000000;
+         --bg-inverse: #002B7F;
+         --bg-page-translucent: rgba(0,0,0,0.92);
+         --text-primary: #FFFFFF;
+         --text-secondary: #006233;
+         --text-on-inverse: #000000;
+         --text-on-inverse-secondary: #000000;
+         --border: #000000;
+         --accent: #FFFFFF;
+         --accent-dark: #000000;
+         --resolved: #006233;
+         --resolved-bg: #004224;
+         --ridge-1: #000000;
+         --ridge-2: #000000;
+         --ridge-3: #000000;
+         font-family: 'IBM Plex Sans', sans-serif;
+         color: var(--text-primary);
+         background: var(--bg-page);
+         transition: background 0.2s ease, color 0.2s ease;
+       }
+       .grms-root .font-display { font-family: 'Source Serif 4', serif; }
+       .grms-root .font-mono { font-family: 'IBM Plex Mono', monospace; }
+       @media (prefers-reduced-motion: reduce) {
+         .grms-road-line { animation: none !important; }
+       }
+       @keyframes grms-road-draw {
+         from { stroke-dashoffset: 240; }
+         to { stroke-dashoffset: 0; }
+       }
+       .grms-road-line {
+         stroke-dasharray: 6 6;
+         animation: grms-road-draw 6s linear infinite;
+       }
+       .grms-root input, .grms-root textarea {
+         background: var(--bg-raised);
+         border: 1px solid var(--border);
+         color: var(--text-primary);
+         border-radius: 6px;
+         padding: 10px 12px;
+         font-size: 14px;
+         width: 100%;
+         outline: none;
+       }
+       .grms-root input:focus, .grms-root textarea:focus {
+         border-color: var(--accent);
+       }
+     `}</style>
     );
 }
 
@@ -1164,14 +1165,15 @@ export function NavBar() {
                             {l.label}
                         </Link>
                     ))}
-                        <Button
-                            variant="outline"
-                            className="w-full"
-                            style={{ borderColor: 'var(--border)' }}
-                        >      <Link href={LOGIN_URL}>
-                            {t.nav.signIn}
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        style={{ borderColor: 'var(--border)' }}
+                    >
+                        <Link href={LOGIN_URL}>
+                        {t.nav.signIn}
                         </Link>
-                        </Button>
+                    </Button>
                 </div>
             )}
         </header>
@@ -1268,53 +1270,7 @@ export function Footer() {
                     >
                         {t.nav.faqs}
                     </Link>
-                    <Link
-                        href={CONTACT_URL}
-                        className="block text-sm"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
-                        {t.nav.contact}
-                    </Link>
                 </div>
-
-                <div className="space-y-2">
-                    <p
-                        className="mb-3 text-xs font-semibold tracking-wide uppercase"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
-                        {t.footer.colContact}
-                    </p>
-                    {t.contactPage.addressLines.map((line) => (
-                        <p
-                            key={line}
-                            className="text-sm"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
-                            {line}
-                        </p>
-                    ))}
-                    <p
-                        className="text-sm"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
-                        {t.contactPage.email}
-                    </p>
-                    <p
-                        className="text-sm"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
-                        {t.contactPage.phone}
-                    </p>
-                </div>
-            </div>
-            <div
-                className="border-t py-4 text-center text-xs"
-                style={{
-                    borderColor: 'var(--border)',
-                    color: 'var(--text-secondary)',
-                }}
-            >
-                © {new Date().getFullYear()} {AUTHORITY}
             </div>
         </footer>
     );

@@ -170,7 +170,7 @@ interface PendingFile {
     error: string | null;
 }
 const WARNING = '#B8860B';
-const DANGER = '#B3261E';
+const DANGER = '#C6432E';
 
 interface StatusVisual {
     color: string;
