@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
+import { AccessibilityControls } from '@/components/accessibility-controls';
 import { route } from 'ziggy-js';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -96,6 +97,7 @@ createInertiaApp({
         return (
             <TooltipProvider delayDuration={0}>
                 {app}
+                <AccessibilityControls />
                 <Toaster />
             </TooltipProvider>
         );

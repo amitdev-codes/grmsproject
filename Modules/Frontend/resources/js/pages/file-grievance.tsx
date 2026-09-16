@@ -170,7 +170,7 @@ interface PendingFile {
     error: string | null;
 }
 const WARNING = '#B8860B';
-const DANGER = '#C6432E';
+const DANGER = '#B3261E';
 
 interface StatusVisual {
     color: string;
@@ -1246,7 +1246,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             onClick={() => onFiled(confirmation.ref)}
                             style={{
                                 background: 'var(--accent)',
-                                color: '#14213D',
+                                color: '#FFFFFF',
                             }}
                         >
                             Track this grievance{' '}
@@ -1824,7 +1824,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             onClick={() => setStep((s) => s + 1)}
                             style={{
                                 background: 'var(--accent)',
-                                color: '#14213D',
+                                color: '#FFFFFF',
                             }}
                         >
                             Continue <ArrowRight className="ml-1 h-4 w-4" />
@@ -1835,7 +1835,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             onClick={handleSubmit}
                             style={{
                                 background: 'var(--accent)',
-                                color: '#14213D',
+                                color: '#FFFFFF',
                             }}
                         >
                             {submitting ? (
@@ -2167,7 +2167,7 @@ function MessageThread({
                         disabled={sending || !draft.trim()}
                         style={{
                             background: 'var(--accent)',
-                            color: '#14213D',
+                            color: '#FFFFFF',
                         }}
                     >
                         {sending ? (
@@ -2357,7 +2357,7 @@ function TrackGrievancePanel({ prefillRef }: { prefillRef: string | null }) {
                             disabled={loading || !reference.trim()}
                             style={{
                                 background: 'var(--accent)',
-                                color: '#14213D',
+                                color: '#FFFFFF',
                             }}
                         >
                             {loading ? (
@@ -2603,7 +2603,9 @@ export default function FileGrievancePage() {
     return (
         <PageShell>
             <NavBar />
-            <GrievanceHub />
+            <main id="main-content" tabIndex={-1}>
+                <GrievanceHub />
+            </main>
             <Footer />
         </PageShell>
     );

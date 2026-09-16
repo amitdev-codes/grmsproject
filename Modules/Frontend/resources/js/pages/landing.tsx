@@ -180,7 +180,7 @@ function TicketMockup() {
                                     className="h-3.5 w-3.5"
                                     style={{
                                         color: active
-                                            ? 'var(--text-on-inverse)'
+                                            ? '#FFFFFF'
                                             : 'var(--text-secondary)',
                                     }}
                                 />
@@ -280,7 +280,7 @@ function Hero() {
                             size="lg"
                             style={{
                                 background: 'var(--accent)',
-color: 'var(--accent-foreground)',
+                                color: '#FFFFFF',
                             }}
                         >
                             <Link href={FILE_GRIEVANCE_URL}>
@@ -764,7 +764,7 @@ function HowItWorks() {
                                 >
                                     <Icon
                                         className="h-4.5 w-4.5"
-                                        style={{ color: 'var(--accent-foreground)' }}
+                                        style={{ color: '#fff' }}
                                     />
                                 </div>
                                 <span
@@ -941,7 +941,7 @@ function CTA() {
                         size="lg"
                         style={{
                             background: 'var(--accent)',
-                            color: 'var(--accent-foreground)',
+                            color: '#FFFFFF',
                         }}
                     >
                         {t.cta.button} <ArrowRight className="ml-1 h-4 w-4" />
@@ -956,14 +956,16 @@ function LandingContent() {
     return (
         <>
             <NavBar />
-            <Hero />
-            <ResolutionChart />
-            <ProblemSolution />
-            <Features />
-            <HowItWorks />
-            <Audiences />
-            <Security />
-            <CTA />
+            <main id="main-content" tabIndex={-1}>
+                <Hero />
+                <ResolutionChart />
+                <ProblemSolution />
+                <Features />
+                <HowItWorks />
+                <Audiences />
+                <Security />
+                <CTA />
+            </main>
             <Footer />
         </>
     );

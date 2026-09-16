@@ -16,6 +16,7 @@ return
     'resolutions' => 'Resolutions',
     'settings' => 'Settings',
     'reports' => 'Reports',
+    'summary_report' => 'Summary report',
     'logs' => 'Logs',
     'profile_settings' => 'Profile',
     'application_settings' => 'Application Setting',
@@ -23,4 +24,9 @@ return
     'districts' => 'Districts',
     'divisions' => 'Division',
     'sections' => 'Section',
+    'project_types' => 'Project Types',
+    'service_providers' => 'Service Providers',
+    'projects' => 'Projects',
+    'sla_policies' => 'SLA Policies',
+    'escalation_rules' => 'Escalation Rules',
 ];

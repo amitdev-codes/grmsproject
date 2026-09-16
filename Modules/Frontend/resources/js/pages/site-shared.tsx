@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Link } from '@inertiajs/react';
-import { MapPinned, Menu, X, Sun, Moon } from 'lucide-react';
+import { Menu, X, Sun, Moon } from 'lucide-react';
+import AppLogoIcon from '@/components/app-logo-icon';
 import React, { createContext, useContext, useState } from 'react';
 import {route} from 'ziggy-js';
 
@@ -85,7 +86,7 @@ export interface Translations {
         heading: string;
         withoutTitle: string;
         withTitle: string;
-        rows: { old: string; grv: string }[];
+        rows: { old: string; grms: string }[];
     };
     features: {
         heading: string;
@@ -361,6 +362,10 @@ export const translations: Record<Lang, Translations> = {
                     a: "They route directly to the safeguards officer and link to the project's land acquisition and resettlement register.",
                 },
                 {
+                    q: 'Does the system work without a smartphone or internet access?',
+                    a: 'Yes. Complaints can be filed by SMS, toll-free hotline, or in person at a site office or suggestion box.',
+                },
+                {
                     q: 'How does the World Bank review grievance data?',
                     a: 'Consolidated, exportable reports are available for implementation support missions and safeguards supervision.',
                 },
@@ -426,14 +431,13 @@ export const translations: Record<Lang, Translations> = {
                 subtitle: 'Enter your details below to create your account',
                 nameLabel: 'Name',
                 emailLabel: 'Email address',
-                email: string;
-                passwordLabel: 'Password';
-                confirmPasswordLabel: 'Confirm password';
-                submit: 'Create account';
-                haveAccount: 'Already have an account?';
-                signIn: 'Log in';
-            };
-        };
+                passwordLabel: 'Password',
+                confirmPasswordLabel: 'Confirm password',
+                submit: 'Create account',
+                haveAccount: 'Already have an account?',
+                signIn: 'Log in',
+            },
+        },
     },
     st: {
         funding:
@@ -576,7 +580,7 @@ export const translations: Record<Lang, Translations> = {
                 {
                     label: 'Mobu le ho tlosoa',
                     points: [
-                        "Romela lipotso tsa tefo le ho tlosoa moofisiring ea ts'ireletso mosebetsing ka thoko ho tse tsoang ho sechaba.",
+                        "Romela lipotso tsa tefo le ho tlosoa moofisiring ea ts'ireletso ea khethiloeng.",
                         'Hokahanya nyeoe le lengolo la morero la ho fumana mobu le ho tlosoa.',
                         'Litletlebo tse bohlokoa li tšoaroa ka mocha o arohaneng, o sirelelitsoeng.',
                     ],
@@ -593,7 +597,7 @@ export const translations: Record<Lang, Translations> = {
                     label: 'Roads Directorate le tlhahlobo',
                     points: [
                         "Dashboard e le 'ngoe bakeng sa basebetsi mererong yohle le litereke.",
-                        "Tlaleho e kopantsoeng bakeng sa maeto a tšehetso ea ts'ebetso ea World Bank.",
+                        "Tlaleho e kopantsoeng bakeng sa maeto a tšehetso ea ts'ebetsong ea World Bank.",
                         "Litlaleho tse ntšoang bakeng sa tlhahlobo ea ts'ireletso le ea morero.",
                     ],
                 },
@@ -619,7 +623,7 @@ export const translations: Record<Lang, Translations> = {
         cta: {
             heading:
                 "Na u loketse ho fa tletlebo e 'ngoe le e 'ngoe nomoro ea nyeoe?",
-            sub: 'Ngola tletlebo ka metsotso, kapa u kene ho latela nyeoe eo u seng u e ile ua e ile ua e romela.',
+            sub: 'Ngola tletlebo ka metsotso, kapa u kene ho latela nyeoe eo u seng u e ile ua e romela.',
             button: 'Ngola tletlebo',
         },
         faqPage: {
@@ -736,78 +740,74 @@ export const useI18n = () => useContext(LanguageContext);
 export function FontStyles() {
     return (
         <style>{`
-       @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
-       .grms-root {
-         --bg-page: #FFFFFF;
-         --bg-raised: #F8F8F2;
-         --bg-inverse: #002B7F;
-         --bg-page-translucent: rgba(255,255,255,0.92);
-         --text-primary: #002B7F;
-         --text-secondary: #006233;
-         --text-on-inverse: #FFFFFF;
-         --text-on-inverse-secondary: #FFFFFF;
-         --border: #D6D5C7;
-         --accent: #000000;
-         --accent-dark: #FFFFFF;
-         --resolved: #006233;
-         --resolved-bg: #E0F2E9;
-         --ridge-1: #E5E4D6;
-         --ridge-2: #F8F8F2;
-         --ridge-3: #D6D5C7;
-         font-family: 'IBM Plex Sans', sans-serif;
-         color: var(--text-primary);
-         background: var(--bg-page);
-         transition: background 0.2s ease, color 0.2s ease;
-       }
-       .grms-root.dark {
-         --bg-page: #000000;
-         --bg-raised: #000000;
-         --bg-inverse: #002B7F;
-         --bg-page-translucent: rgba(0,0,0,0.92);
-         --text-primary: #FFFFFF;
-         --text-secondary: #006233;
-         --text-on-inverse: #000000;
-         --text-on-inverse-secondary: #000000;
-         --border: #000000;
-         --accent: #FFFFFF;
-         --accent-dark: #000000;
-         --resolved: #006233;
-         --resolved-bg: #004224;
-         --ridge-1: #000000;
-         --ridge-2: #000000;
-         --ridge-3: #000000;
-         font-family: 'IBM Plex Sans', sans-serif;
-         color: var(--text-primary);
-         background: var(--bg-page);
-         transition: background 0.2s ease, color 0.2s ease;
-       }
-       .grms-root .font-display { font-family: 'Source Serif 4', serif; }
-       .grms-root .font-mono { font-family: 'IBM Plex Mono', monospace; }
-       @media (prefers-reduced-motion: reduce) {
-         .grms-road-line { animation: none !important; }
-       }
-       @keyframes grms-road-draw {
-         from { stroke-dashoffset: 240; }
-         to { stroke-dashoffset: 0; }
-       }
-       .grms-road-line {
-         stroke-dasharray: 6 6;
-         animation: grms-road-draw 6s linear infinite;
-       }
-       .grms-root input, .grms-root textarea {
-         background: var(--bg-raised);
-         border: 1px solid var(--border);
-         color: var(--text-primary);
-         border-radius: 6px;
-         padding: 10px 12px;
-         font-size: 14px;
-         width: 100%;
-         outline: none;
-       }
-       .grms-root input:focus, .grms-root textarea:focus {
-         border-color: var(--accent);
-       }
-     `}</style>
+      @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+      .grms-root {
+        --bg-page: #F5F8FC;
+        --bg-raised: #FFFFFF;
+        --bg-inverse: #002B70;
+        --bg-page-translucent: rgba(245,248,252,0.94);
+        --text-primary: #102A43;
+        --text-secondary: #486581;
+        --text-on-inverse: #FFFFFF;
+        --text-on-inverse-secondary: #D9E8FF;
+        --border: #C9D8EA;
+        --accent: #003DA5;
+        --accent-dark: #007A3D;
+        --resolved: #1E7145;
+        --resolved-bg: #E1EFE6;
+        --ridge-1: #DCEBFA;
+        --ridge-2: #B9D4F1;
+        --ridge-3: #8DB8E3;
+        font-family: 'IBM Plex Sans', sans-serif;
+        color: var(--text-primary);
+        background: var(--bg-page);
+        transition: background 0.2s ease, color 0.2s ease;
+      }
+      .grms-root.dark {
+        --bg-page: #10182B;
+        --bg-raised: #182238;
+        --bg-inverse: #061A3A;
+        --bg-page-translucent: rgba(16,24,43,0.92);
+        --text-primary: #ECEAE0;
+        --text-secondary: #A7B0C4;
+        --text-on-inverse: #ECEAE0;
+        --text-on-inverse-secondary: #8790A6;
+        --border: #2A3350;
+        --accent: #6CA8FF;
+        --accent-dark: #43B66D;
+        --resolved: #4CA37A;
+        --resolved-bg: #16281F;
+        --ridge-1: #102A4C;
+        --ridge-2: #12355F;
+        --ridge-3: #1D559C;
+      }
+      .grms-root .font-display { font-family: 'Source Serif 4', serif; }
+      .grms-root .font-mono { font-family: 'IBM Plex Mono', monospace; }
+      @media (prefers-reduced-motion: reduce) {
+        .grms-road-line { animation: none !important; }
+      }
+      @keyframes grms-road-draw {
+        from { stroke-dashoffset: 240; }
+        to { stroke-dashoffset: 0; }
+      }
+      .grms-road-line {
+        stroke-dasharray: 6 6;
+        animation: grms-road-draw 6s linear infinite;
+      }
+      .grms-root input, .grms-root textarea {
+        background: var(--bg-raised);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        border-radius: 6px;
+        padding: 10px 12px;
+        font-size: 0.875rem;
+        width: 100%;
+        outline: none;
+      }
+      .grms-root input:focus, .grms-root textarea:focus {
+        border-color: var(--accent);
+      }
+    `}</style>
     );
 }
 
@@ -1001,13 +1001,20 @@ export function LanguageToggle() {
 
     return (
         <button
+            type="button"
+            role="switch"
+            aria-checked={lang === 'st'}
             onClick={toggle}
-            className="flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-medium"
+            className="flex h-9 min-w-16 items-center justify-center gap-1.5 rounded-full border px-2 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
             style={{
                 borderColor: 'var(--border)',
                 color: 'var(--text-secondary)',
             }}
-            aria-label="Switch language"
+            aria-label={
+                lang === 'en'
+                    ? 'Switch language to Sesotho'
+                    : 'Switch language to English'
+            }
         >
             <span style={{ opacity: lang === 'en' ? 1 : 0.4 }}>🇬🇧 EN</span>
             <span style={{ color: 'var(--border)' }}>/</span>
@@ -1076,11 +1083,11 @@ export function NavBar() {
                 >
                     <div
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm"
-                        style={{ background: '#14213D' }}
+                            style={{ background: 'var(--bg-inverse)' }}
                     >
-                        <MapPinned
+                        <AppLogoIcon
                             className="h-4.5 w-4.5"
-                            style={{ color: '#EFEFE6' }}
+                            style={{ color: '#FFFFFF' }}
                         />
                     </div>
                     <div className="hidden leading-tight sm:block">
@@ -1113,13 +1120,12 @@ export function NavBar() {
                 {/* Right: sign in, theme, language */}
                 <div className="hidden shrink-0 items-center gap-3 justify-self-end lg:flex">
                     <Button
+                        asChild
                         variant="ghost"
-                        className="text-sm whitespace-nowrap"
+                        className="h-9 text-sm whitespace-nowrap"
                         style={{ color: 'var(--text-primary)' }}
                     >
-                        <Link href={LOGIN_URL}>
-                        {t.nav.signIn}
-                        </Link>
+                        <Link href={LOGIN_URL}>{t.nav.signIn}</Link>
                     </Button>
 
                     <Separator
@@ -1135,8 +1141,12 @@ export function NavBar() {
                     <ThemeToggle />
                     <LanguageToggle />
                     <button
+                        type="button"
                         onClick={() => setOpen(!open)}
-                        aria-label="Toggle menu"
+                        aria-label={open ? 'Close menu' : 'Open menu'}
+                        aria-expanded={open}
+                        className="flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                        style={{ color: 'var(--text-primary)' }}
                     >
                         {open ? (
                             <X className="h-5 w-5" />
@@ -1165,15 +1175,14 @@ export function NavBar() {
                             {l.label}
                         </Link>
                     ))}
-                    <Button
-                        variant="outline"
-                        className="w-full"
-                        style={{ borderColor: 'var(--border)' }}
-                    >
-                        <Link href={LOGIN_URL}>
-                        {t.nav.signIn}
-                        </Link>
-                    </Button>
+                        <Button
+                            asChild
+                            variant="outline"
+                            className="w-full"
+                            style={{ borderColor: 'var(--border)' }}
+                        >
+                            <Link href={LOGIN_URL}>{t.nav.signIn}</Link>
+                        </Button>
                 </div>
             )}
         </header>
@@ -1190,7 +1199,7 @@ export function Footer() {
             <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-6 py-12 md:grid-cols-4">
                 <div className="col-span-2 md:col-span-1">
                     <div className="mb-3 flex items-center gap-2">
-                        <MapPinned
+                        <AppLogoIcon
                             className="h-4 w-4"
                             style={{ color: 'var(--accent)' }}
                         />
@@ -1270,7 +1279,53 @@ export function Footer() {
                     >
                         {t.nav.faqs}
                     </Link>
+                    <Link
+                        href={CONTACT_URL}
+                        className="block text-sm"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
+                        {t.nav.contact}
+                    </Link>
                 </div>
+
+                <div className="space-y-2">
+                    <p
+                        className="mb-3 text-xs font-semibold tracking-wide uppercase"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
+                        {t.footer.colContact}
+                    </p>
+                    {t.contactPage.addressLines.map((line) => (
+                        <p
+                            key={line}
+                            className="text-sm"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            {line}
+                        </p>
+                    ))}
+                    <p
+                        className="text-sm"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
+                        {t.contactPage.email}
+                    </p>
+                    <p
+                        className="text-sm"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
+                        {t.contactPage.phone}
+                    </p>
+                </div>
+            </div>
+            <div
+                className="border-t py-4 text-center text-xs"
+                style={{
+                    borderColor: 'var(--border)',
+                    color: 'var(--text-secondary)',
+                }}
+            >
+                © {new Date().getFullYear()} {AUTHORITY}
             </div>
         </footer>
     );
