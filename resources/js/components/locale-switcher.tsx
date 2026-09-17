@@ -29,10 +29,10 @@ export function LocaleSwitcher() {
                     : 'Switch language to English'
             }
             onClick={toggleLocale}
-            className="relative flex h-9 w-17 items-center rounded-full border border-neutral-200 bg-secondary px-0.75 transition-colors hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="relative flex h-9 w-17 items-center rounded-full border border-sidebar-border bg-sidebar-background px-0.75 transition-colors hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-offset-sidebar"
         >
             {/* Track labels */}
-            <span className="pointer-events-none absolute inset-0 flex items-center justify-between px-2 text-[10px] font-semibold tracking-wide text-muted-foreground">
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-between px-2 text-[10px] font-semibold tracking-wide text-sidebar-foreground">
                 <span
                     className={cn(
                         'transition-opacity',
