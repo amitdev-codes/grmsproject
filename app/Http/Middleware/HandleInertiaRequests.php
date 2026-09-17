@@ -44,6 +44,7 @@ class HandleInertiaRequests extends Middleware
             'locales' => config('locales.supported'),
             'translations' => $this->loadTranslations($locale),
             'name' => config('app.name'),
+            'app_author' => config('app.author', 'Roads Directorate · Government of Lesotho'),
             'auth' => [
                 'user' => $request->user()
                     ? [

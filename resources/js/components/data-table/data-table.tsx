@@ -46,6 +46,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useDataTable } from '@/hooks/use-data-table';
+import { useTranslation } from '@/hooks/use-translation';
 import type {
     DataTableFilterField,
     DataTableRoutes,
@@ -91,8 +92,8 @@ export function DataTable<TData extends { id: number | string }, TValue>({
     filterFields = [],
     title = 'Records',
     description,
-    searchPlaceholder = 'Search...',
-    resourceLabel = 'New',
+    searchPlaceholder,
+    resourceLabel,
     perPageOptions = [10, 25, 50, 100],
     defaultSort = '',
     defaultOrder = 'desc',
@@ -105,9 +106,10 @@ export function DataTable<TData extends { id: number | string }, TValue>({
     onEdit,
     onExport,
     onImport,
-    exportLabel = 'Export',
-    importLabel = 'Import',
+    exportLabel,
+    importLabel,
 }: DataTableProps<TData, TValue>) {
+    const { t } = useTranslation();
     const dt = useDataTable({ routes, meta, defaultSort, defaultOrder });
     const [viewRow, setViewRow] = useState<TData | null>(null);
 
@@ -121,6 +123,11 @@ export function DataTable<TData extends { id: number | string }, TValue>({
     const showExport = Boolean(onExport || routes.export);
     const showImport = Boolean(onImport || routes.import);
     const showCreate = Boolean(onCreate || routes.create);
+
+    const resolvedSearchPlaceholder = searchPlaceholder ?? t('menu.search_placeholder');
+    const resolvedResourceLabel = resourceLabel ?? t('menu.new_resource', { resource: title });
+    const resolvedExportLabel = exportLabel ?? t('menu.export');
+    const resolvedImportLabel = importLabel ?? t('menu.import');
 
     // `route()` is assumed to be Ziggy's global helper. If it isn't registered globally in
     // this app, replace the calls below with your actual navigation/URL-building logic.
@@ -287,7 +294,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
             <CardHeader className="flex flex-row flex-nowrap items-center justify-between gap-2 border-b px-3 py-2.5!">
                 <div className="flex min-w-0 flex-col justify-center">
                     <CardTitle className="text-sm leading-tight font-semibold">
-                        List {title}
+                        {t('menu.list_resource', { resource: title })}
                     </CardTitle>
                     {description && (
                         <CardDescription className="text-[11px] leading-tight">
@@ -305,7 +312,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
                             onClick={handleExport}
                         >
                             <Download className="mr-1 h-3 w-3" />
-                            {exportLabel}
+                            {resolvedExportLabel}
                         </Button>
                     )}
                     {showImport && (
@@ -316,7 +323,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
                             onClick={handleImport}
                         >
                             <Upload className="mr-1 h-3 w-3" />
-                            {importLabel}
+                            {resolvedImportLabel}
                         </Button>
                     )}
                     {/* View — column visibility toggle */}
@@ -328,12 +335,12 @@ export function DataTable<TData extends { id: number | string }, TValue>({
                                 className="h-6.5 px-2 text-xs"
                             >
                                 <Settings2 className="mr-1 h-3 w-3" />
-                                View
+                                {t('menu.view_all')}
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-44">
                             <DropdownMenuLabel className="text-xs">
-                                Toggle columns
+                                {t('menu.toggle_columns')}
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             {table
@@ -360,7 +367,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
                             onClick={handleCreate}
                         >
                             <Plus className="mr-1 h-3 w-3" />
-                            {resourceLabel}
+                            {resolvedResourceLabel}
                         </Button>
                     )}
                 </div>
@@ -372,7 +379,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
                     wrap onto their own line on narrow widths — never overlapping. ── */}
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
                     <div className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-                        <span>Show</span>
+                        <span>{t('menu.show')}</span>
                         <Select
                             value={String(meta.per_page)}
                             onValueChange={(value) =>
@@ -394,7 +401,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
                                 ))}
                             </SelectContent>
                         </Select>
-                        <span>entries</span>
+                        <span>{t('menu.entries')}</span>
                     </div>
 
                     <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
@@ -411,7 +418,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
                             <Input
                                 value={dt.query.search ?? ''}
                                 onChange={(e) => dt.setSearch(e.target.value)}
-                                placeholder={searchPlaceholder}
+                                placeholder={resolvedSearchPlaceholder}
                                 className="h-6.5 pl-7 text-xs"
                             />
                         </div>
@@ -482,7 +489,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
                                         colSpan={fullColumns.length}
                                         className="h-20 text-center text-sm text-muted-foreground"
                                     >
-                                        No results.
+                                        {t('menu.no_results')}
                                     </TableCell>
                                 </TableRow>
                             )}

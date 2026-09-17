@@ -13,6 +13,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/use-translation';
 import type { FacetedFilterOption } from '@/types/data-table';
 
 interface DataTableFacetedFilterProps {
@@ -23,6 +24,7 @@ interface DataTableFacetedFilterProps {
 }
 
 export function DataTableFacetedFilter({ title, options, selected, onChange }: DataTableFacetedFilterProps) {
+  const { t } = useTranslation();
   const selectedSet = new Set(selected);
 
   const toggle = (value: string) => {
@@ -46,7 +48,7 @@ export function DataTableFacetedFilter({ title, options, selected, onChange }: D
               <div className="hidden space-x-1 lg:flex">
                 {selectedSet.size > 2 ? (
                   <Badge variant="secondary" className="rounded-sm px-1 font-normal">
-                    {selectedSet.size} selected
+                    {selectedSet.size} {t('menu.selected_count', { count: '' }).trim()}
                   </Badge>
                 ) : (
                   options
@@ -66,7 +68,7 @@ export function DataTableFacetedFilter({ title, options, selected, onChange }: D
         <Command>
           <CommandInput placeholder={title} />
           <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandEmpty>{t('menu.no_results_found')}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => {
                 const isSelected = selectedSet.has(option.value);
@@ -91,7 +93,7 @@ export function DataTableFacetedFilter({ title, options, selected, onChange }: D
                 <CommandSeparator />
                 <CommandGroup>
                   <CommandItem onSelect={() => onChange([])} className="justify-center text-center">
-                    Clear filters
+                    {t('menu.clear_filters')}
                   </CommandItem>
                 </CommandGroup>
               </>

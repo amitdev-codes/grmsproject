@@ -99,7 +99,7 @@
     --secondary-foreground:   #163B70;
 
     --muted:                  #EEF3F9;
-    --muted-foreground:       #486581;
+    --muted-foreground:       #597289; /* darkened from #486581 for WCAG AA 4.5:1 against --muted */
 
     --accent:                 #E1F3E8; /* Lesotho flag green tint */
     --accent-dark: #007A3D;
@@ -137,7 +137,7 @@
     --success-foreground:     #ECEAE0;
     --success-muted:          #E1EFE6; /* --resolved-bg */
 
-    --warning:                #B8763A; /* NOT in GRMS palette — reused --accent since it's already an amber/ochre tone */
+    --warning:                #A8642E; /* darkened from #B8763A for WCAG AA 4.5:1 against --warning-foreground */
     --warning-foreground:     #ECEAE0;
     --warning-muted:          #F3E7D8; /* derived light tint */
 

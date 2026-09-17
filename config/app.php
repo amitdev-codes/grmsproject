@@ -17,6 +17,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Author
+    |--------------------------------------------------------------------------
+    |
+    | This value is the author/copyright holder of your application, which will
+    | be used in the footer copyright notice.
+    |
+    */
+    'author' => env('APP_AUTHOR', 'Roads Directorate · Government of Lesotho'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

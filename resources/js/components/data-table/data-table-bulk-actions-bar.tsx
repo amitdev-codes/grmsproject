@@ -12,6 +12,7 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/hooks/use-translation';
 import type { DataTableRoutes } from '@/types/data-table';
 
 interface DataTableBulkActionsBarProps {
@@ -31,6 +32,7 @@ export function DataTableBulkActionsBar({
     routes,
     onCleared,
 }: DataTableBulkActionsBarProps) {
+    const { t } = useTranslation();
     if (selectedIds.length === 0 || !routes.bulkDestroy) {
         return null;
     }
@@ -53,11 +55,13 @@ export function DataTableBulkActionsBar({
         );
     };
 
+    const count = selectedIds.length;
+    const rowLabel = count > 1 ? t('menu.rows') : t('menu.row');
+
     return (
         <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
             <span className="text-xs font-medium text-muted-foreground">
-                {selectedIds.length} row{selectedIds.length > 1 ? 's' : ''}{' '}
-                selected
+                {count} {rowLabel} {t('menu.selected_count', { count: '' }).trim()}
             </span>
             <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -67,23 +71,22 @@ export function DataTableBulkActionsBar({
                         className="h-6.5 px-2 text-xs"
                     >
                         <Trash2 className="mr-1 h-3 w-3" />
-                        Delete selected
+                        {t('menu.delete_selected')}
                     </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            Delete {selectedIds.length} selected row
-                            {selectedIds.length > 1 ? 's' : ''}?
+                            {t('menu.delete')} {count} {rowLabel}?
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone.
+                            {t('menu.cannot_be_undone')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('menu.cancel')}</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete}>
-                            Delete
+                            {t('menu.delete')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

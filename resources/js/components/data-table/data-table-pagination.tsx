@@ -8,6 +8,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/use-translation';
 import type { PaginationMeta } from '@/types/data-table';
 
 interface DataTablePaginationProps {
@@ -70,6 +71,7 @@ export function DataTablePagination({
     onPageChange,
     onPerPageChange,
 }: DataTablePaginationProps) {
+    const { t } = useTranslation();
     // Defensive fallbacks — if the backend/meta hook ever sends these through as
     // undefined, "Page {current} of {last}" used to silently render
     // "Page undefined of NaN" instead of failing loudly.
@@ -87,17 +89,19 @@ export function DataTablePagination({
             <div className="flex-1 text-xs text-muted-foreground">
                 {selectedCount > 0 ? (
                     <span>
-                        {selectedCount} of {meta.total} row(s) selected.
+                        {selectedCount} {t('menu.row')}{' '}
+                        {t('menu.selected_count', { count: '' }).trim()}
                     </span>
                 ) : (
                     <span>
-                        Showing {meta.from ?? 0}–{meta.to ?? 0} of {meta.total}
+                        {t('menu.showing')} {meta.from ?? 0}–{meta.to ?? 0}{' '}
+                        {t('menu.of')} {meta.total}
                     </span>
                 )}
             </div>
             <div className="flex items-center gap-4 lg:gap-5">
                 <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-medium">Rows per page</p>
+                    <p className="text-xs font-medium">{t('menu.rows_per_page')}</p>
                     <Select
                         value={`${meta.per_page}`}
                         onValueChange={(value) =>

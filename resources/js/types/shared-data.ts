@@ -17,6 +17,8 @@ export interface SharedData {
     locale: string;
     locales: Record<string, string>;
     translations: Record<string, string>;
+    name: string;
+    app_author: string;
     flash: {
         success?: string | null;
         error?: string | null;

@@ -18,6 +18,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/use-translation';
 import type { DataTableRoutes } from '@/types/data-table';
 
 interface DataTableRowActionsProps<TData> {
@@ -49,6 +50,7 @@ export function DataTableRowActions<TData>({
     onView,
     onEdit,
 }: DataTableRowActionsProps<TData>) {
+    const { t } = useTranslation();
     const showView = Boolean(onView || routes.view);
     const showEdit = Boolean(onEdit || routes.edit);
     const showDelete = Boolean(routes.destroy);
@@ -104,7 +106,7 @@ export function DataTableRowActions<TData>({
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent className="border-green-600 bg-green-600 fill-green-600 text-white">
-                        View
+                        {t('menu.view')}
                     </TooltipContent>
                 </Tooltip>
             )}
@@ -126,7 +128,7 @@ export function DataTableRowActions<TData>({
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent className="border-purple-600 bg-purple-600 fill-purple-600 text-white">
-                        Edit
+                        {t('menu.edit')}
                     </TooltipContent>
                 </Tooltip>
             )}
@@ -145,21 +147,21 @@ export function DataTableRowActions<TData>({
                                 </Button>
                             </AlertDialogTrigger>
                         </TooltipTrigger>
-                        <TooltipContent>Delete</TooltipContent>
+                        <TooltipContent>{t('menu.delete')}</TooltipContent>
                     </Tooltip>
                     <AlertDialogContent>
                         <AlertDialogHeader>
                             <AlertDialogTitle>
-                                Delete{label ? ` "${label}"` : ' this record'}?
+                                {t('menu.delete')} {label ? `"${label}"` : t('menu.this_record')}?
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                                This action cannot be undone.
+                                {t('menu.cannot_be_undone')}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t('menu.cancel')}</AlertDialogCancel>
                             <AlertDialogAction onClick={handleDelete}>
-                                Delete
+                                {t('menu.delete')}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
