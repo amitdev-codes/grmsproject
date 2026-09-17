@@ -7,6 +7,23 @@ import {
     ScrollText,
     Settings,
     ChevronDown,
+    ShieldCheck,
+    UserCog,
+    Users,
+    UsersRound,
+    FolderKanban,
+    TrendingUp,
+    MessageSquareText,
+    History,
+    CheckCircle2,
+    MapPinned,
+    Network,
+    LayoutList,
+    Building2,
+    BriefcaseBusiness,
+    Timer,
+    ArrowUpRight,
+    Globe,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { Button } from '@/components/ui/button';
@@ -31,55 +48,64 @@ export function AppTopMenu() {
         label: string;
         href?: string;
         icon?: ComponentType<{ className?: string }>;
-        items?: { title: string; href: string }[];
+        items?: { title: string; href: string; icon?: ComponentType<{ className?: string }> }[];
     }[] = [
         { label: 'menu.dashboard', href: dashboard(), icon: LayoutGrid },
+        {
+            label: 'menu.user_management',
+            icon: UsersRound,
+            items: [
+                { title: 'menu.permissions', href: '/permissions', icon: ShieldCheck },
+                { title: 'menu.roles', href: '/roles', icon: UserCog },
+                { title: 'menu.users', href: '/users', icon: Users },
+            ],
+        },
         {
             label: 'menu.grievances',
             icon: MessageSquareWarning,
             items: [
-                { title: 'menu.grievance-categories', href: '/grievance-categories' },
-                { title: 'menu.grievance-channels', href: '/grievance-channels' },
-                { title: 'menu.grievances', href: '/grievances' },
-                { title: 'menu.grievance-escalations', href: '/grievance-escalations' },
-                { title: 'menu.grievance-messages', href: '/grievance-messages' },
-                { title: 'menu.grievance-status-history', href: '/grievance-status-histories' },
-                { title: 'menu.resolutions', href: '/resolutions' },
+                { title: 'menu.grievance-categories', href: '/grievance-categories', icon: FolderKanban },
+                { title: 'menu.grievance-channels', href: '/grievance-channels', icon: FolderKanban },
+                { title: 'menu.grievances', href: '/grievances', icon: FileText },
+                { title: 'menu.grievance-escalations', href: '/grievance-escalations', icon: TrendingUp },
+                { title: 'menu.grievance-messages', href: '/grievance-messages', icon: MessageSquareText },
+                { title: 'menu.grievance-status-history', href: '/grievance-status-histories', icon: History },
+                { title: 'menu.resolutions', href: '/resolutions', icon: CheckCircle2 },
             ],
         },
         {
             label: 'menu.master',
             icon: Database,
             items: [
-                { title: 'menu.districts', href: '/districts' },
-                { title: 'menu.divisions', href: '/divisions' },
-                { title: 'menu.sections', href: '/sections' },
-                { title: 'menu.project_types', href: '/project-types' },
-                { title: 'menu.service_providers', href: '/service-providers' },
-                { title: 'menu.projects', href: '/projects' },
-                { title: 'menu.sla_policies', href: '/grievance-sla-policies' },
-                { title: 'menu.escalation_rules', href: '/grievance-escalation-rules' },
+                { title: 'menu.districts', href: '/districts', icon: MapPinned },
+                { title: 'menu.divisions', href: '/divisions', icon: Network },
+                { title: 'menu.sections', href: '/sections', icon: LayoutList },
+                { title: 'menu.project_types', href: '/project-types', icon: FolderKanban },
+                { title: 'menu.service_providers', href: '/service-providers', icon: Building2 },
+                { title: 'menu.projects', href: '/projects', icon: BriefcaseBusiness },
+                { title: 'menu.sla_policies', href: '/grievance-sla-policies', icon: Timer },
+                { title: 'menu.escalation_rules', href: '/grievance-escalation-rules', icon: ArrowUpRight },
             ],
         },
         {
             label: 'menu.reports',
             icon: FileText,
             items: [
-                { title: 'menu.reports', href: '/reports' },
-                { title: 'Summary report', href: '/reports/summary' },
+                { title: 'menu.reports', href: '/reports', icon: FileText },
+                { title: 'Summary report', href: '/reports/summary', icon: FileText },
             ],
         },
         {
             label: 'menu.logs',
             icon: ScrollText,
-            items: [{ title: 'menu.logs', href: '/logs' }],
+            items: [{ title: 'menu.logs', href: '/logs', icon: ScrollText }],
         },
         {
             label: 'menu.settings',
             icon: Settings,
             items: [
-                { title: 'menu.profile_settings', href: '/edit-profile' },
-                { title: 'menu.application_settings', href: '/settings/application' },
+                { title: 'menu.profile_settings', href: '/edit-profile', icon: UserCog },
+                { title: 'menu.application_settings', href: '/settings/application', icon: Globe },
             ],
         },
     ];
@@ -129,6 +155,7 @@ export function AppTopMenu() {
                         >
                             {(group.items ?? []).map((item) => {
                                 const itemActive = isActiveHref(page.url, item.href);
+                                const ItemIcon = item.icon;
 
                                 return (
                                     <DropdownMenuItem
@@ -139,6 +166,7 @@ export function AppTopMenu() {
                                         }`}
                                     >
                                         <Link href={item.href} prefetch>
+                                            {ItemIcon && <ItemIcon className="mr-2 size-4" />}
                                             {t(item.title)}
                                         </Link>
                                     </DropdownMenuItem>
