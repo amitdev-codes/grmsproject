@@ -10,9 +10,18 @@ interface ResolutionViewContentProps {
 type ResolutionState = 'proposed' | 'approved' | 'confirmed' | 'rejected';
 
 const resolveState = (r: Resolution): ResolutionState => {
-    if (r.rejected_reason) return 'rejected';
-    if (r.complainant_confirmed_at) return 'confirmed';
-    if (r.approved_at) return 'approved';
+    if (r.rejected_reason) {
+return 'rejected';
+}
+
+    if (r.complainant_confirmed_at) {
+return 'confirmed';
+}
+
+    if (r.approved_at) {
+return 'approved';
+}
+
     return 'proposed';
 };
 

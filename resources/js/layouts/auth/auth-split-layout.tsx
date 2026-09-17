@@ -54,7 +54,7 @@ export default function AuthSplitLayout({
                 <div
                     className="absolute inset-0"
                     style={{
-                        background: `linear-gradient(165deg, ${INVERSE_BG} 20%, rgba(16,32,61,0.94) 100%)`,
+                        background: `linear-gradient(90deg, ${INVERSE_BG} 20%, rgba(16,32,61,0.94) 100%)`,
                     }}
                 />
                 <div className="absolute inset-0" style={{ opacity: 0.12 }}>
@@ -75,15 +75,11 @@ export default function AuthSplitLayout({
                         className="flex items-center gap-3 font-medium"
                         style={{ color: INVERSE_TEXT }}
                     >
-                        <span
-                            className="flex h-10 w-10 items-center justify-center rounded-full"
-                            style={{ background: ACCENT }}
-                        >
-                            <AppLogoIcon
-                                className="h-5 w-5"
-                                style={{ color: '#10203D' }}
-                            />
-                        </span>
+                        <img
+                            src="/logo.png"
+                            alt="GRMS Lesotho"
+                            className="h-10 w-10 rounded-full object-contain"
+                        />
                         <span
                             className="font-display text-lg"
                             style={{ color: INVERSE_TEXT }}
@@ -139,15 +135,11 @@ export default function AuthSplitLayout({
                         href={home()}
                         className="mb-8 flex items-center gap-2 font-medium md:hidden"
                     >
-                        <span
-                            className="flex h-9 w-9 items-center justify-center rounded-full"
-                            style={{ background: ACCENT_DARK }}
-                        >
-                            <AppLogoIcon
-                                className="h-4.5 w-4.5"
-                                style={{ color: '#fff' }}
-                            />
-                        </span>
+                        <img
+                            src="/logo.png"
+                            alt="GRMS Lesotho"
+                            className="h-9 w-9 rounded-full object-contain"
+                        />
                         <span className="font-display text-lg">
                             GRMS Lesotho
                         </span>

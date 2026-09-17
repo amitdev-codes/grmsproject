@@ -54,6 +54,7 @@ export const Columns: ColumnDef<Section>[] = [
         ),
         cell: ({ row }) => {
             const division = row.original.division;
+
             return division ? (
                 <Badge variant={divisionVariant(division.name)}>
                     {division.name}

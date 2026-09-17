@@ -20,7 +20,6 @@ import {
     LanguageToggle,
     PRODUCT_NAME,
     AUTHORITY,
-    AppLogoIcon,
 } from '@modules/Frontend/pages/site-shared';
 import type { Lang } from '@modules/Frontend/pages/site-shared';
 
@@ -43,28 +42,16 @@ function LoginContent({ status, canResetPassword, appLogoUrl = null }: Props) {
                 </div>
 
                 <div className="flex flex-col items-center gap-2">
-                    <div className="flex items-center gap-2.5">
-                        {appLogoUrl ? (
-                            <img
-                                src={appLogoUrl}
-                                alt={PRODUCT_NAME}
-                                className="h-9 w-9 rounded-sm object-contain"
-                            />
-                        ) : (
-                            <div
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm"
-                                style={{ background: '#002B70' }}
-                            >
-                                <AppLogoIcon
-                                    className="h-4.5 w-4.5"
-                                    style={{ color: '#FFFFFF' }}
-                                />
-                            </div>
-                        )}
-                        <span className="font-display text-lg font-semibold tracking-tight text-foreground">
-                            {PRODUCT_NAME}
-                        </span>
-                    </div>
+<div className="flex items-center gap-2.5">
+                    <img
+                        src="/logo.png"
+                        alt={PRODUCT_NAME}
+                        className="h-9 w-9 rounded-sm object-contain"
+                    />
+                    <span className="font-display text-lg font-semibold tracking-tight text-foreground">
+                        {PRODUCT_NAME}
+                    </span>
+                </div>
                 </div>
 
                 <div className="mt-4 space-y-1 text-center">

@@ -1,8 +1,8 @@
+import AppLogoIcon from '@/components/app-logo-icon';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Link } from '@inertiajs/react';
 import { Menu, X, Sun, Moon } from 'lucide-react';
-import AppLogoIcon from '@/components/app-logo-icon';
 import React, { createContext, useContext, useState } from 'react';
 import {route} from 'ziggy-js';
 
@@ -1077,20 +1077,16 @@ export function NavBar() {
                 {t.funding}
             </div>
             <div className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-6 py-3.5">
-                {/* Left: logo + project name */}
+{/* Left: logo + project name */}
                 <Link
                     href={HOME_URL}
                     className="flex shrink-0 items-center gap-2.5"
                 >
-                    <div
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm"
-                            style={{ background: 'var(--bg-inverse)' }}
-                    >
-                        <AppLogoIcon
-                            className="h-4.5 w-4.5"
-                            style={{ color: '#FFFFFF' }}
-                        />
-                    </div>
+                    <img
+                        src="/logo.png"
+                        alt={PRODUCT_NAME}
+                        className="h-9 w-9 rounded-sm object-contain"
+                    />
                     <div className="hidden leading-tight sm:block">
                         <div className="font-display text-lg font-semibold tracking-tight whitespace-nowrap">
                             {PRODUCT_NAME}
@@ -1200,9 +1196,11 @@ export function Footer() {
             <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-6 py-12 md:grid-cols-4">
                 <div className="col-span-2 md:col-span-1">
                     <div className="mb-3 flex items-center gap-2">
-                        <AppLogoIcon
-                            className="h-4 w-4"
-                            style={{ color: 'var(--accent)' }}
+                        <img
+                            src="/logo.png"
+                            alt={PRODUCT_NAME}
+                            className="h-4 w-4 object-contain"
+                            style={{ filter: 'drop-shadow(0 0 2px var(--accent))' }}
                         />
                         <span className="font-display font-semibold">
                             {PRODUCT_NAME}

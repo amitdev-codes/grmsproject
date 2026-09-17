@@ -1,3 +1,4 @@
+import { StatusCell } from '@/components/data-table/status-cell';
 import {
     Card,
     CardContent,
@@ -5,7 +6,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { StatusCell } from '@/components/data-table/status-cell';
 import { useTranslation } from '@/hooks/use-translation';
 import type { GrievanceSlaPolicy } from './Columns';
 

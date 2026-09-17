@@ -56,6 +56,7 @@ export default function Form({
 
         if (Object.keys(clientErrors).length > 0) {
             setError(clientErrors as Record<keyof FormValues, string>);
+
             return;
         }
 

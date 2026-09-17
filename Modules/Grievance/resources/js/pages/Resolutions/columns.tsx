@@ -31,9 +31,18 @@ export interface Resolution {
 type ResolutionState = 'proposed' | 'approved' | 'confirmed' | 'rejected';
 
 const resolveState = (r: Resolution): ResolutionState => {
-    if (r.rejected_reason) return 'rejected';
-    if (r.complainant_confirmed_at) return 'confirmed';
-    if (r.approved_at) return 'approved';
+    if (r.rejected_reason) {
+return 'rejected';
+}
+
+    if (r.complainant_confirmed_at) {
+return 'confirmed';
+}
+
+    if (r.approved_at) {
+return 'approved';
+}
+
     return 'proposed';
 };
 
@@ -84,6 +93,7 @@ export const columns: ColumnDef<Resolution>[] = [
         ),
         cell: ({ row }) => {
             const state = resolveState(row.original);
+
             return (
                 <Badge variant={stateVariant(state)}>{stateLabel(state)}</Badge>
             );

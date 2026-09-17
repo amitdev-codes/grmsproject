@@ -16,7 +16,6 @@ import {
     useI18n,
     LanguageToggle,
     PRODUCT_NAME,
-    AppLogoIcon,
 } from '@modules/Frontend/pages/site-shared';
 import type { Lang } from '@modules/Frontend/pages/site-shared';
 
@@ -34,15 +33,11 @@ function RegisterContent() {
 
                 <div className="flex flex-col items-center gap-2">
                     <div className="flex items-center gap-2.5">
-                        <div
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm"
-                            style={{ background: '#002B70' }}
-                        >
-                            <AppLogoIcon
-                                className="h-4.5 w-4.5"
-                                style={{ color: '#FFFFFF' }}
-                            />
-                        </div>
+                        <img
+                            src="/logo.png"
+                            alt={PRODUCT_NAME}
+                            className="h-9 w-9 rounded-sm object-contain"
+                        />
                         <span className="font-display text-lg font-semibold tracking-tight text-foreground">
                             {PRODUCT_NAME}
                         </span>

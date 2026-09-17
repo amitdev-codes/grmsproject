@@ -54,6 +54,7 @@ export default function Form({ section, divisions }: SectionFormProps) {
 
         if (Object.keys(clientErrors).length > 0) {
             setError(clientErrors as Record<keyof FormValues, string>);
+
             return;
         }
 

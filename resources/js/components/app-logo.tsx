@@ -3,7 +3,7 @@ export default function AppLogo() {
         <>
             <div className="flex items-center gap-2">
                 <img
-                    src="/images/rd-logo.png"
+                    src="/logo.png"
                     alt="Roads Directorate of Lesotho"
                     className="size-10 shrink-0 rounded-md object-contain"
                     loading="eager"

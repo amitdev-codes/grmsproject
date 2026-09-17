@@ -1,8 +1,8 @@
 // resources/js/Pages/GrievanceStatusHistories/columns.tsx
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { DateCell } from '@/components/data-table/date-cell';
-import { statusLabel } from '@/types/grievance-status';
 import { Badge } from '@/components/ui/badge';
+import { statusLabel } from '@/types/grievance-status';
 import type { ColumnDef } from '@tanstack/react-table';
 
 export interface Grievance {
