@@ -532,3 +532,21 @@
     from { stroke-dashoffset: 240; }
     to { stroke-dashoffset: 0; }
 }
+
+/* ─── App top bar — blue gradient for icon visibility ────────────────────────── */
+.app-top-bar {
+    background: linear-gradient(135deg, rgba(0, 43, 112, 0.92) 0%, rgba(20, 33, 61, 0.92) 50%, rgba(100, 149, 237, 0.92) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.dark .app-top-bar {
+    background: linear-gradient(135deg, rgba(6, 26, 58, 0.95) 0%, rgba(18, 53, 95, 0.95) 50%, rgba(130, 162, 240, 0.95) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure icons in the top bar are visible against the gradient */
+.app-top-bar .locale-switcher,
+.app-top-bar .theme-toggle,
+.app-top-bar .user-avatar {
+    color: #FFFFFF;
+}

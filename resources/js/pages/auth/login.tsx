@@ -18,10 +18,11 @@ import {
     translations,
     useI18n,
     LanguageToggle,
-    PRODUCT_NAME
-
+    PRODUCT_NAME,
+    AUTHORITY,
+    AppLogoIcon,
 } from '@modules/Frontend/pages/site-shared';
-import type {Lang} from '@modules/Frontend/pages/site-shared';
+import type { Lang } from '@modules/Frontend/pages/site-shared';
 
 type Props = {
     status?: string;
@@ -37,12 +38,10 @@ function LoginContent({ status, canResetPassword, appLogoUrl = null }: Props) {
             <Head title={t.auth.login.headTitle} />
 
             <div className="relative">
-                {/* Language toggle — pinned to the top-right corner */}
                 <div className="absolute top-0 right-0">
                     <LanguageToggle />
                 </div>
 
-                {/* Icon + GRMS — same line, like the navbar lockup */}
                 <div className="flex flex-col items-center gap-2">
                     <div className="flex items-center gap-2.5">
                         {appLogoUrl ? (
@@ -54,11 +53,11 @@ function LoginContent({ status, canResetPassword, appLogoUrl = null }: Props) {
                         ) : (
                             <div
                                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm"
-                                style={{ background: '#14213D' }}
+                                style={{ background: '#002B70' }}
                             >
-                                <MapPinned
+                                <AppLogoIcon
                                     className="h-4.5 w-4.5"
-                                    style={{ color: '#EFEFE6' }}
+                                    style={{ color: '#FFFFFF' }}
                                 />
                             </div>
                         )}

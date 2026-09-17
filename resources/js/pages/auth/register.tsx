@@ -15,6 +15,8 @@ import {
     translations,
     useI18n,
     LanguageToggle,
+    PRODUCT_NAME,
+    AppLogoIcon,
 } from '@modules/Frontend/pages/site-shared';
 import type { Lang } from '@modules/Frontend/pages/site-shared';
 
@@ -30,7 +32,24 @@ function RegisterContent() {
                     <LanguageToggle />
                 </div>
 
-                <div className="space-y-1 pt-1 text-center">
+                <div className="flex flex-col items-center gap-2">
+                    <div className="flex items-center gap-2.5">
+                        <div
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm"
+                            style={{ background: '#002B70' }}
+                        >
+                            <AppLogoIcon
+                                className="h-4.5 w-4.5"
+                                style={{ color: '#FFFFFF' }}
+                            />
+                        </div>
+                        <span className="font-display text-lg font-semibold tracking-tight text-foreground">
+                            {PRODUCT_NAME}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="mt-4 space-y-1 text-center">
                     <h1 className="text-card-title font-semibold text-foreground">
                         {t.auth.register.title}
                     </h1>
@@ -88,10 +107,10 @@ function RegisterContent() {
                                 </Label>
                                 <PasswordInput
                                     id="password"
+                                    name="password"
                                     required
                                     tabIndex={3}
                                     autoComplete="new-password"
-                                    name="password"
                                     placeholder={t.auth.register.passwordLabel}
                                 />
                                 <InputError message={errors.password} />
@@ -103,10 +122,10 @@ function RegisterContent() {
                                 </Label>
                                 <PasswordInput
                                     id="password_confirmation"
+                                    name="password_confirmation"
                                     required
                                     tabIndex={4}
                                     autoComplete="new-password"
-                                    name="password_confirmation"
                                     placeholder={
                                         t.auth.register.confirmPasswordLabel
                                     }

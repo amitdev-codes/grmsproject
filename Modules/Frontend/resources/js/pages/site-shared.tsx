@@ -6,6 +6,7 @@ import AppLogoIcon from '@/components/app-logo-icon';
 import React, { createContext, useContext, useState } from 'react';
 import {route} from 'ziggy-js';
 
+export { AppLogoIcon };
 export const PRODUCT_NAME = 'GRMS';
 export const SYSTEM_FULL_NAME_EN = 'Grievance Redress Management System';
 export const SYSTEM_FULL_NAME_ST = 'Tsamaiso ea ho Rarolla Litletlebo';

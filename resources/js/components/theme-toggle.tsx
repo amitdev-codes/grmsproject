@@ -12,7 +12,7 @@ export function ThemeToggle() {
         <button
             type="button"
             onClick={toggleAppearance}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-offset-sidebar"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/30 bg-white/15 text-white transition-all hover:bg-white/25 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-offset-transparent"
             aria-label={
                 appearance === 'light'
                     ? 'Switch to dark mode'
