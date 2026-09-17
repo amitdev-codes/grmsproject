@@ -20,7 +20,6 @@ use Inertia\Inertia;
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class,'index'])->name('dashboard');
     Route::get('/lang/{locale}', [LocaleController::class, 'update'])->name('locale.update');
+    Route::get('dashboard/analytics', [DashboardController::class, 'analytics'])->name('dashboard.analytics');
+    Route::get('dashboard/reports', [DashboardController::class, 'reports'])->name('dashboard.reports');
 });
-
-
-require __DIR__.'/settings.php';

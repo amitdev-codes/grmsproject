@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
@@ -45,6 +46,7 @@ class HandleInertiaRequests extends Middleware
             'translations' => $this->loadTranslations($locale),
             'name' => config('app.name'),
             'app_author' => config('app.author', 'Roads Directorate · Government of Lesotho'),
+            'dashboard' => app(DashboardController::class)->data(),
             'auth' => [
                 'user' => $request->user()
                     ? [

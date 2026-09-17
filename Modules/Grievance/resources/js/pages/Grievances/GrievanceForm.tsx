@@ -3,11 +3,13 @@ import { Select2Field, StatusField, TextField } from '@/components/form-fields';
 import { PhoneField } from '@/components/form-fields/phone-field';
 import { FormLayout } from '@/components/form-layout';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { rules, validateForm } from '@/lib/validation';
 import { statusLabel, statusVariant } from '@/types/grievance-status';
 import { useForm } from '@inertiajs/react';
-import { FileWarning } from 'lucide-react';
+import { FileWarning, LocateFixed, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 import { route } from 'ziggy-js';
 import type { Grievance } from './columns';
 
@@ -75,6 +77,8 @@ export default function Form({
                              }: GrievanceFormProps) {
     const isEdit = !!grievance;
     const { t } = useTranslation();
+    const [locating, setLocating] = useState(false);
+    const [locError, setLocError] = useState<string | null>(null);
 
     const {
         data,
@@ -200,6 +204,37 @@ export default function Form({
                 setData('division_id', String(category.division_id));
             }
         }
+    };
+
+    /** Auto-capture coordinates from the browser's Geolocation API. */
+    const captureLocation = () => {
+        if (!('geolocation' in navigator)) {
+            setLocError(t('Geolocation is not supported by your browser.'));
+
+            return;
+        }
+
+        setLocating(true);
+        setLocError(null);
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setData('latitude', pos.coords.latitude.toFixed(6));
+                setData('longitude', pos.coords.longitude.toFixed(6));
+                setLocating(false);
+            },
+            (err) => {
+                const msg =
+                    err.code === err.PERMISSION_DENIED
+                        ? t('Location permission denied. Please enable it in your browser settings.')
+                        : err.code === err.TIMEOUT
+                            ? t('Location request timed out. Please try again.')
+                            : t('Unable to retrieve location. Please try again.');
+                setLocError(msg);
+                setLocating(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+        );
     };
 
     return (
@@ -404,6 +439,29 @@ export default function Form({
                     placeholder="27.4833"
                 />
             </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={captureLocation}
+                    disabled={locating}
+                >
+                    {locating ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <LocateFixed className="mr-2 h-4 w-4" />
+                    )}
+                    {locating ? t('Capturing…') : t('Use my location')}
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                    {t('Auto-capture coordinates from your device.')}
+                </span>
+            </div>
+            {locError && (
+                <p className="text-sm text-destructive">{locError}</p>
+            )}
 
             {/* Evidence attachments. FileDropzone's existingPreviewUrl/
                 onRemoveExisting props are single-file-only (per its own

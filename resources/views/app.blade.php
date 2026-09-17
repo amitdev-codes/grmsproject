@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="icon" href="{{ $seo['favicon'] ?? '/favicon.ico' }}" sizes="any">
-    <link rel="icon" href="{{ $seo['favicon_svg'] ?? '/favicon.svg' }}" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="{{ $seo['apple_touch_icon'] ?? '/apple-touch-icon.png' }}">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="/favicon.png">
 
     @fonts
     @routes

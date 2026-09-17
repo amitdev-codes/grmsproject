@@ -76,12 +76,10 @@
     --fs-input:             0.8125rem;
 }
 
-/* ─── LIGHT MODE — GRMS palette ──────────────────────────────────────────────
-   Sourced from the GRMS landing-page style block. Where that palette didn't
-   define a slot this token system needs (secondary, muted, destructive,
-   chart colors, warning/info), a value was derived from the nearest GRMS
-   color (--ridge-* grays, --accent, --resolved) — flagged inline. Replace
-   any of these if you have exact values in mind.                          ─ */
+/* ─── LIGHT MODE — Roads Directorate corporate palette ──────────────────────────
+    Sourced from www.rd.org.ls. Corporate colour: #6495ED (Cornflower Blue).
+    Lesotho national flag colours are also honoured: #003DA5 (blue),
+    #007A3D (green), #FFFFFF (white).                          ─ */
 :root {
     --background:             #F5F8FC;
     --foreground:             #102A43;
@@ -92,119 +90,118 @@
     --popover:                #FFFFFF;
     --popover-foreground:     #102A43;
 
-    --primary:                #003DA5; /* Lesotho flag blue */
+    --primary:                #6495ED; /* Roads Directorate corporate blue */
     --primary-foreground:     #FFFFFF;
 
     --secondary:              #E7F0FF;
     --secondary-foreground:   #163B70;
 
     --muted:                  #EEF3F9;
-    --muted-foreground:       #597289; /* darkened from #486581 for WCAG AA 4.5:1 against --muted */
+    --muted-foreground:       #597289; /* WCAG AA 4.5:1 against --muted */
 
     --accent:                 #E1F3E8; /* Lesotho flag green tint */
     --accent-dark: #007A3D;
     --accent-foreground:      #075C30;
 
-    --destructive:            #C6432E; /* NOT in GRMS palette — kept a red in the same warm-earth family as --accent, rather than reusing the old purple theme's cool red */
+    --destructive:            #C6432E;
     --destructive-foreground: #ECEAE0;
 
     --border:                 #C9D8EA;
     --input:                  #B7C8DD;
-    --ring:                   #003DA5;
+    --ring:                   #6495ED;
 
-    /* NOT in GRMS palette — kept distinct hues for chart legibility,
-       tinted toward the earth-tone family instead of the old purple set */
-    --chart-1:                #B8763A; /* accent */
-    --chart-2:                #1E7145; /* resolved green */
-    --chart-3:                #4E5A72; /* text-secondary blue-gray */
-    --chart-4:                #9CA290; /* ridge-3 */
-    --chart-5:                #8F5A28; /* accent-dark */
+    /* Chart colours — distinct hues for legibility */
+    --chart-1:                #B8763A;
+    --chart-2:                #1E7145;
+    --chart-3:                #4E5A72;
+    --chart-4:                #9CA290;
+    --chart-5:                #8F5A28;
 
     --radius: 0.5rem;
 
-    --sidebar:                       #002B70;
+    --sidebar:                       #002B70; /* Lesotho flag navy */
     --sidebar-foreground:            #FFFFFF;
-    --sidebar-primary:               #00A651;
-    --sidebar-primary-foreground:    #002B70;
+    --sidebar-primary:               #6495ED; /* corporate blue */
+    --sidebar-primary-foreground:    #FFFFFF;
     --sidebar-accent:                #12488F;
     --sidebar-accent-foreground:     #FFFFFF;
     --sidebar-border:                #1D559C;
     --sidebar-ring:                  #FFFFFF;
 
-    --checkbox-border:        #9CA290; /* --ridge-3 */
+    --checkbox-border:        #9CA290;
 
-    --success:                #1E7145; /* --resolved */
+    --success:                #1E7145;
     --success-foreground:     #ECEAE0;
-    --success-muted:          #E1EFE6; /* --resolved-bg */
+    --success-muted:          #E1EFE6;
 
-    --warning:                #A8642E; /* darkened from #B8763A for WCAG AA 4.5:1 against --warning-foreground */
+    --warning:                #A8642E; /* WCAG AA 4.5:1 against --warning-foreground */
     --warning-foreground:     #ECEAE0;
-    --warning-muted:          #F3E7D8; /* derived light tint */
+    --warning-muted:          #F3E7D8;
 
-    --info:                   #4E5A72; /* NOT in GRMS palette — reused --text-secondary's blue-gray */
+    --info:                   #4E5A72;
     --info-foreground:        #ECEAE0;
-    --info-muted:             #E7E9EE; /* derived light tint */
+    --info-muted:             #E7E9EE;
 }
 
-/* ─── DARK MODE — GRMS palette ──────────────────────────────────────────────── */
+/* ─── DARK MODE — Roads Directorate corporate palette ──────────────────────────── */
 .dark {
-    --background:             #10182B; /* --bg-page (dark) */
-    --foreground:             #ECEAE0; /* --text-primary (dark) */
+    --background:             #10182B;
+    --foreground:             #ECEAE0;
 
-    --card:                   #182238; /* --bg-raised (dark) */
+    --card:                   #182238;
     --card-foreground:        #ECEAE0;
 
     --popover:                #182238;
     --popover-foreground:     #ECEAE0;
 
-    --primary:                #6CA8FF;
+    --primary:                #82A2F0; /* lightened #6495ED for dark bg legibility */
     --primary-foreground:     #061A3A;
 
-    --secondary:              #212C4A; /* --ridge-2 (dark) */
-    --secondary-foreground:   #A7B0C4; /* --text-secondary (dark) */
+    --secondary:              #212C4A;
+    --secondary-foreground:   #A7B0C4;
 
-    --muted:                  #1C2540; /* --ridge-1 (dark) */
+    --muted:                  #1C2540;
     --muted-foreground:       #A7B0C4;
 
     --accent:                 #153C65;
     --accent-foreground:      #9FE0B7;
     --accent-dark: #43B66D;
 
-    --destructive:            #D9573F; /* derived — lighter/desaturated for dark bg legibility */
+    --destructive:            #D9573F;
     --destructive-foreground: #ECEAE0;
 
-    --border:                 #2A3350; /* --border (dark) */
+    --border:                 #2A3350;
     --input:                  #2A3350;
-    --ring:                   #6CA8FF;
+    --ring:                   #82A2F0;
 
     --chart-1:                #D89552;
-    --chart-2:                #4CA37A; /* --resolved (dark) */
+    --chart-2:                #4CA37A;
     --chart-3:                #A7B0C4;
-    --chart-4:                #263254; /* --ridge-3 (dark) */
-    --chart-5:                #EAB273; /* --accent-dark (dark) */
+    --chart-4:                #263254;
+    --chart-5:                #EAB273;
 
     --sidebar:                       #061A3A;
-    --sidebar-foreground:            #ECEAE0; /* --text-on-inverse */
-    --sidebar-primary:               #43B66D;
+    --sidebar-foreground:            #ECEAE0;
+    --sidebar-primary:               #82A2F0;
     --sidebar-primary-foreground:    #061A3A;
     --sidebar-accent:                #12355F;
     --sidebar-accent-foreground:     #FFFFFF;
     --sidebar-border:                #1D559C;
     --sidebar-ring:                  #FFFFFF;
 
-    --checkbox-border:        #263254; /* --ridge-3 (dark) */
+    --checkbox-border:        #263254;
 
-    --success:                #4CA37A; /* --resolved (dark) */
+    --success:                #4CA37A;
     --success-foreground:     #10182B;
-    --success-muted:          #16281F; /* --resolved-bg (dark) */
+    --success-muted:          #16281F;
 
-    --warning:                #D89552; /* reused --accent (dark) */
+    --warning:                #D89552;
     --warning-foreground:     #10182B;
-    --warning-muted:          #2A2013; /* derived dark tint */
+    --warning-muted:          #2A2013;
 
-    --info:                   #A7B0C4; /* reused --text-secondary (dark) */
+    --info:                   #A7B0C4;
     --info-foreground:        #10182B;
-    --info-muted:             #1B2130; /* derived dark tint */
+    --info-muted:             #1B2130;
 }
 
 /* ─── BASE ──────────────────────────────────────────────────────────────────── */
