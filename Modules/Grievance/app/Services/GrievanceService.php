@@ -44,13 +44,13 @@ class GrievanceService
 
     public function forEdit(Grievance $grievance): array
     {
-        $grievance->load(['category', 'district', 'division', 'section', 'assignedOfficer', 'user', 'media']);
+        $grievance->load(['category', 'district', 'division', 'section', 'assignedOfficer', 'complainant', 'registeredBy', 'media']);
 
         return [
             'grievance' => $grievance,
             'categories' => GrievanceCategory::where('is_active', true)
-                ->orderBy('name')
-                ->get(['id', 'name', 'name_st', 'division_id', 'is_sensitive']),
+                ->orderBy('name_en')
+                ->get(['id', 'name_en as name', 'name_st', 'division_id', 'is_sensitive']),
             'districts' => District::orderBy('name')->get(['id', 'name', 'name_st']),
             'divisions' => Division::orderBy('name')->get(['id', 'name']),
             'sections' => Section::orderBy('name')->get(['id', 'name', 'division_id']),

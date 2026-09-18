@@ -96,7 +96,7 @@ class GrievanceController extends Controller
     public function edit(Grievance $grievance): Response
     {
         return Inertia::render('Grievance::Grievances/GrievanceForm', [
-            'grievance' => new GrievanceResource($grievance->load('category', 'channel', 'district', 'media')),
+            'grievance' => new GrievanceResource($grievance->load('category', 'channel', 'district', 'division', 'section', 'media')),
             'categories' => GrievanceCategory::active()->get(['id', 'code', 'name_en']),
             'channels' => GrievanceChannel::active()->get(['id', 'code', 'name']),
             'districts' => District::orderBy('name')->get(['id', 'code', 'name']),

@@ -15,10 +15,12 @@ class GrievanceResource extends JsonResource
             'reference_no' => $this->reference_no,
             'description' => $this->description,
             'status' => $this->status,
+            'priority' => $this->priority,
             'is_anonymous' => $this->is_anonymous,
             'complainant_name' => $this->complainant_name,
             'complainant_phone' => $this->complainant_phone,
             'complainant_email' => $this->complainant_email,
+            'location_description' => $this->location_description,
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => $this->category->id, 'code' => $this->category->code, 'name_en' => $this->category->name_en,
             ]),
@@ -27,6 +29,12 @@ class GrievanceResource extends JsonResource
             ]),
             'district' => $this->whenLoaded('district', fn () => $this->district ? [
                 'id' => $this->district->id, 'name' => $this->district->name,
+            ] : null),
+            'division' => $this->whenLoaded('division', fn () => $this->division ? [
+                'id' => $this->division->id, 'name' => $this->division->name,
+            ] : null),
+            'section' => $this->whenLoaded('section', fn () => $this->section ? [
+                'id' => $this->section->id, 'name' => $this->section->name,
             ] : null),
             'attachments' => $this->getMedia(Grievance::MEDIA_COLLECTION)->map(fn ($m) => [
                 'id' => $m->id,

@@ -39,6 +39,8 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $locale = App::getLocale();
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'locale' => $locale,
@@ -48,15 +50,15 @@ class HandleInertiaRequests extends Middleware
             'app_author' => config('app.author', 'Roads Directorate · Government of Lesotho'),
             'dashboard' => app(DashboardController::class)->data(),
             'auth' => [
-                'user' => $request->user()
+                'user' => $user
                     ? [
-                        'id' => $request->user()->id,
-                        'name' => $request->user()->name,
-                        'email' => $request->user()->email,
-                        'avatar' => $request->user()->avatar,
-                        'locale' => $request->user()->locale,
-                        'role_names' => $request->user()->getRoleNames()->implode(', '),
-                        // or 'roles' => $request->user()->getRoleNames()->values(),
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'avatar' => $user->avatar,
+                        'locale' => $user->locale,
+                        'role_names' => $user->getRoleNames()->implode(', '),
+                        'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
                     ]
                     : null,
             ],
