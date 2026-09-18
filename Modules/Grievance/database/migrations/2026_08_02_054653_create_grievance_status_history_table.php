@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('grievance_status_histories', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->foreignId('grievance_id')->constrained()->cascadeOnDelete();
             $table->string('from_status', 30)->nullable();
             $table->string('to_status', 30);
@@ -20,6 +21,7 @@ return new class extends Migration
             $table->string('actor_role')->nullable();
             $table->text('reason')->nullable();
             $table->timestamp('created_at')->useCurrent();
+            $table->softDeletes();
         });
     }
 

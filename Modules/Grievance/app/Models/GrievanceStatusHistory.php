@@ -2,10 +2,12 @@
 
 namespace Modules\Grievance\Models;
 
+use App\Models\Concerns\HasPublicUlid;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Append-only audit trail. No `updated_at` column by design —
@@ -14,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['from_status', 'grievance_id', 'to_status', 'is_status', 'actor_id', 'actor_role','reason'])]
 class GrievanceStatusHistory extends Model
 {
+    use HasPublicUlid, SoftDeletes;
     public $timestamps = false;
 
     protected $table = 'grievance_status_histories';

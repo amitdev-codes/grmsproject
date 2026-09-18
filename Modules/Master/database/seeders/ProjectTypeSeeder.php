@@ -4,6 +4,7 @@ namespace Modules\Master\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Modules\Master\Models\ProjectType;
 
 class ProjectTypeSeeder extends Seeder
 {
@@ -22,9 +23,9 @@ class ProjectTypeSeeder extends Seeder
         ];
 
         foreach ($types as $sortOrder => $type) {
-            DB::table('project_types')->updateOrInsert(
+            ProjectType::updateOrCreate(
                 ['code' => $type['code']],
-                [...$type, 'sort_order' => $sortOrder, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]
+                [...$type, 'sort_order' => $sortOrder, 'is_active' => true]
             );
         }
     }

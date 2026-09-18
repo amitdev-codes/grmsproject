@@ -13,16 +13,19 @@ return new class extends Migration
     {
         Schema::create('project_types', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->string('code', 30)->unique();
             $table->string('name');
             $table->string('name_st')->nullable();
             $table->unsignedInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('service_providers', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->string('code', 30)->unique();
             $table->string('name');
             $table->string('provider_type', 20); // contractor | consultant | other
@@ -31,11 +34,13 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
             $table->index(['provider_type', 'is_active']);
         });
 
         Schema::create('projects', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->string('code', 40)->unique();
             $table->string('title');
             $table->text('description')->nullable();
@@ -58,6 +63,7 @@ return new class extends Migration
 
         Schema::create('grievance_sla_policies', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->string('code', 30)->unique();
             $table->string('name');
             $table->string('priority', 10)->nullable();
@@ -66,10 +72,12 @@ return new class extends Migration
             $table->boolean('use_business_hours')->default(true);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('grievance_escalation_rules', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->foreignId('grievance_sla_policy_id')->nullable()->constrained()->nullOnDelete();
             $table->unsignedTinyInteger('escalation_level');
             $table->unsignedSmallInteger('breach_after_hours');
@@ -78,6 +86,7 @@ return new class extends Migration
             $table->boolean('requires_manual_review')->default(false);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
             $table->unique(['grievance_sla_policy_id', 'escalation_level'], 'sla_escalation_level_unique');
         });
     }

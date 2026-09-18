@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignId('acted_by')->nullable()->constrained('users')->nullOnDelete();
             $table->text('reason')->nullable();
             $table->timestamps();
+            $table->softDeletes();
             $table->index(['grievance_id', 'created_at']);
         });
 
@@ -33,6 +34,7 @@ return new class extends Migration
             $table->timestamp('revised_due_at');
             $table->timestamp('communicated_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('resolution_approval_actions', function (Blueprint $table) {
@@ -54,6 +56,7 @@ return new class extends Migration
             $table->timestamp('signed_at');
             $table->timestamp('tracking_link_revoked_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('grievance_communications', function (Blueprint $table) {
@@ -72,6 +75,7 @@ return new class extends Migration
             $table->timestamp('failed_at')->nullable();
             $table->text('failure_reason')->nullable();
             $table->timestamps();
+            $table->softDeletes();
             $table->index(['grievance_id', 'message_type']);
             $table->index(['delivery_status', 'created_at']);
         });

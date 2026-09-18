@@ -4,6 +4,8 @@ namespace Modules\Master\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Modules\Master\Models\District;
+use Modules\Master\Models\Division;
 
 class DivisionSeeder extends Seeder
 {
@@ -34,12 +36,9 @@ class DivisionSeeder extends Seeder
         ];
 
         foreach ($divisions as $division) {
-            DB::table('divisions')->updateOrInsert(
+            Division::updateOrCreate(
                 ['code' => $division['code']],
-                array_merge($division, [
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ])
+                $division
             );
         }
     }

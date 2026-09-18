@@ -5,8 +5,10 @@ namespace Modules\UserManagement\Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
+use Modules\Master\Models\District;
+use Modules\Master\Models\Division;
+use Modules\Master\Models\Section;
 use Spatie\Permission\PermissionRegistrar;
-
 
 class UserSeeder extends Seeder
 {
@@ -14,9 +16,9 @@ class UserSeeder extends Seeder
     {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $district = fn (string $code) => \DB::table('districts')->where('code', $code)->value('id');
-        $division = fn (string $code) => \DB::table('divisions')->where('code', $code)->value('id');
-        $section = fn (string $name) => \DB::table('sections')->where('name', $name)->value('id');
+        $district = fn (string $code) => District::where('code', $code)->value('id');
+        $division = fn (string $code) => Division::where('code', $code)->value('id');
+        $section = fn (string $name) => Section::where('name', $name)->value('id');
 
         $fixedUsers = [
             [
@@ -67,6 +69,7 @@ class UserSeeder extends Seeder
 
             $user->syncRoles([$fixed['role']]);
         }
+
         // 20 users, distributed across all 8 roles in a realistic ratio
         // for an org this size: 1 Super Admin, 2 IT Admin, 1 Director,
         // 2 Division Director, 3 Section Manager, 5 Helpdesk Officer,

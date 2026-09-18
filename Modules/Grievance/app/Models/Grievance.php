@@ -2,6 +2,7 @@
 
 namespace Modules\Grievance\Models;
 
+use App\Models\Concerns\HasPublicUlid;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +17,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Grievance extends Model implements HasMedia
 {
+    use HasPublicUlid;
     use InteractsWithMedia, SoftDeletes;
 
     public const string STATUS_SUBMITTED = 'submitted';
@@ -33,6 +35,7 @@ class Grievance extends Model implements HasMedia
         'latitude', 'longitude', 'location_accuracy_meters', 'preferred_language',
         'grievance_sla_policy_id', 'first_response_due_at', 'resolution_due_at',
         'closed_by', 'closed_reason', 'closed_at', 'tracking_access_expires_at', 'tracking_access_revoked_at',
+        'ai_suggested_category_id', 'ai_confidence',
     ];
 
     protected function casts(): array
@@ -47,6 +50,7 @@ class Grievance extends Model implements HasMedia
             'first_response_due_at' => 'datetime',
             'resolution_due_at' => 'datetime',
             'closed_at' => 'datetime',
+            'ai_confidence' => 'float',
         ];
     }
 
@@ -62,10 +66,12 @@ class Grievance extends Model implements HasMedia
                 'audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/x-m4a',
             ]);
     }
+
     public function messages(): HasMany
     {
         return $this->hasMany(GrievanceMessage::class);
     }
+
     public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')
@@ -88,17 +94,20 @@ class Grievance extends Model implements HasMedia
     {
         return $this->belongsTo(District::class);
     }
+
     public function division(): BelongsTo
     {
         return $this->belongsTo(Division::class);
     }
+
     public function section(): BelongsTo
     {
         return $this->belongsTo(Section::class);
     }
+
     public function assignedOfficer(): BelongsTo
     {
-        return $this->belongsTo(User::class,'assigned_officer_id');
+        return $this->belongsTo(User::class, 'assigned_officer_id');
     }
 
     public function complainant(): BelongsTo

@@ -2,13 +2,18 @@
 
 namespace Modules\Master\Models;
 
+use App\Models\Concerns\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Grievance\Models\Grievance;
+
 // use Modules\Master\Database\Factories\DistrictFactory;
 
 class District extends Model
 {
+    use HasPublicUlid, SoftDeletes;
+
     protected $fillable = [
         'code',
         'name',
@@ -17,6 +22,6 @@ class District extends Model
 
     public function grievances(): HasMany
     {
-        return $this->hasMany(\Modules\Grievance\Models\Grievance::class, 'district_id');
+        return $this->hasMany(Grievance::class, 'district_id');
     }
 }

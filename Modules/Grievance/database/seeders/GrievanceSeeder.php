@@ -4,6 +4,11 @@ namespace Modules\Grievance\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Modules\Grievance\Models\Grievance;
+use Modules\Grievance\Models\GrievanceCategory;
+use Modules\Master\Models\District;
+use Modules\Master\Models\Division;
+use Modules\Master\Models\Section;
 
 class GrievanceSeeder extends Seeder
 {
@@ -51,16 +56,15 @@ class GrievanceSeeder extends Seeder
             ],
         ];
         foreach ($grievances as $g) {
-            DB::table('grievances')->updateOrInsert(
+            Grievance::updateOrCreate(
                 ['reference_number' => $g['reference_number']],
                 [
-                    'reference_number' => $g['reference_number'],
                     'user_id' => $g['user_id'],
                     'is_anonymous' => is_null($g['user_id']),
-                    'category_id' => DB::table('grievance_categories')->where('slug', $g['category'])->value('id'),
-                    'district_id' => DB::table('districts')->where('code', $g['district'])->value('id'),
-                    'division_id' => DB::table('divisions')->where('name', $g['division'])->value('id'),
-                    'section_id' => $g['section'] ? DB::table('sections')->where('name', $g['section'])->value('id') : null,
+                    'category_id' => GrievanceCategory::where('slug', $g['category'])->value('id'),
+                    'district_id' => District::where('code', $g['district'])->value('id'),
+                    'division_id' => Division::where('name', $g['division'])->value('id'),
+                    'section_id' => $g['section'] ? Section::where('name', $g['section'])->value('id') : null,
                     'assigned_officer_id' => $g['officer'],
                     'description' => $g['description'],
                     'status' => $g['status'],

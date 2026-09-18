@@ -4,6 +4,7 @@ namespace Modules\Master\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Modules\Master\Models\District;
 
 class DistrictSeeder extends Seeder
 {
@@ -26,12 +27,9 @@ class DistrictSeeder extends Seeder
         ];
 
         foreach ($districts as $district) {
-            DB::table('districts')->updateOrInsert(
+            District::updateOrCreate(
                 ['code' => $district['code']],
-                array_merge($district, [
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ])
+                $district
             );
         }
     }

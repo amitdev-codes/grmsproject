@@ -4,6 +4,8 @@ namespace Modules\Master\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Modules\Master\Models\ProjectType;
+use Modules\Master\Models\Section;
 
 class SectionSeeder extends Seeder
 {
@@ -86,12 +88,10 @@ class SectionSeeder extends Seeder
         ];
 
         foreach ($sections as $section) {
-            DB::table('sections')->updateOrInsert(
+
+            Section::updateOrCreate(
                 ['code' => $section['code']],
-                array_merge($section, [
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ])
+                [...$section]
             );
         }
     }

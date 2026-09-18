@@ -13,16 +13,19 @@ return new class extends Migration
     {
         Schema::create('grievance_categories', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->string('code', 10)->unique();
             $table->string('name_en');
             $table->string('name_st');
             $table->string('slug')->unique();
+            $table->foreignId('default_section_id')->nullable()->constrained('sections');
             $table->string('icon', 50)->nullable();
             $table->boolean('is_sensitive')->default(false);
             $table->json('form_fields')->nullable();
             $table->unsignedInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

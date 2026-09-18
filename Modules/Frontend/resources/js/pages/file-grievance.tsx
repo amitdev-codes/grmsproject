@@ -259,11 +259,6 @@ const STATUS_VISUALS: Record<GrievanceStatus, StatusVisual> = {
         icon: RefreshCw,
     },
 };
-
-// Labels mirror GrievanceStatus::label() in App\Enums\GrievanceStatus exactly.
-// Statuses aren't a database table — they're a fixed PHP enum — so there's
-// nothing to fetch here; keep this object in lockstep with the enum by hand
-// whenever a case or its label() changes on the backend.
 const STATUS_LABELS: Record<GrievanceStatus, string> = {
     submitted: 'Submitted',
     acknowledged: 'Acknowledged',
@@ -279,11 +274,6 @@ const STATUS_LABELS: Record<GrievanceStatus, string> = {
     rejected: 'Rejected',
     reopened: 'Reopened',
 };
-
-// Happy-path order for the linear timeline, matching the enum's normal
-// forward flow (App\Enums\GrievanceStatus::allowedTransitions()). escalated /
-// rejected / reopened are branch states and are never part of this line —
-// Timeline renders them separately, as it already did.
 const STATUS_ORDER: GrievanceStatus[] = [
     'submitted',
     'acknowledged',
@@ -306,9 +296,6 @@ const STATUS_META: StatusMetaMap = (
     return acc;
 }, {} as StatusMetaMap);
 
-// Maps grievance_categories.icon (a lucide icon name) to a component.
-// Extend as new categories/icons are added on the backend; unknown or
-// missing names fall back to a generic icon rather than breaking the UI.
 const ICON_MAP: Record<string, typeof FileText> = {
     road: Construction,
     roads: Construction,
@@ -606,6 +593,8 @@ async function submitGrievance(
         method: 'POST',
         headers: {
             'X-XSRF-TOKEN': getCsrfToken(),
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
         },
         body: buildSubmitFormData(fields, files, captchaToken),
     });

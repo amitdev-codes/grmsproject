@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('grievance_channels', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->string('code', 20)->unique(); // web, mobile_app, sms, ussd, whatsapp, helpdesk, box, grc, chief, social_media
             $table->string('name');
             $table->boolean('is_active')->default(true);

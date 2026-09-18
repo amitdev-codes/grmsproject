@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('grievance_escalations', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->foreignId('grievance_id')->constrained()->cascadeOnDelete();
             $table->unsignedTinyInteger('escalation_level'); // 1 = 48hr->Zonal Officer, 2 = 5day->Regional Head, 3 = 7day->Director
             $table->foreignId('escalated_to')->nullable()->constrained('users')->nullOnDelete();
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->text('reason')->nullable();
             $table->boolean('resolved')->default(false);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

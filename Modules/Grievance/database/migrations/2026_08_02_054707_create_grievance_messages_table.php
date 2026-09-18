@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('grievance_messages', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->foreignId('grievance_id')->constrained()->cascadeOnDelete();
             $table->string('sender', 10); // citizen | officer
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete(); // null for citizen
             $table->text('body');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

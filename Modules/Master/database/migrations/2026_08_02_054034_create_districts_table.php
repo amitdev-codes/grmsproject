@@ -13,10 +13,12 @@ return new class extends Migration
     {
         Schema::create('districts', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->string('code')->unique();
             $table->string('name');
             $table->string('name_st')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('resolutions', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->foreignId('grievance_id')->constrained()->cascadeOnDelete();
             $table->foreignId('proposed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->timestamp('complainant_confirmed_at')->nullable();
             $table->text('rejected_reason')->nullable(); // if complainant rejects the proposed resolution
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

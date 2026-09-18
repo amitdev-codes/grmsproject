@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Rules\ValidCaptcha;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Session;
+use Modules\Grievance\DataTransferObjects\GrievanceIntakeData;
 use Modules\Grievance\Http\Requests\RateGrievanceRequest;
 use Modules\Grievance\Http\Requests\StoreGrievanceMessageRequest;
 use Modules\Grievance\Http\Requests\StorePublicGrievanceRequest;
 use Modules\Grievance\Http\Requests\TrackGrievanceRequest;
 use Modules\Grievance\Http\Resources\GrievanceTrackingResource;
+use Modules\Grievance\Jobs\SubmitGrievanceJob;
 use Modules\Grievance\Models\Grievance;
 use Modules\Grievance\Services\GrievanceRegistrationService;
 
@@ -31,10 +33,15 @@ class PublicGrievanceController extends Controller
     {
         $request->validate(['captcha_token' => [new ValidCaptcha]]);
 
-        $grievance = $this->service->registerPublic(
+        $intakeData = GrievanceIntakeData::fromPublicWebRequest(
             $request->safe()->except(['attachments', 'captcha_token']),
-            $request->file('attachments', []),
+            $request->file('attachments', [])
         );
+
+        $grievance = $this->service->submitQuick($intakeData);
+
+        // Dispatch async job for AI classification, routing, notifications
+        SubmitGrievanceJob::dispatch($grievance->id);
 
         return response()->json([
             'data' => [

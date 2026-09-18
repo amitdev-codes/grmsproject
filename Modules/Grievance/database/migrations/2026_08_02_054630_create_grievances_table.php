@@ -10,9 +10,13 @@ return new class extends Migration
     {
         Schema::create('grievances', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->string('reference_no', 20)->unique();
 
             $table->foreignId('grievance_category_id')->constrained()->restrictOnDelete();
+            $table->foreignId('ai_suggested_category_id')->nullable()->constrained('grievance_categories');//new
+            $table->float('ai_confidence')->nullable();
+
             $table->foreignId('channel_id')->constrained('grievance_channels')->restrictOnDelete();
             $table->foreignId('district_id')->nullable()->constrained()->nullOnDelete();
             $table->text('location_description')->nullable();

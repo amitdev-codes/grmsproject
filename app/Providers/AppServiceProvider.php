@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +29,9 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         Vite::prefetch(concurrency: 3);
         JsonResource::withoutWrapping();
+        Blueprint::macro('publicId', function () {
+            $this->ulid('ulid')->unique()->after('id');
+        });
     }
 
     /**

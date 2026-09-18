@@ -2,12 +2,15 @@
 
 namespace Modules\Master\Models;
 
+use App\Models\Concerns\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Section extends Model
 {
+    use HasPublicUlid, SoftDeletes;
+
     protected $fillable = [
         'code',
         'division_id',

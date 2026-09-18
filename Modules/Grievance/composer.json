@@ -18,6 +18,8 @@
     "autoload": {
         "psr-4": {
             "Modules\\Grievance\\": "app/",
+            "Modules\\Grievance\\DataTransferObjects\\": "DataTransferObjects/",
+            "Modules\\Grievance\\Jobs\\": "Jobs/",
             "Modules\\Grievance\\Database\\Factories\\": "database/factories/",
             "Modules\\Grievance\\Database\\Seeders\\": "database/seeders/"
         }

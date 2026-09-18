@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('divisions', function (Blueprint $table) {
             $table->id();
+            $table->publicId();
             $table->string('code')->unique();
             $table->string('name');
             $table->string('name_st')->nullable();
             $table->text('description')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
