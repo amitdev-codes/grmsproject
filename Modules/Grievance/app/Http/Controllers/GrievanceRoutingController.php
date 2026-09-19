@@ -24,7 +24,7 @@ class GrievanceRoutingController extends Controller
     {
         $this->authorize('viewTriageQueue', Grievance::class); // add a simple gate/policy method, or check role directly
         return Inertia::render('Grievances/TriageQueue', [
-            'grievances' => $this->routing->queueForResponsibleManager(),
+            'grievances' => $this->routing->queueForDirector(),
         ]);
     }
 

@@ -504,6 +504,8 @@ interface SubmitFields {
     division_id: number | null;
     description: string;
     location_description: string;
+    latitude?: string | null;
+    longitude?: string | null;
     metadata: Record<string, string>;
     is_anonymous: boolean;
     contact_name: string;
@@ -534,6 +536,14 @@ function buildSubmitFormData(
 
     if (fields.location_description) {
         form.append('location_description', fields.location_description);
+    }
+
+    if (fields.latitude) {
+        form.append('latitude', fields.latitude);
+    }
+
+    if (fields.longitude) {
+        form.append('longitude', fields.longitude);
     }
 
     form.append('is_anonymous', fields.is_anonymous ? '1' : '0');
@@ -594,7 +604,7 @@ async function submitGrievance(
         method: 'POST',
         headers: {
             'X-XSRF-TOKEN': getCsrfToken(),
-            'Accept': 'application/json',
+            Accept: 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
         },
         body: buildSubmitFormData(fields, files, captchaToken),
@@ -1013,6 +1023,145 @@ function AttachmentsStep({
     );
 }
 
+function GisLocationPicker({
+    latitude,
+    longitude,
+    onLocationSelect,
+}: {
+    latitude: string;
+    longitude: string;
+    onLocationSelect: (lat: string, lng: string) => void;
+}) {
+    const mapContainerRef = useRef<HTMLDivElement>(null);
+    const mapInstanceRef = useRef<any>(null);
+    const markerRef = useRef<any>(null);
+    const [isLoaded, setIsLoaded] = useState<boolean>(
+        () => typeof window !== 'undefined' && Boolean((window as any).L),
+    );
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        if ((window as any).L) {
+            setIsLoaded(true);
+            return;
+        }
+
+        const cssId = 'leaflet-css';
+        if (!document.getElementById(cssId)) {
+            const link = document.createElement('link');
+            link.id = cssId;
+            link.rel = 'stylesheet';
+            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            document.head.appendChild(link);
+        }
+
+        const scriptId = 'leaflet-js';
+        if (!document.getElementById(scriptId)) {
+            const script = document.createElement('script');
+            script.id = scriptId;
+            script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+            script.onload = () => setIsLoaded(true);
+            document.body.appendChild(script);
+        } else {
+            const interval = setInterval(() => {
+                if ((window as any).L) {
+                    setIsLoaded(true);
+                    clearInterval(interval);
+                }
+            }, 100);
+            return () => clearInterval(interval);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!isLoaded || !mapContainerRef.current) return;
+
+        const L = (window as any).L;
+        if (!L) return;
+
+        const hasCoords = Boolean(
+            latitude &&
+            longitude &&
+            !isNaN(Number(latitude)) &&
+            !isNaN(Number(longitude)),
+        );
+        const initLat = hasCoords ? Number(latitude) : -29.61;
+        const initLng = hasCoords ? Number(longitude) : 28.23;
+        const initZoom = hasCoords ? 14 : 8;
+
+        if (!mapInstanceRef.current) {
+            const map = L.map(mapContainerRef.current).setView(
+                [initLat, initLng],
+                initZoom,
+            );
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19,
+            }).addTo(map);
+
+            map.on('click', (e: any) => {
+                const { lat, lng } = e.latlng;
+                onLocationSelect(lat.toFixed(6), lng.toFixed(6));
+            });
+
+            mapInstanceRef.current = map;
+        } else {
+            mapInstanceRef.current.invalidateSize();
+        }
+
+        const map = mapInstanceRef.current;
+
+        const customIcon = L.divIcon({
+            className: 'custom-leaflet-marker',
+            html: `<div style="background-color: #B3261E; width: 24px; height: 24px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.4); margin-left: -12px; margin-top: -24px;"></div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 24],
+        });
+
+        if (hasCoords) {
+            const latNum = Number(latitude);
+            const lngNum = Number(longitude);
+
+            if (markerRef.current) {
+                markerRef.current.setLatLng([latNum, lngNum]);
+            } else {
+                markerRef.current = L.marker([latNum, lngNum], {
+                    icon: customIcon,
+                }).addTo(map);
+            }
+            map.setView([latNum, lngNum], Math.max(map.getZoom(), 13));
+        } else if (markerRef.current) {
+            map.removeLayer(markerRef.current);
+            markerRef.current = null;
+        }
+    }, [isLoaded, latitude, longitude, onLocationSelect]);
+
+    return (
+        <div
+            className="relative overflow-hidden rounded-md border"
+            style={{ borderColor: 'var(--border)' }}
+        >
+            <div
+                ref={mapContainerRef}
+                className="h-64 w-full bg-slate-100 dark:bg-slate-800"
+            />
+            {!isLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 text-xs text-muted-foreground">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading
+                    Interactive GIS Map...
+                </div>
+            )}
+            <div className="border-t border-border bg-background/90 p-2 text-center text-[11px] text-muted-foreground">
+                {latitude && longitude
+                    ? `Selected Location: Lat ${latitude}, Lng ${longitude} (Click map to adjust)`
+                    : 'Click anywhere on map to select location coordinates'}
+            </div>
+        </div>
+    );
+}
+
 function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
     const { categories, districts } = useGrievanceMeta();
 
@@ -1025,7 +1174,12 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
     } | null>(null);
 
     const initialCategory = usePage().url
-        ? new URL(usePage().url, typeof window !== 'undefined' ? window.location.origin : 'http://localhost').searchParams.get('category')
+        ? new URL(
+              usePage().url,
+              typeof window !== 'undefined'
+                  ? window.location.origin
+                  : 'http://localhost',
+          ).searchParams.get('category')
         : null;
 
     const [categoryId, setCategoryId] = useState<string>(initialCategory ?? '');
@@ -1033,6 +1187,10 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
     const [divisionId, setDivisionId] = useState<string>('');
     const [description, setDescription] = useState('');
     const [locationDescription, setLocationDescription] = useState('');
+    const [latitude, setLatitude] = useState('');
+    const [longitude, setLongitude] = useState('');
+    const [locating, setLocating] = useState(false);
+    const [locError, setLocError] = useState<string | null>(null);
     const [metadata, setMetadata] = useState<Record<string, string>>({});
     const [photos, setPhotos] = useState<PendingFile[]>([]);
     const [isAnonymous, setIsAnonymous] = useState(false);
@@ -1049,6 +1207,35 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
         categories.find((c) => String(c.id) === categoryId) ?? null;
     const { divisions: divisionsForDistrict, loading: divisionsLoading } =
         useDivisions(districtId);
+
+    const handleGetCurrentLocation = () => {
+        if (!('geolocation' in navigator)) {
+            setLocError('Geolocation is not supported by your browser.');
+            return;
+        }
+
+        setLocating(true);
+        setLocError(null);
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setLatitude(pos.coords.latitude.toFixed(6));
+                setLongitude(pos.coords.longitude.toFixed(6));
+                setLocating(false);
+            },
+            (err) => {
+                const msg =
+                    err.code === err.PERMISSION_DENIED
+                        ? 'Location permission denied. Please allow location access.'
+                        : err.code === err.TIMEOUT
+                          ? 'Location request timed out.'
+                          : 'Unable to retrieve location.';
+                setLocError(msg);
+                setLocating(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+        );
+    };
 
     function addPhotos(list: FileList | null) {
         if (!list) {
@@ -1135,6 +1322,8 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                     division_id: divisionId ? Number(divisionId) : null,
                     description,
                     location_description: locationDescription,
+                    latitude: latitude || null,
+                    longitude: longitude || null,
                     metadata,
                     is_anonymous: isAnonymous,
                     contact_name: contactName,
@@ -1169,6 +1358,9 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
         setDivisionId('');
         setDescription('');
         setLocationDescription('');
+        setLatitude('');
+        setLongitude('');
+        setLocError(null);
         setMetadata({});
         setPhotos([]);
         setIsAnonymous(false);
@@ -1279,71 +1471,58 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             <Label className="mb-2 block text-sm font-semibold">
                                 What is this about?
                             </Label>
-                            <div className="grid gap-2.5 sm:grid-cols-2">
-                                {categories.map((c) => {
-                                    const CategoryIcon = resolveCategoryIcon(
-                                        c.icon,
-                                    );
-                                    const selected =
-                                        categoryId === String(c.id);
-
-                                    return (
-                                        <button
+                            <Select
+                                value={categoryId}
+                                onValueChange={setCategoryId}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select what your grievance is about..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {categories.map((c) => (
+                                        <SelectItem
                                             key={c.id}
-                                            type="button"
-                                            onClick={() =>
-                                                setCategoryId(String(c.id))
-                                            }
-                                            className="flex items-start gap-2.5 rounded-md border p-3.5 text-left transition-colors"
-                                            style={{
-                                                borderColor: selected
-                                                    ? 'var(--accent)'
-                                                    : 'var(--border)',
-                                                background: selected
-                                                    ? 'var(--bg-page)'
-                                                    : 'transparent',
-                                            }}
+                                            value={String(c.id)}
                                         >
-                                            <CategoryIcon
-                                                className="mt-0.5 h-4 w-4 shrink-0"
-                                                style={{
-                                                    color: 'var(--text-secondary)',
-                                                }}
-                                            />
-                                            <span>
-                                                <span className="flex items-center gap-1.5">
-                                                    <span className="text-sm font-semibold">
-                                                        {c.name}
-                                                    </span>
-                                                    {c.is_sensitive && (
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="font-mono text-[10px]"
-                                                            style={{
-                                                                borderColor:
-                                                                    DANGER,
-                                                                color: DANGER,
-                                                            }}
-                                                        >
-                                                            Sensitive
-                                                        </Badge>
-                                                    )}
+                                            <div className="flex w-full items-center justify-between gap-2">
+                                                <span>
+                                                    {c.name}
+                                                    {c.name_st
+                                                        ? ` (${c.name_st})`
+                                                        : ''}
                                                 </span>
-                                                {c.name_st && (
-                                                    <span
-                                                        className="mt-0.5 block text-xs"
+                                                {c.is_sensitive && (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="ml-2 font-mono text-[10px]"
                                                         style={{
-                                                            color: 'var(--text-secondary)',
+                                                            borderColor: DANGER,
+                                                            color: DANGER,
                                                         }}
                                                     >
-                                                        {c.name_st}
-                                                    </span>
+                                                        Sensitive
+                                                    </Badge>
                                                 )}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {category && (
+                                <p
+                                    className="mt-1.5 text-xs"
+                                    style={{ color: 'var(--text-secondary)' }}
+                                >
+                                    Selected category:{' '}
+                                    <span className="font-medium">
+                                        {category.name}
+                                    </span>
+                                    {category.name_st &&
+                                        ` (${category.name_st})`}
+                                    {category.is_sensitive &&
+                                        ' — Sensitive case'}
+                                </p>
+                            )}
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2">
@@ -1431,17 +1610,116 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             </p>
                         </div>
 
-                        <div>
-                            <Label className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
-                                <MapPin className="h-3.5 w-3.5" /> Location
-                            </Label>
-                            <Input
-                                value={locationDescription}
-                                onChange={(e) =>
-                                    setLocationDescription(e.target.value)
-                                }
-                                placeholder="e.g. Main North 1, near Ha Abia junction"
-                            />
+                        <div
+                            className="space-y-4 rounded-md border p-4"
+                            style={{ borderColor: 'var(--border)' }}
+                        >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <Label className="flex items-center gap-1.5 text-sm font-semibold">
+                                    <MapPin
+                                        className="h-4 w-4"
+                                        style={{ color: 'var(--accent-dark)' }}
+                                    />{' '}
+                                    Location & GIS Coordinates
+                                </Label>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleGetCurrentLocation}
+                                    disabled={locating}
+                                    className="gap-1.5 text-xs"
+                                >
+                                    {locating ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                        <MapPin
+                                            className="h-3.5 w-3.5"
+                                            style={{
+                                                color: 'var(--accent-dark)',
+                                            }}
+                                        />
+                                    )}
+                                    Get Current Location
+                                </Button>
+                            </div>
+
+                            {locError && (
+                                <Alert
+                                    style={{
+                                        borderColor: DANGER,
+                                        background: 'rgba(179,38,30,0.06)',
+                                    }}
+                                >
+                                    <AlertTriangle
+                                        className="h-4 w-4"
+                                        style={{ color: DANGER }}
+                                    />
+                                    <AlertDescription
+                                        style={{ color: DANGER }}
+                                        className="text-xs"
+                                    >
+                                        {locError}
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+
+                            <div>
+                                <Label className="mb-1.5 block text-xs font-medium">
+                                    Location / Address Description (Manual)
+                                </Label>
+                                <Input
+                                    value={locationDescription}
+                                    onChange={(e) =>
+                                        setLocationDescription(e.target.value)
+                                    }
+                                    placeholder="e.g. Main North 1, near Ha Abia junction"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label className="mb-1 block text-xs text-muted-foreground">
+                                        Latitude
+                                    </Label>
+                                    <Input
+                                        value={latitude}
+                                        onChange={(e) =>
+                                            setLatitude(e.target.value)
+                                        }
+                                        placeholder="-29.316700"
+                                        className="font-mono text-xs"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="mb-1 block text-xs text-muted-foreground">
+                                        Longitude
+                                    </Label>
+                                    <Input
+                                        value={longitude}
+                                        onChange={(e) =>
+                                            setLongitude(e.target.value)
+                                        }
+                                        placeholder="27.483300"
+                                        className="font-mono text-xs"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-2">
+                                <Label className="mb-2 block text-xs font-medium">
+                                    Interactive GIS Map Picker (Click map to set
+                                    pin)
+                                </Label>
+                                <GisLocationPicker
+                                    latitude={latitude}
+                                    longitude={longitude}
+                                    onLocationSelect={(lat, lng) => {
+                                        setLatitude(lat);
+                                        setLongitude(lng);
+                                    }}
+                                />
+                            </div>
                         </div>
 
                         <div
@@ -1489,9 +1767,6 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             )}
                         </div>
 
-                        {/* Category-specific extra fields — populated only if the backend
-                            sends `form_fields` on the category (add a jsonb column of that
-                            name to grievance_categories to enable this). */}
                         {category?.form_fields?.map((f) => (
                             <div key={f.key}>
                                 <Label className="mb-2 block text-sm font-semibold">
@@ -1704,6 +1979,20 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                         </dt>
                                         <dd className="text-right font-medium">
                                             {locationDescription}
+                                        </dd>
+                                    </div>
+                                )}
+                                {(latitude || longitude) && (
+                                    <div className="flex justify-between gap-4">
+                                        <dt
+                                            style={{
+                                                color: 'var(--text-secondary)',
+                                            }}
+                                        >
+                                            GIS Coordinates
+                                        </dt>
+                                        <dd className="text-right font-mono text-xs font-medium">
+                                            {latitude}, {longitude}
                                         </dd>
                                     </div>
                                 )}

@@ -16,9 +16,9 @@ class GrievanceRoutingService
     {
     }
 
-    public function queueForResponsibleManager(int $perPage = 20)
+    public function queueForDirector(int $perPage = 20)
     {
-        return $this->grievances->queueForResponsibleManager($perPage);
+        return $this->grievances->queueForDirector($perPage);
     }
 
     public function queueForDivision(int $divisionId, int $perPage = 20)
@@ -40,11 +40,11 @@ class GrievanceRoutingService
             'status' => 'allocated_division',
         ]);
 
-        $this->grievances->recordStatus($grievance, $from, 'allocated_division', $actor->id, 'responsible_manager');
+        $this->grievances->recordStatus($grievance, $from, 'allocated_division', $actor->id, 'director');
         $this->recordAssignment($grievance, 'allocated', $actor->id, toDivisionId: $divisionId);
 
         Notification::send(
-            User::role('division_director')->where('division_id', $divisionId)->get(),
+            User::role('Division Director')->where('division_id', $divisionId)->get(),
             new GrievanceAllocated($grievance)
         );
 
@@ -64,7 +64,7 @@ class GrievanceRoutingService
         $this->recordAssignment($grievance, 'allocated', $actor->id, toDivisionId: $grievance->division_id, toSectionId: $sectionId);
 
         Notification::send(
-            User::role('section_manager')->where('section_id', $sectionId)->get(),
+            User::role('Section Manager')->where('section_id', $sectionId)->get(),
             new GrievanceAllocated($grievance)
         );
 
@@ -85,7 +85,7 @@ class GrievanceRoutingService
         $this->recordAssignment($grievance, 'rejected', $actor->id, reason: $reason);
 
         Notification::send(
-            User::role('responsible_manager')->get(),
+            User::role('Director')->get(),
             new GrievanceReallocationRequested($grievance)
         );
 
@@ -114,7 +114,7 @@ class GrievanceRoutingService
     {
         $from = $grievance->status;
         $grievance = $this->grievances->update($grievance, ['status' => 'rejected', 'closed_by' => $actor->id, 'closed_reason' => $reason, 'closed_at' => now()]);
-        $this->grievances->recordStatus($grievance, $from, 'rejected', $actor->id, 'responsible_manager', $reason);
+        $this->grievances->recordStatus($grievance, $from, 'rejected', $actor->id, 'director', $reason);
         $this->queueCitizenCommunication($grievance, 'status_update', "Grievance {$grievance->reference_no} cannot proceed. Reason: {$reason}");
 
         return $grievance;
@@ -124,7 +124,7 @@ class GrievanceRoutingService
     {
         $from = $grievance->status;
         $grievance = $this->grievances->update($grievance, ['status' => 'closed', 'closed_by' => $actor->id, 'closed_reason' => $reason, 'closed_at' => now()]);
-        $this->grievances->recordStatus($grievance, $from, 'closed', $actor->id, 'responsible_manager', $reason);
+        $this->grievances->recordStatus($grievance, $from, 'closed', $actor->id, 'director', $reason);
         $this->queueCitizenCommunication($grievance, 'status_update', "Grievance {$grievance->reference_no} has been closed. Reason: {$reason}");
 
         return $grievance;

@@ -43,7 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/resolutions/import', [ResolutionController::class, 'import'])->name('resolutions.import');
     Route::resource('resolutions', ResolutionController::class)->names('resolutions');
 });
-// Route::middleware(['auth', 'role:helpdesk_officer|grms_admin|super_admin'])
+// Route::middleware(['auth', 'role:Helpdesk Officer|IT Admin|Super Admin'])
 Route::middleware(['auth'])
     ->prefix('grievances')->name('grievances.')->group(function () {
         Route::get('/', [GrievanceController::class, 'index'])->name('index');
@@ -61,19 +61,19 @@ Route::prefix('grievances')->group(function () {
     Route::post('/{grievance:reference_no}/messages', [PublicGrievanceController::class, 'storeMessage']);
 });
 Route::middleware(['auth'])->prefix('grievances')->name('grievances.')->group(function () {
-    Route::middleware('role:responsible_manager|super_admin')->group(function () {
+    Route::middleware('role:Director|Super Admin')->group(function () {
         Route::get('/triage', [GrievanceRoutingController::class, 'triageQueue'])->name('triage');
         Route::post('/{grievance}/allocate-division', [GrievanceRoutingController::class, 'allocateDivision'])->name('allocate-division');
         Route::post('/{grievance}/reject', [GrievanceRoutingController::class, 'reject'])->name('reject');
         Route::post('/{grievance}/close', [GrievanceRoutingController::class, 'close'])->name('close');
     });
 
-    Route::middleware('role:division_director|super_admin')->group(function () {
+    Route::middleware('role:Division Director|Super Admin')->group(function () {
         Route::get('/division-queue', [GrievanceRoutingController::class, 'divisionQueue'])->name('division-queue');
         Route::post('/{grievance}/allocate-section', [GrievanceRoutingController::class, 'allocateSection'])->name('allocate-section');
     });
 
-    Route::middleware('role:section_manager|super_admin')->group(function () {
+    Route::middleware('role:Section Manager|Super Admin')->group(function () {
         Route::get('/section-queue', [GrievanceRoutingController::class, 'sectionQueue'])->name('section-queue');
         Route::post('/{grievance}/reject-allocation', [GrievanceRoutingController::class, 'rejectAllocation'])->name('reject-allocation');
         Route::post('/{grievance}/assign-officer', [GrievanceRoutingController::class, 'assignOfficer'])->name('assign-officer');

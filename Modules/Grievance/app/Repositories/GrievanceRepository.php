@@ -159,7 +159,7 @@ class GrievanceRepository implements GrievanceRepositoryInterface
     }
     // EloquentGrievanceRepository
 
-    public function queueForResponsibleManager(int $perPage = 20): LengthAwarePaginator
+    public function queueForDirector(int $perPage = 20): LengthAwarePaginator
     {
         return Grievance::query()
             ->with(['category', 'channel', 'district'])

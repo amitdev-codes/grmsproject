@@ -43,7 +43,7 @@ interface GrievanceRepositoryInterface
 
     public function rate(Grievance $grievance, int $rating): Grievance;
     // interface
-    public function queueForResponsibleManager(int $perPage = 20): LengthAwarePaginator;
+    public function queueForDirector(int $perPage = 20): LengthAwarePaginator;
     public function queueForDivision(int $divisionId, int $perPage = 20): LengthAwarePaginator;
     public function queueForSection(int $sectionId, int $perPage = 20): LengthAwarePaginator;
 }

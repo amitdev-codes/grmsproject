@@ -168,7 +168,7 @@ class GrievanceRegistrationService
         $this->recordAcknowledgement($grievance, $intakeData);
 
         if ($grievance->is_previously_lodged || $grievance->is_previously_finalized) {
-            Notification::send(User::role('Responsible Manager')->get(), new GrievanceAllocated($grievance));
+            Notification::send(User::role('Director')->get(), new GrievanceAllocated($grievance));
         }
 
         event(new GrievanceRegistered($grievance));
@@ -254,7 +254,7 @@ class GrievanceRegistrationService
             $this->recordAcknowledgement($grievance, $data);
 
             if ($data->isPreviouslyLodged || $data->isPreviouslyFinalized) {
-                Notification::send(User::role('Responsible Manager')->get(), new GrievanceAllocated($grievance));
+                Notification::send(User::role('Director')->get(), new GrievanceAllocated($grievance));
             }
 
             event(new GrievanceRegistered($grievance));

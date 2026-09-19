@@ -8,7 +8,7 @@ class AllocateSectionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['division_director', 'super_admin']) ?? false;
+        return $this->user()?->hasAnyRole(['Division Director', 'Super Admin']) ?? false;
     }
 
     public function rules(): array
