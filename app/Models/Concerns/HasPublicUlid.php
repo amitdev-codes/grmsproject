@@ -13,8 +13,8 @@ trait HasPublicUlid
         return ['ulid'];
     }
 
-    public function getRouteKeyName(): string
-    {
-        return 'ulid';
-    }
+//    public function getRouteKeyName(): string
+//    {
+//        return 'ulid';
+//    }
 }
