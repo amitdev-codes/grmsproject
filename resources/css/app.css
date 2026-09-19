@@ -550,3 +550,15 @@
 .app-top-bar .user-avatar {
     color: #FFFFFF;
 }
+/* Pointer cursor on interactive controls. Intentionally NOT in a @layer, so it
+   beats shadcn's `cursor-default` utility on menu/command items. */
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']),
+[role='menuitem']:not([aria-disabled='true']),
+[role='menuitemcheckbox']:not([aria-disabled='true']),
+[role='menuitemradio']:not([aria-disabled='true']),
+[role='option']:not([aria-disabled='true']),
+[role='combobox']:not(:disabled),
+[role='tab']:not([aria-disabled='true']) {
+    cursor: pointer;
+}

@@ -15,6 +15,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { Link, usePage } from '@inertiajs/react';
 import {
     FileText,
     ClipboardCheck,
@@ -1023,7 +1024,11 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
         slaDue: string;
     } | null>(null);
 
-    const [categoryId, setCategoryId] = useState<string>('');
+    const initialCategory = usePage().url
+        ? new URL(usePage().url, typeof window !== 'undefined' ? window.location.origin : 'http://localhost').searchParams.get('category')
+        : null;
+
+    const [categoryId, setCategoryId] = useState<string>(initialCategory ?? '');
     const [districtId, setDistrictId] = useState<string>('');
     const [divisionId, setDivisionId] = useState<string>('');
     const [description, setDescription] = useState('');

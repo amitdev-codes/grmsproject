@@ -34,7 +34,8 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/hooks/use-translation';
-import { dashboard } from '@/routes';
+import { cn } from '@/lib/utils';
+
 
 interface MenuItem {
     title: string;
@@ -56,7 +57,10 @@ function isActiveHref(currentUrl: string, href: string) {
 }
 
 function hasPermission(permissions: string[], permission?: string): boolean {
-    if (!permission) return true;
+    if (!permission) {
+        return true;
+    }
+
     return permissions.includes(permission);
 }
 
@@ -68,7 +72,7 @@ export function AppTopMenu() {
     const permissions = auth?.user?.permissions ?? [];
 
     const allGroups: MenuGroup[] = [
-        { label: 'menu.dashboard', href: dashboard(), icon: LayoutGrid },
+        { label: 'menu.dashboard', href: '/dashboard', icon: LayoutGrid },
         {
             label: 'menu.user_management',
             icon: UsersRound,
@@ -191,11 +195,13 @@ export function AppTopMenu() {
 
                                 return (
                                     <DropdownMenuItem
-                                        key={item.title}
+                                        key={item.href}
                                         asChild
-                                        className={`rounded-sm px-2 py-1.5 text-sm focus:bg-accent focus:text-accent-foreground ${
-                                            itemActive ? 'bg-accent text-accent-foreground' : ''
-                                        }`}
+                                        style={{ cursor: 'pointer' }}
+                                        className={cn(
+                                            'cursor-pointer! rounded-sm px-2 py-1.5 text-sm focus:bg-accent focus:text-accent-foreground',
+                                            itemActive && 'bg-accent text-accent-foreground',
+                                        )}
                                     >
                                         <Link href={item.href} prefetch>
                                             {ItemIcon && <ItemIcon className="mr-2 size-4" />}

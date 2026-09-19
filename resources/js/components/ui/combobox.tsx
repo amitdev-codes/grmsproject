@@ -6,7 +6,6 @@ import {
     Command,
     CommandEmpty,
     CommandGroup,
-    CommandInput,
     CommandItem,
     CommandList,
 } from '@/components/ui/command';
@@ -35,7 +34,7 @@ interface ComboboxProps {
 }
 
 /**
- * shadcn's "select2" equivalent — a searchable single-select built on
+ * shadcn "select2" equivalent — a searchable single-select built on
  * Popover + Command. Requires the `command` and `popover` shadcn
  * components to be installed:
  *   npx shadcn@latest add command popover
@@ -89,7 +88,6 @@ export function Combobox({
                 align="start"
             >
                 <Command>
-                    <CommandInput placeholder={searchPlaceholder} />
                     <CommandList>
                         <CommandEmpty>{emptyText}</CommandEmpty>
                         <CommandGroup>

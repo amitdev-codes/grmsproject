@@ -51,6 +51,7 @@ import {
     useI18n,
     FILE_GRIEVANCE_URL,
 } from './site-shared';
+import { Combobox } from '@/components/ui/combobox';
 
 // Sample data — wire this up to your real case records (e.g. a /api/grievances/monthly endpoint).
 const MONTHLY_DATA = [
@@ -246,6 +247,42 @@ function TicketMockup() {
 
 function Hero() {
     const { t } = useI18n();
+    const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<string>('');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch('/api/v1/grievance-categories')
+            .then((res) => {
+                if (!res.ok) throw new Error('Failed to load categories');
+                return res.json();
+            })
+            .then((json) => {
+                if (cancelled) return;
+                const data = json.data ?? json;
+                setCategories(
+                    data.map((c: { id: number; name: string; is_sensitive: boolean }) => ({
+                        value: String(c.id),
+                        label: c.is_sensitive ? `${c.name} (Sensitive)` : c.name,
+                    })),
+                );
+            })
+            .catch(() => {
+                if (!cancelled) setCategories([]);
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const grievanceUrl = selectedCategory
+        ? `${FILE_GRIEVANCE_URL}?category=${selectedCategory}`
+        : FILE_GRIEVANCE_URL;
 
     return (
         <section className="relative overflow-hidden">
@@ -274,6 +311,18 @@ function Hero() {
                     >
                         {t.hero.sub}
                     </p>
+                    <div className="mb-4 max-w-md">
+                            <Combobox
+                            options={categories}
+                            value={selectedCategory}
+                            onChange={setSelectedCategory}
+                            placeholder={t.combobox.placeholder}
+                            searchPlaceholder={t.combobox.searchPlaceholder}
+                            emptyText={t.combobox.emptyText}
+                            loading={loading}
+                            disabled={false}
+                        />
+                    </div>
                     <div className="mb-8 flex flex-wrap gap-3">
                         <Button
                             asChild
@@ -283,7 +332,7 @@ function Hero() {
                                 color: '#FFFFFF',
                             }}
                         >
-                            <Link href={FILE_GRIEVANCE_URL}>
+                            <Link href={grievanceUrl}>
                                 {t.hero.ctaPrimary}
                                 <ArrowRight className="ml-1.5 h-4 w-4" />
                             </Link>

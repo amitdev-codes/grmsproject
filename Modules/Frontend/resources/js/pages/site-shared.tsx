@@ -98,6 +98,7 @@ export interface Translations {
     audiences: { heading: string; tabs: { label: string; points: string[] }[] };
     security: { heading: string; items: { title: string; desc: string }[] };
     cta: { heading: string; sub: string; button: string };
+    combobox: { placeholder: string; searchPlaceholder: string; emptyText: string };
     faqPage: {
         eyebrow: string;
         title: string;
@@ -344,6 +345,11 @@ export const translations: Record<Lang, Translations> = {
             heading: 'Ready to give every complaint a case number?',
             sub: "File a grievance in minutes, or sign in to track a case you've already submitted.",
             button: 'File a grievance',
+        },
+        combobox: {
+            placeholder: 'Select a category…',
+            searchPlaceholder: 'Search categories…',
+            emptyText: 'No categories found.',
         },
         faqPage: {
             eyebrow: 'Help centre',
@@ -626,6 +632,11 @@ export const translations: Record<Lang, Translations> = {
                 "Na u loketse ho fa tletlebo e 'ngoe le e 'ngoe nomoro ea nyeoe?",
             sub: 'Ngola tletlebo ka metsotso, kapa u kene ho latela nyeoe eo u seng u e ile ua e romela.',
             button: 'Ngola tletlebo',
+        },
+        combobox: {
+            placeholder: 'Khethaa khonopo…',
+            searchPlaceholder: 'Karoha khonopo…',
+            emptyText: 'Ha u khone u kopa konopo.',
         },
         faqPage: {
             eyebrow: 'Setsi sa thuso',

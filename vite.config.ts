@@ -4,22 +4,21 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
+import path from 'node:path';
 import { defineConfig } from 'vite';
-import path from 'path';
+
+const modules = ['Notification', 'UserManagement','Grievance','Report','Log','Master','Frontend', 'Setting'];
 
 export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
-            refresh: [
-                'resources/views/**',
-                'Modules/*/resources/views/**',
-                'Modules/*/resources/js/**',
-            ],
+            // Blade only. JS/TSX changes are handled by React Fast Refresh.
+            refresh: ['resources/views/**', 'Modules/*/resources/views/**'],
             fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
-                }),
+                bunny('IBM Plex Sans', { weights: [400, 500, 600] }),
+                bunny('IBM Plex Mono', { weights: [400, 500] }),
+                bunny('Source Serif 4', { weights: [400, 500, 600] }),
             ],
         }),
         inertia(),
@@ -36,21 +35,15 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(import.meta.dirname, 'resources/js'),
-            '@modules/Notification': path.resolve(
-                import.meta.dirname,
-                'Modules/Notification/resources/js',
-            ),
-            '@modules/UserManagement': path.resolve(
-                import.meta.dirname,
-                'Modules/UserManagement/resources/js',
-            ),
-            '@modules/Frontend': path.resolve(
-                import.meta.dirname,
-                'Modules/Frontend/resources/js',
-            ),
-            '@modules/Setting': path.resolve(
-                import.meta.dirname,
-                'Modules/Setting/resources/js',
+            // adds a new module alias by extending the `modules` array above
+            ...Object.fromEntries(
+                modules.map((name) => [
+                    `@modules/${name}`,
+                    path.resolve(
+                        import.meta.dirname,
+                        `Modules/${name}/resources/js`,
+                    ),
+                ]),
             ),
         },
     },
@@ -61,17 +54,9 @@ export default defineConfig({
                     if (
                         id.includes('node_modules/@inertiajs') ||
                         id.includes('node_modules/react/') ||
-                        id.includes('node_modules/react-dom/') ||
-                        id.includes('node_modules/react-router')
+                        id.includes('node_modules/react-dom/')
                     ) {
                         return 'vendor';
-                    }
-
-                    if (id.includes('/Modules/')) {
-                        const match = id.match(/\/Modules\/(\w+)\//);
-                        if (match) {
-                            return `module-${match[1].toLowerCase()}`;
-                        }
                     }
                 },
             },
