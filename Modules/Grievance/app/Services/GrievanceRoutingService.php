@@ -120,6 +120,16 @@ class GrievanceRoutingService
         return $grievance;
     }
 
+    public function resolve(Grievance $grievance, User $actor, string $reason): Grievance
+    {
+        $from = $grievance->status;
+        $grievance = $this->grievances->update($grievance, ['status' => 'resolved', 'closed_by' => $actor->id, 'closed_reason' => $reason, 'closed_at' => now()]);
+        $this->grievances->recordStatus($grievance, $from, 'resolved', $actor->id, 'director', $reason);
+        $this->queueCitizenCommunication($grievance, 'status_update', "Grievance {$grievance->reference_no} has been resolved. Reason: {$reason}");
+
+        return $grievance;
+    }
+
     public function close(Grievance $grievance, User $actor, string $reason): Grievance
     {
         $from = $grievance->status;
