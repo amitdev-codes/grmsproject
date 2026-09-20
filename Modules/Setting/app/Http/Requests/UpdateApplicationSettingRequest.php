@@ -9,7 +9,7 @@ class UpdateApplicationSettingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('manageApplicationSettings') ?? false;
+        return $this->user()?->hasRole('Super Admin') ?? false;
     }
 
     public function rules(): array
@@ -27,6 +27,7 @@ class UpdateApplicationSettingRequest extends FormRequest
             'favicon' => ['nullable', 'image', 'max:512'],
             'primary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'theme' => ['required', Rule::in(['default', 'roads'])],
 
             // Location
             'address_line' => ['nullable', 'string', 'max:255'],

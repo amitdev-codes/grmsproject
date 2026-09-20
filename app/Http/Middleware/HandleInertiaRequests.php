@@ -11,6 +11,7 @@ use Modules\Grievance\Models\Grievance;
 use Modules\Grievance\Notifications\GrievanceAllocated;
 use Modules\Grievance\Notifications\GrievanceAssigned;
 use Modules\Grievance\Notifications\GrievanceReAllocationRequested;
+use Modules\Setting\Models\ApplicationSetting;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -52,6 +53,7 @@ class HandleInertiaRequests extends Middleware
             'translations' => $this->loadTranslations($locale),
             'name' => config('app.name'),
             'app_author' => config('app.author', 'Roads Directorate · Government of Lesotho'),
+            'applicationSettings' => $this->applicationSettings(),
             'dashboard' => app(DashboardController::class)->data(),
             'auth' => [
                 'user' => $user
@@ -84,6 +86,26 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'import_failures' => fn () => $request->session()->get('import_failures'),
             ],
+        ];
+    }
+
+    protected function applicationSettings(): array
+    {
+        $settings = ApplicationSetting::current();
+
+        return [
+            'project_name' => $settings->project_name,
+            'short_name' => $settings->short_name,
+            'tagline' => $settings->tagline,
+            'description' => $settings->description,
+            'theme' => $settings->theme ?: 'default',
+            'logo_url' => $settings->logo_path ? asset('storage/'.$settings->logo_path) : null,
+            'favicon_url' => $settings->favicon_path ? asset('storage/'.$settings->favicon_path) : null,
+            'email' => $settings->email,
+            'phone' => $settings->phone,
+            'address_line' => $settings->address_line,
+            'support_hours' => $settings->support_hours,
+            'footer_text' => $settings->footer_text,
         ];
     }
 

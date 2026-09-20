@@ -1,6 +1,7 @@
 <?php
 
 namespace Modules\Setting\Models;
+
 use Illuminate\Database\Eloquent\Model;
 
 class ApplicationSetting extends Model
@@ -9,7 +10,7 @@ class ApplicationSetting extends Model
         // Identity
         'project_name', 'project_slug', 'short_name', 'tagline', 'description',
         // Branding
-        'logo_path', 'favicon_path', 'primary_color', 'secondary_color',
+        'logo_path', 'favicon_path', 'primary_color', 'secondary_color', 'theme',
         // Location
         'address_line', 'district_id', 'latitude', 'longitude',
         // Contact
@@ -24,7 +25,9 @@ class ApplicationSetting extends Model
         // Escape hatch
         'extra',
     ];
+
     protected $guarded = ['id'];
+
     protected $casts = [
         'social_links' => 'array',
         'seo_meta' => 'array',

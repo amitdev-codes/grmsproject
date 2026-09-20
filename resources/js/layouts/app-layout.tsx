@@ -11,16 +11,27 @@ interface FlashProps {
 }
 
 export default function AppLayout({
-                                      breadcrumbs = [],
-                                      children,
-                                  }: {
+    breadcrumbs = [],
+    children,
+}: {
     breadcrumbs?: BreadcrumbItem[];
     children: React.ReactNode;
 }) {
-    const { flash } = usePage().props as { flash?: FlashProps };
+    const { flash, applicationSettings } = usePage().props as {
+        flash?: FlashProps;
+        applicationSettings?: { theme?: 'default' | 'roads' };
+    };
 
     // Prevent the same flash message re-firing on unrelated re-renders
     const lastFlashKey = useRef<string | null>(null);
+
+    useEffect(() => {
+        if (applicationSettings?.theme === 'roads') {
+            document.documentElement.setAttribute('data-theme', 'roads');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+    }, [applicationSettings?.theme]);
 
     useEffect(() => {
         if (!flash) {

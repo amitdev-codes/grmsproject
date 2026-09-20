@@ -78,6 +78,7 @@ export function AppTopMenu() {
     const isPrivileged = roleNames.some((role) =>
         ['Super Admin', 'IT Admin', 'Admin', 'Developer'].includes(role),
     );
+    const isSuperAdmin = roleNames.includes('Super Admin');
     const pendingGrievances = page.props.pendingGrievances as {
         count: number;
         href: string;
@@ -264,13 +265,8 @@ export function AppTopMenu() {
         {
             label: 'menu.settings',
             icon: Settings,
-            visible: isPrivileged,
+            visible: isSuperAdmin,
             items: [
-                {
-                    title: 'menu.profile_settings',
-                    href: '/edit-profile',
-                    icon: UserCog,
-                },
                 {
                     title: 'menu.application_settings',
                     href: '/settings/application',

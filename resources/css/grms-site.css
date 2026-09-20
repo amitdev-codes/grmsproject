@@ -1,0 +1,136 @@
+/* resources/css/grms-site.css
+ *
+ * Theming for the public-facing pages (landing, login/register, file-a-
+ * grievance) that render through <PageShell>/<Shell> in site-shared.tsx.
+ * This is deliberately separate from app.css, which themes everything
+ * behind AppSidebarLayout — the two systems use different variable names
+ * on purpose, since this one also drives the decorative road/ridge SVGs.
+ *
+ * Four states, exactly like app.css:
+ *   .grms-root                        -> Default, light
+ *   .grms-root.dark                   -> Default, dark
+ *   .grms-root[data-theme="roads"]        -> Laterite Road, light
+ *   .grms-root[data-theme="roads"].dark   -> Laterite Road, dark
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+/* ─── DEFAULT — Roads Directorate corporate palette, light ─────────────── */
+.grms-root {
+    --bg-page: #F5F8FC;
+    --bg-raised: #FFFFFF;
+    --bg-inverse: #002B70;
+    --bg-page-translucent: rgba(245, 248, 252, 0.94);
+    --text-primary: #102A43;
+    --text-secondary: #486581;
+    --text-on-inverse: #FFFFFF;
+    --text-on-inverse-secondary: #D9E8FF;
+    --border: #C9D8EA;
+    --accent: #003DA5;
+    --accent-dark: #007A3D;
+    --resolved: #1E7145;
+    --resolved-bg: #E1EFE6;
+    --ridge-1: #DCEBFA;
+    --ridge-2: #B9D4F1;
+    --ridge-3: #8DB8E3;
+
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--text-primary);
+    background: var(--bg-page);
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+/* ─── DEFAULT — corporate palette, dark ─────────────────────────────────── */
+.grms-root.dark {
+    --bg-page: #10182B;
+    --bg-raised: #182238;
+    --bg-inverse: #061A3A;
+    --bg-page-translucent: rgba(16, 24, 43, 0.92);
+    --text-primary: #ECEAE0;
+    --text-secondary: #A7B0C4;
+    --text-on-inverse: #ECEAE0;
+    --text-on-inverse-secondary: #8790A6;
+    --border: #2A3350;
+    --accent: #6CA8FF;
+    --accent-dark: #43B66D;
+    --resolved: #4CA37A;
+    --resolved-bg: #16281F;
+    --ridge-1: #102A4C;
+    --ridge-2: #12355F;
+    --ridge-3: #1D559C;
+}
+
+/* ─── THEME 2 "LATERITE ROAD" — soil/gravel/asphalt palette, light ─────── */
+.grms-root[data-theme="roads"] {
+    --bg-page: #F7F1E6;
+    --bg-raised: #FFFCF6;
+    --bg-inverse: #2B2018;
+    --bg-page-translucent: rgba(247, 241, 230, 0.94);
+    --text-primary: #33261C;
+    --text-secondary: #7A6752;
+    --text-on-inverse: #F3E9D8;
+    --text-on-inverse-secondary: #D8C4A6;
+    --border: #DFCBA9;
+    --accent: #AB4E28;
+    --accent-dark: #4B6B34;
+    --resolved: #4B6B34;
+    --resolved-bg: #E6EBDA;
+    --ridge-1: #EFE0C9;
+    --ridge-2: #DFCBA9;
+    --ridge-3: #C9A876;
+}
+
+/* ─── THEME 2 "LATERITE ROAD" — dark ─────────────────────────────────────── */
+.grms-root[data-theme="roads"].dark {
+    --bg-page: #1B140F;
+    --bg-raised: #241B14;
+    --bg-inverse: #120C08;
+    --bg-page-translucent: rgba(27, 20, 15, 0.92);
+    --text-primary: #EFE4D2;
+    --text-secondary: #BCA98C;
+    --text-on-inverse: #EFE4D2;
+    --text-on-inverse-secondary: #9C8B6E;
+    --border: #3D2F22;
+    --accent: #E08850;
+    --accent-dark: #7FA753;
+    --resolved: #7FA753;
+    --resolved-bg: #202B16;
+    --ridge-1: #2A2018;
+    --ridge-2: #3D2F22;
+    --ridge-3: #4A3626;
+}
+
+/* ─── Shared, theme-independent rules ────────────────────────────────────── */
+.grms-root .font-display { font-family: 'Source Serif 4', serif; }
+.grms-root .font-mono { font-family: 'IBM Plex Mono', monospace; }
+
+@media (prefers-reduced-motion: reduce) {
+    .grms-road-line { animation: none !important; }
+}
+
+@keyframes grms-road-draw {
+    from { stroke-dashoffset: 240; }
+    to { stroke-dashoffset: 0; }
+}
+
+.grms-road-line {
+    stroke-dasharray: 6 6;
+    animation: grms-road-draw 6s linear infinite;
+}
+
+.grms-root input,
+.grms-root textarea {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.875rem;
+    width: 100%;
+    outline: none;
+}
+
+.grms-root input:focus,
+.grms-root textarea:focus {
+    border-color: var(--accent);
+}

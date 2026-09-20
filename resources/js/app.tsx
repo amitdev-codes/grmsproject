@@ -1,11 +1,11 @@
 import { createInertiaApp } from '@inertiajs/react';
 import React from 'react';
+import { AccessibilityControls } from '@/components/accessibility-controls';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
-import { AccessibilityControls } from '@/components/accessibility-controls';
 import { route } from 'ziggy-js';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -24,6 +24,7 @@ const modulePages2 = import.meta.glob('/Modules/*/resources/js/pages/**/*.tsx');
 
 // Merge all module pages
 const modulePages = { ...modulePages1, ...modulePages2 };
+
 async function resolvePageComponent(
     name: string,
 ): Promise<React.ComponentType> {
@@ -39,7 +40,6 @@ async function resolvePageComponent(
         ];
 
         let page = null;
-
 
         for (const path of pathFormats) {
             if (modulePages[path]) {
@@ -74,8 +74,6 @@ async function resolvePageComponent(
 
     const module = await page();
 
-
-
     return (module as { default: React.ComponentType }).default;
 }
 
@@ -105,7 +103,7 @@ createInertiaApp({
     progress: {
         color: '#4B5563',
     },
-}).then( );
+}).then();
 
 // This will set light / dark mode on load...
 initializeTheme();

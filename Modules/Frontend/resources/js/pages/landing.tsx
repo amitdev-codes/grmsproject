@@ -39,8 +39,7 @@ import {
     Legend,
     ResponsiveContainer,
 } from 'recharts';
-import type {
-    IconType} from './site-shared';
+import type { IconType } from './site-shared';
 import {
     PageShell,
     NavBar,
@@ -50,6 +49,7 @@ import {
     RoadDivider,
     useI18n,
     FILE_GRIEVANCE_URL,
+    useApplicationSettings,
 } from './site-shared';
 import { Combobox } from '@/components/ui/combobox';
 
@@ -148,7 +148,7 @@ function TicketMockup() {
                     {t.ticket.dept}
                 </Badge>
             </div>
-            <h4 className="font-display mb-1 text-lg font-semibold">
+            <h4 className="mb-1 font-display text-lg font-semibold">
                 {t.ticket.title}
             </h4>
             <p
@@ -228,7 +228,7 @@ function TicketMockup() {
                 </span>
             </div>
             <div
-                className="font-display absolute -top-4 -right-4 flex h-20 w-20 items-center justify-center rounded-full text-center text-xs font-semibold tracking-wide uppercase transition-all duration-500"
+                className="absolute -top-4 -right-4 flex h-20 w-20 items-center justify-center rounded-full text-center font-display text-xs font-semibold tracking-wide uppercase transition-all duration-500"
                 style={{
                     border: '2px solid var(--resolved)',
                     color: 'var(--resolved)',
@@ -247,7 +247,10 @@ function TicketMockup() {
 
 function Hero() {
     const { t } = useI18n();
-    const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
+    const settings = useApplicationSettings();
+    const [categories, setCategories] = useState<
+        { value: string; label: string }[]
+    >([]);
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [loading, setLoading] = useState(true);
 
@@ -262,10 +265,18 @@ function Hero() {
                 if (cancelled) return;
                 const data = json.data ?? json;
                 setCategories(
-                    data.map((c: { id: number; name: string; is_sensitive: boolean }) => ({
-                        value: String(c.id),
-                        label: c.is_sensitive ? `${c.name} (Sensitive)` : c.name,
-                    })),
+                    data.map(
+                        (c: {
+                            id: number;
+                            name: string;
+                            is_sensitive: boolean;
+                        }) => ({
+                            value: String(c.id),
+                            label: c.is_sensitive
+                                ? `${c.name} (Sensitive)`
+                                : c.name,
+                        }),
+                    ),
                 );
             })
             .catch(() => {
@@ -300,19 +311,17 @@ function Hero() {
                     >
                         {t.hero.eyebrow}
                     </Badge>
-                    <h1 className="font-display mb-6 text-4xl leading-[1.1] font-semibold md:text-5xl">
-                        {t.hero.headline[0]}
-                        <br />
-                        {t.hero.headline[1]}
+                    <h1 className="mb-6 font-display text-4xl leading-[1.1] font-semibold md:text-5xl">
+                        {settings.project_name ?? t.hero.headline[0]}
                     </h1>
                     <p
                         className="mb-8 max-w-lg text-lg"
                         style={{ color: 'var(--text-secondary)' }}
                     >
-                        {t.hero.sub}
+                        {settings.description ?? settings.tagline ?? t.hero.sub}
                     </p>
                     <div className="mb-4 max-w-md">
-                            <Combobox
+                        <Combobox
                             options={categories}
                             value={selectedCategory}
                             onChange={setSelectedCategory}
@@ -419,7 +428,7 @@ function ResolutionChart() {
             }}
         >
             <div className="mx-auto max-w-6xl px-6 py-14">
-                <h2 className="font-display mb-1 text-center text-2xl font-semibold md:text-3xl">
+                <h2 className="mb-1 text-center font-display text-2xl font-semibold md:text-3xl">
                     {t.chart.heading}
                 </h2>
                 <p
@@ -661,7 +670,7 @@ function ProblemSolution() {
 
     return (
         <section className="mx-auto max-w-6xl px-6 py-20">
-            <h2 className="font-display mb-10 text-center text-3xl font-semibold">
+            <h2 className="mb-10 text-center font-display text-3xl font-semibold">
                 {t.problem.heading}
             </h2>
             <div
@@ -728,7 +737,7 @@ function Features() {
 
     return (
         <section id="features" className="mx-auto max-w-6xl px-6 py-20">
-            <h2 className="font-display mb-2 text-center text-3xl font-semibold">
+            <h2 className="mb-2 text-center font-display text-3xl font-semibold">
                 {t.features.heading}
             </h2>
             <p
@@ -792,7 +801,7 @@ function HowItWorks() {
             style={{ background: 'var(--bg-raised)' }}
         >
             <div className="mx-auto max-w-6xl px-6">
-                <h2 className="font-display mb-8 text-center text-3xl font-semibold">
+                <h2 className="mb-8 text-center font-display text-3xl font-semibold">
                     {t.how.heading}
                 </h2>
                 <RoadDivider />
@@ -848,7 +857,7 @@ function Audiences() {
 
     return (
         <section id="audiences" className="mx-auto max-w-6xl px-6 py-20">
-            <h2 className="font-display mb-10 text-center text-3xl font-semibold">
+            <h2 className="mb-10 text-center font-display text-3xl font-semibold">
                 {t.audiences.heading}
             </h2>
             <Tabs value={active} onValueChange={setActive} className="w-full">
@@ -923,7 +932,7 @@ function Security() {
         >
             <div className="mx-auto max-w-6xl px-6">
                 <h2
-                    className="font-display mb-10 text-center text-3xl font-semibold"
+                    className="mb-10 text-center font-display text-3xl font-semibold"
                     style={{ color: 'var(--text-on-inverse)' }}
                 >
                     {t.security.heading}
@@ -976,7 +985,7 @@ function CTA() {
                     className="mx-auto mb-6 h-8 w-8"
                     style={{ color: 'var(--accent)' }}
                 />
-                <h2 className="font-display mb-4 text-3xl font-semibold md:text-4xl">
+                <h2 className="mb-4 font-display text-3xl font-semibold md:text-4xl">
                     {t.cta.heading}
                 </h2>
                 <p

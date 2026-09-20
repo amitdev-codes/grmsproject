@@ -3,7 +3,6 @@
 namespace Modules\Setting\Database\Seeders;
 
 use Illuminate\Database\Seeder;
-
 use Modules\Setting\Models\ApplicationSetting;
 
 class ApplicationSettingSeeder extends Seeder
@@ -24,6 +23,7 @@ class ApplicationSettingSeeder extends Seeder
                 'favicon_path' => null,
                 'primary_color' => '#002B7F',
                 'secondary_color' => '#006233',
+                'theme' => 'default',
 
                 // Location
                 'address_line' => 'Ministry Complex, Maseru',
@@ -64,7 +64,7 @@ class ApplicationSettingSeeder extends Seeder
                 'maintenance_mode' => false,
 
                 // Legal / footer
-                'footer_text' => '© ' . date('Y') . ' Government of Lesotho. All rights reserved.',
+                'footer_text' => '© '.date('Y').' Government of Lesotho. All rights reserved.',
                 'privacy_policy_url' => null,
                 'terms_url' => null,
 

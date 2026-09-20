@@ -35,6 +35,7 @@ interface ApplicationSettingsModel {
     favicon_path: string | null;
     primary_color: string | null;
     secondary_color: string | null;
+    theme: 'default' | 'roads';
     address_line: string | null;
     district_id: number | null;
     latitude: string | null;
@@ -75,6 +76,7 @@ interface FormValues {
     favicon: File[];
     primary_color: string;
     secondary_color: string;
+    theme: 'default' | 'roads';
     address_line: string;
     district_id: string;
     latitude: string;
@@ -140,6 +142,7 @@ export default function Form({ settings, districts }: Props) {
         favicon: [],
         primary_color: settings.primary_color ?? '',
         secondary_color: settings.secondary_color ?? '',
+        theme: settings.theme ?? 'default',
         address_line: settings.address_line ?? '',
         district_id: settings.district_id ? String(settings.district_id) : '',
         latitude: settings.latitude ?? '',
@@ -206,6 +209,7 @@ export default function Form({ settings, districts }: Props) {
             favicon: formData.favicon[0] ?? null,
             primary_color: formData.primary_color || null,
             secondary_color: formData.secondary_color || null,
+            theme: formData.theme,
             address_line: formData.address_line || null,
             district_id: formData.district_id || null,
             latitude: formData.latitude || null,
@@ -386,6 +390,21 @@ export default function Form({ settings, districts }: Props) {
                         onChange={(v) => setData('secondary_color', v)}
                         error={errors.secondary_color}
                         placeholder="#64748B"
+                    />
+                    <Select2Field
+                        id="theme"
+                        required
+                        label={t('Site Theme')}
+                        value={data.theme}
+                        onChange={(value) =>
+                            setData('theme', value as FormValues['theme'])
+                        }
+                        options={[
+                            { value: 'default', label: t('Default') },
+                            { value: 'roads', label: t('Laterite Road') },
+                        ]}
+                        placeholder={t('Select a site theme')}
+                        error={errors.theme}
                     />
                 </>
             )}

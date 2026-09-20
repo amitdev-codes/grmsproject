@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ShieldCheck } from 'lucide-react';
-import AppLogoIcon from '@/components/app-logo-icon';
+import { useEffect } from 'react';
 import type { PropsWithChildren } from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -15,6 +15,7 @@ import { home } from '@/routes';
 import {
     MountainRoadBackdrop,
     RoadWatermark,
+    useApplicationSettings,
 } from '@modules/Frontend/pages/site-shared';
 
 const INVERSE_BG = 'var(--bg-inverse, #10203D)';
@@ -22,7 +23,6 @@ const INVERSE_TEXT = 'var(--text-on-inverse, #FFFFFF)';
 const INVERSE_TEXT_SECONDARY =
     'var(--text-on-inverse-secondary, rgba(255,255,255,0.72))';
 const ACCENT = 'var(--accent, #D4A017)';
-const ACCENT_DARK = 'var(--accent-dark, #B8860B)';
 
 const BRAND_EYEBROW = 'Grievance Redress Management System';
 const BRAND_HEADLINE =
@@ -35,10 +35,20 @@ const BRAND_POINTS = [
 ];
 
 export default function AuthSplitLayout({
-                                            children,
-                                            title = '',
-                                            description = '',
-                                        }: PropsWithChildren<{ title?: string; description?: string }>) {
+    children,
+    title = '',
+    description = '',
+}: PropsWithChildren<{ title?: string; description?: string }>) {
+    const settings = useApplicationSettings();
+
+    useEffect(() => {
+        if (settings.theme === 'roads') {
+            document.documentElement.setAttribute('data-theme', 'roads');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+    }, [settings.theme]);
+
     return (
         <div
             className="grid min-h-svh md:grid-cols-2"
@@ -76,15 +86,17 @@ export default function AuthSplitLayout({
                         style={{ color: INVERSE_TEXT }}
                     >
                         <img
-                            src="/logo.png"
-                            alt="GRMS Lesotho"
+                            src={settings.logo_url ?? '/logo.png'}
+                            alt={settings.short_name ?? 'GRMS'}
                             className="h-10 w-10 rounded-full object-contain"
                         />
                         <span
                             className="font-display text-lg"
                             style={{ color: INVERSE_TEXT }}
                         >
-                            GRMS Lesotho
+                            {settings.short_name ??
+                                settings.project_name ??
+                                'GRMS'}
                         </span>
                     </Link>
 
@@ -94,13 +106,13 @@ export default function AuthSplitLayout({
                             className="mb-4 border-none font-mono text-xs font-semibold"
                             style={{ color: '#10203D', background: ACCENT }}
                         >
-                            {BRAND_EYEBROW}
+                            {settings.project_name ?? BRAND_EYEBROW}
                         </Badge>
                         <h2
-                            className="font-display mb-6 max-w-sm text-3xl leading-tight font-semibold"
+                            className="mb-6 max-w-sm font-display text-3xl leading-tight font-semibold"
                             style={{ color: INVERSE_TEXT }}
                         >
-                            {BRAND_HEADLINE}
+                            {settings.tagline ?? BRAND_HEADLINE}
                         </h2>
                         <ul className="max-w-sm space-y-3">
                             {BRAND_POINTS.map((point) => (
@@ -123,25 +135,31 @@ export default function AuthSplitLayout({
                         className="text-xs"
                         style={{ color: INVERSE_TEXT_SECONDARY }}
                     >
-                        {BRAND_FOOTER}
+                        {settings.footer_text ?? BRAND_FOOTER}
                     </p>
                 </div>
             </div>
 
             {/* Form panel */}
-            <main id="main-content" tabIndex={-1} className="relative flex flex-col justify-center px-6 py-10 sm:px-10 md:px-16">
+            <main
+                id="main-content"
+                tabIndex={-1}
+                className="relative flex flex-col justify-center px-6 py-10 sm:px-10 md:px-16"
+            >
                 <div className="mx-auto w-full max-w-md">
                     <Link
                         href={home()}
                         className="mb-8 flex items-center gap-2 font-medium md:hidden"
                     >
                         <img
-                            src="/logo.png"
-                            alt="GRMS Lesotho"
+                            src={settings.logo_url ?? '/logo.png'}
+                            alt={settings.short_name ?? 'GRMS'}
                             className="h-9 w-9 rounded-full object-contain"
                         />
                         <span className="font-display text-lg">
-                            GRMS Lesotho
+                            {settings.short_name ??
+                                settings.project_name ??
+                                'GRMS'}
                         </span>
                     </Link>
 

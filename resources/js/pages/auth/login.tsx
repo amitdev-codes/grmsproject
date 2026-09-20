@@ -18,6 +18,7 @@ import {
     useI18n,
     LanguageToggle,
     PRODUCT_NAME,
+    useApplicationSettings,
 } from '@modules/Frontend/pages/site-shared';
 import type { Lang } from '@modules/Frontend/pages/site-shared';
 
@@ -28,6 +29,7 @@ type Props = {
 
 function LoginContent({ status, canResetPassword }: Props) {
     const { t } = useI18n();
+    const settings = useApplicationSettings();
 
     return (
         <>
@@ -42,11 +44,13 @@ function LoginContent({ status, canResetPassword }: Props) {
                     <div className="flex items-center gap-2.5">
                         <img
                             src="/logo.png"
-                            alt={PRODUCT_NAME}
+                            alt={settings.short_name ?? PRODUCT_NAME}
                             className="h-9 w-9 rounded-sm object-contain"
                         />
                         <span className="font-display text-lg font-semibold tracking-tight text-foreground">
-                            {PRODUCT_NAME}
+                            {settings.short_name ??
+                                settings.project_name ??
+                                PRODUCT_NAME}
                         </span>
                     </div>
                 </div>

@@ -202,6 +202,143 @@
     --info-muted:             #1B2130;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME 2 — "LATERITE ROAD" (soil / gravel / asphalt palette)
+   An earth-toned alternative to the corporate-blue theme above, drawn from
+   the materials of the road network itself: red laterite gravel, sun-baked
+   clay, asphalt, limestone dust and roadside scrub. Applied by setting
+   data-theme="roads" on <html> (or another ancestor element), independent
+   of the existing .dark toggle — so it has its own light and dark variant
+   below, exactly like the default theme does. Covers every surface the
+   default theme covers (auth pages, navbar/topbar, sidebar, forms, badges,
+   charts) since all components already read from these same CSS variables.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── LIGHT MODE — Theme 2 "Laterite Road" ───────────────────────────────── */
+[data-theme="roads"] {
+    --background:             #F7F1E6; /* limestone dust / sun-bleached gravel */
+    --foreground:             #33261C; /* wet asphalt brown */
+
+    --card:                   #FFFCF6;
+    --card-foreground:        #33261C;
+
+    --popover:                #FFFCF6;
+    --popover-foreground:     #33261C;
+
+    --primary:                #AB4E28; /* red laterite road soil */
+    --primary-foreground:     #FFF8F0;
+
+    --secondary:              #EFE0C9; /* packed gravel */
+    --secondary-foreground:   #5C3A22;
+
+    --muted:                  #EFE6D6;
+    --muted-foreground:       #7A6752; /* WCAG AA 4.5:1 against --muted */
+
+    --accent:                 #E4EAD8; /* roadside scrub green tint */
+    --accent-dark:            #4B6B34;
+    --accent-foreground:      #33481F;
+
+    --destructive:            #B0362A;
+    --destructive-foreground: #FDF4E9;
+
+    --border:                 #DFCBA9;
+    --input:                  #CDB48A;
+    --ring:                   #AB4E28;
+
+    /* Chart colours — earth-toned but distinct hues for legibility */
+    --chart-1:                #AB4E28; /* laterite red */
+    --chart-2:                #4B6B34; /* scrub green */
+    --chart-3:                #7A6752; /* stone grey-brown */
+    --chart-4:                #C99A3E; /* dry clay ochre */
+    --chart-5:                #5B453A; /* asphalt brown */
+
+    --radius: 0.5rem;
+
+    --sidebar:                       #2B2018; /* wet asphalt, near-black brown */
+    --sidebar-foreground:            #F3E9D8;
+    --sidebar-primary:               #C97A3F; /* laterite, lightened for contrast on dark bar */
+    --sidebar-primary-foreground:    #2B2018;
+    --sidebar-accent:                #3D2D20;
+    --sidebar-accent-foreground:     #F3E9D8;
+    --sidebar-border:                #4A3626;
+    --sidebar-ring:                  #F3E9D8;
+
+    --checkbox-border:        #9C8B6E;
+
+    --success:                #4B6B34;
+    --success-foreground:     #F3F0E4;
+    --success-muted:          #E6EBDA;
+
+    --warning:                #A66A18; /* road-sign amber, WCAG AA 4.5:1 against --warning-foreground */
+    --warning-foreground:     #FDF4E9;
+    --warning-muted:          #F4E4C7;
+
+    --info:                   #5B6B72; /* road-marking slate */
+    --info-foreground:        #F3F0E4;
+    --info-muted:             #E7EBEC;
+}
+
+/* ─── DARK MODE — Theme 2 "Laterite Road" ────────────────────────────────── */
+[data-theme="roads"].dark {
+    --background:             #1B140F; /* night asphalt */
+    --foreground:             #EFE4D2;
+
+    --card:                   #241B14;
+    --card-foreground:        #EFE4D2;
+
+    --popover:                #241B14;
+    --popover-foreground:     #EFE4D2;
+
+    --primary:                #E08850; /* lightened laterite for dark-bg legibility */
+    --primary-foreground:     #241004;
+
+    --secondary:              #362A1E;
+    --secondary-foreground:   #D8C4A6;
+
+    --muted:                  #2A2018;
+    --muted-foreground:       #BCA98C;
+
+    --accent:                 #26301C;
+    --accent-foreground:      #B8D28C;
+    --accent-dark:            #7FA753;
+
+    --destructive:            #DE6A50;
+    --destructive-foreground: #241004;
+
+    --border:                 #3D2F22;
+    --input:                  #3D2F22;
+    --ring:                   #E08850;
+
+    --chart-1:                #E08850;
+    --chart-2:                #7FA753;
+    --chart-3:                #BCA98C;
+    --chart-4:                #E0B563;
+    --chart-5:                #8C6B57;
+
+    --sidebar:                       #120C08;
+    --sidebar-foreground:            #EFE4D2;
+    --sidebar-primary:               #E08850;
+    --sidebar-primary-foreground:    #120C08;
+    --sidebar-accent:                #2B2016;
+    --sidebar-accent-foreground:     #F3E9D8;
+    --sidebar-border:                #3D2F22;
+    --sidebar-ring:                  #F3E9D8;
+
+    --checkbox-border:        #4A3B2A;
+
+    --success:                #7FA753;
+    --success-foreground:     #14180E;
+    --success-muted:          #202B16;
+
+    --warning:                #E0A752;
+    --warning-foreground:     #241A08;
+    --warning-muted:          #2E2313;
+
+    --info:                   #9AAAAF;
+    --info-foreground:        #14181A;
+    --info-muted:             #1E2427;
+}
+
 /* ─── BASE ──────────────────────────────────────────────────────────────────── */
 @layer base {
     * {
@@ -547,6 +684,17 @@
 .app-top-bar .theme-toggle,
 .app-top-bar .user-avatar {
     color: #FFFFFF;
+}
+
+/* ─── App top bar — Theme 2 "Laterite Road" gradient ─────────────────────────── */
+[data-theme="roads"] .app-top-bar {
+    background: linear-gradient(90deg, rgba(43, 32, 24, 0.92) 0%, rgba(51, 38, 28, 0.92) 50%, rgba(171, 78, 40, 0.92) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="roads"].dark .app-top-bar {
+    background: linear-gradient(90deg, rgba(18, 12, 8, 0.95) 0%, rgba(36, 27, 20, 0.95) 50%, rgba(224, 136, 80, 0.95) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 /* Pointer cursor on interactive controls. Intentionally NOT in a @layer, so it
    beats shadcn's `cursor-default` utility on menu/command items. */

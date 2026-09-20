@@ -2,15 +2,21 @@ import { useSyncExternalStore } from 'react';
 
 export type ResolvedAppearance = 'light' | 'dark';
 export type Appearance = ResolvedAppearance | 'system';
+export type ColorTheme = 'default' | 'roads';
 
 export type UseAppearanceReturn = {
     readonly appearance: Appearance;
     readonly resolvedAppearance: ResolvedAppearance;
     readonly updateAppearance: (mode: Appearance) => void;
+    readonly colorTheme: ColorTheme;
+    readonly updateColorTheme: (theme: ColorTheme) => void;
 };
 
 const listeners = new Set<() => void>();
 let currentAppearance: Appearance = 'system';
+
+const colorThemeListeners = new Set<() => void>();
+let currentColorTheme: ColorTheme = 'default';
 
 const prefersDark = (): boolean => {
     if (typeof window === 'undefined') {
@@ -52,6 +58,18 @@ const applyTheme = (appearance: Appearance): void => {
     document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
 };
 
+const applyColorTheme = (theme: ColorTheme): void => {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    if (theme === 'roads') {
+        document.documentElement.setAttribute('data-theme', 'roads');
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+    }
+};
+
 const subscribe = (callback: () => void) => {
     listeners.add(callback);
 
@@ -59,6 +77,15 @@ const subscribe = (callback: () => void) => {
 };
 
 const notify = (): void => listeners.forEach((listener) => listener());
+
+const subscribeColorTheme = (callback: () => void) => {
+    colorThemeListeners.add(callback);
+
+    return () => colorThemeListeners.delete(callback);
+};
+
+const notifyColorTheme = (): void =>
+    colorThemeListeners.forEach((listener) => listener());
 
 const mediaQuery = (): MediaQueryList | null => {
     if (typeof window === 'undefined') {
@@ -94,6 +121,12 @@ export function useAppearance(): UseAppearanceReturn {
         () => 'system',
     );
 
+    const colorTheme: ColorTheme = useSyncExternalStore(
+        subscribeColorTheme,
+        () => currentColorTheme,
+        () => 'default',
+    );
+
     const resolvedAppearance: ResolvedAppearance = isDarkMode(appearance)
         ? 'dark'
         : 'light';
@@ -111,5 +144,24 @@ export function useAppearance(): UseAppearanceReturn {
         notify();
     };
 
-    return { appearance, resolvedAppearance, updateAppearance } as const;
+    const updateColorTheme = (theme: ColorTheme): void => {
+        currentColorTheme = theme;
+
+        // Store in localStorage for client-side persistence...
+        localStorage.setItem('color-theme', theme);
+
+        // Store in cookie for SSR...
+        setCookie('color-theme', theme);
+
+        applyColorTheme(theme);
+        notifyColorTheme();
+    };
+
+    return {
+        appearance,
+        resolvedAppearance,
+        updateAppearance,
+        colorTheme,
+        updateColorTheme,
+    } as const;
 }

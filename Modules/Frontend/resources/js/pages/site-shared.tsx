@@ -1,16 +1,40 @@
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Menu, X, Sun, Moon } from 'lucide-react';
 import React, { createContext, useContext, useState } from 'react';
-import {route} from 'ziggy-js';
+import { route } from 'ziggy-js';
+import '@/../css/grms-site.css';
 
 export { AppLogoIcon };
 export const PRODUCT_NAME = 'GRMS';
 export const SYSTEM_FULL_NAME_EN = 'Grievance Redress Management System';
 export const SYSTEM_FULL_NAME_ST = 'Tsamaiso ea ho Rarolla Litletlebo';
 export const AUTHORITY = 'Roads Directorate · Government of Lesotho';
+
+export interface ApplicationSettings {
+    project_name?: string | null;
+    short_name?: string | null;
+    tagline?: string | null;
+    description?: string | null;
+    theme?: 'default' | 'roads';
+    logo_url?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    address_line?: string | null;
+    support_hours?: string | null;
+    footer_text?: string | null;
+}
+
+export function useApplicationSettings(): ApplicationSettings {
+    const page = usePage();
+
+    return (
+        (page.props.applicationSettings as ApplicationSettings | undefined) ??
+        {}
+    );
+}
 
 // Routes — point these at your real Laravel routes.
 export const LOGIN_URL = route('login');
@@ -25,8 +49,15 @@ export type IconType = React.ComponentType<{
 }>;
 
 // ---------- Theme ----------
+//
+// These read/write the SAME localStorage keys ('appearance' and
+// 'color-theme') that resources/js/hooks/use-appearance.tsx uses for the
+// post-login app. That's what keeps a choice made here and a choice made
+// in the app in sync with each other across page loads.
 
 export type Theme = 'light' | 'dark';
+export type ColorTheme = 'default' | 'roads';
+
 export const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>(
     {
         theme: 'light',
@@ -34,6 +65,45 @@ export const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>(
     },
 );
 export const useTheme = () => useContext(ThemeContext);
+
+export const ColorThemeContext = createContext<{
+    colorTheme: ColorTheme;
+    toggle: () => void;
+}>({
+    colorTheme: 'default',
+    toggle: () => {},
+});
+export const useColorTheme = () => useContext(ColorThemeContext);
+
+const prefersDarkOS = (): boolean =>
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+const getInitialTheme = (): Theme => {
+    if (typeof window === 'undefined') {
+        return 'light';
+    }
+
+    const stored = localStorage.getItem('appearance'); // 'light' | 'dark' | 'system' | null
+    if (stored === 'dark') {
+        return 'dark';
+    }
+
+    if (stored === 'light') {
+        return 'light';
+    }
+
+    return prefersDarkOS() ? 'dark' : 'light'; // 'system' or unset
+};
+
+const persist = (name: string, value: string): void => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    localStorage.setItem(name, value);
+    document.cookie = `${name}=${value};path=/;max-age=${365 * 24 * 60 * 60};SameSite=Lax`;
+};
 
 // ---------- Language ----------
 
@@ -98,7 +168,11 @@ export interface Translations {
     audiences: { heading: string; tabs: { label: string; points: string[] }[] };
     security: { heading: string; items: { title: string; desc: string }[] };
     cta: { heading: string; sub: string; button: string };
-    combobox: { placeholder: string; searchPlaceholder: string; emptyText: string };
+    combobox: {
+        placeholder: string;
+        searchPlaceholder: string;
+        emptyText: string;
+    };
     faqPage: {
         eyebrow: string;
         title: string;
@@ -748,79 +822,15 @@ export const LanguageContext = createContext<{
 export const useI18n = () => useContext(LanguageContext);
 
 // ---------- Global styles ----------
-
+//
+// The palette, keyframes and base rules that used to live in this inline
+// <style> block now live in grms-site.css (imported at the top of this
+// file), so both light/dark AND the roads/default color theme are real,
+// cacheable CSS instead of a template string re-rendered on every toggle.
+// Kept as a no-op component so existing <FontStyles /> call sites don't
+// need to change.
 export function FontStyles() {
-    return (
-        <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
-      .grms-root {
-        --bg-page: #F5F8FC;
-        --bg-raised: #FFFFFF;
-        --bg-inverse: #002B70;
-        --bg-page-translucent: rgba(245,248,252,0.94);
-        --text-primary: #102A43;
-        --text-secondary: #486581;
-        --text-on-inverse: #FFFFFF;
-        --text-on-inverse-secondary: #D9E8FF;
-        --border: #C9D8EA;
-        --accent: #003DA5;
-        --accent-dark: #007A3D;
-        --resolved: #1E7145;
-        --resolved-bg: #E1EFE6;
-        --ridge-1: #DCEBFA;
-        --ridge-2: #B9D4F1;
-        --ridge-3: #8DB8E3;
-        font-family: 'IBM Plex Sans', sans-serif;
-        color: var(--text-primary);
-        background: var(--bg-page);
-        transition: background 0.2s ease, color 0.2s ease;
-      }
-      .grms-root.dark {
-        --bg-page: #10182B;
-        --bg-raised: #182238;
-        --bg-inverse: #061A3A;
-        --bg-page-translucent: rgba(16,24,43,0.92);
-        --text-primary: #ECEAE0;
-        --text-secondary: #A7B0C4;
-        --text-on-inverse: #ECEAE0;
-        --text-on-inverse-secondary: #8790A6;
-        --border: #2A3350;
-        --accent: #6CA8FF;
-        --accent-dark: #43B66D;
-        --resolved: #4CA37A;
-        --resolved-bg: #16281F;
-        --ridge-1: #102A4C;
-        --ridge-2: #12355F;
-        --ridge-3: #1D559C;
-      }
-      .grms-root .font-display { font-family: 'Source Serif 4', serif; }
-      .grms-root .font-mono { font-family: 'IBM Plex Mono', monospace; }
-      @media (prefers-reduced-motion: reduce) {
-        .grms-road-line { animation: none !important; }
-      }
-      @keyframes grms-road-draw {
-        from { stroke-dashoffset: 240; }
-        to { stroke-dashoffset: 0; }
-      }
-      .grms-road-line {
-        stroke-dasharray: 6 6;
-        animation: grms-road-draw 6s linear infinite;
-      }
-      .grms-root input, .grms-root textarea {
-        background: var(--bg-raised);
-        border: 1px solid var(--border);
-        color: var(--text-primary);
-        border-radius: 6px;
-        padding: 10px 12px;
-        font-size: 0.875rem;
-        width: 100%;
-        outline: none;
-      }
-      .grms-root input:focus, .grms-root textarea:focus {
-        border-color: var(--accent);
-      }
-    `}</style>
-    );
+    return null;
 }
 
 // ---------- Decorative backgrounds (grievance / road / resolution motif) ----------
@@ -971,11 +981,28 @@ export function RoadDivider() {
 // ---------- Page shell (theme + language providers) ----------
 
 export function PageShell({ children }: { children: React.ReactNode }) {
-    const [theme, setTheme] = useState<Theme>('light');
+    const settings = useApplicationSettings();
+    // Lazy initializers so the very first render already reflects whatever
+    // was picked in the app (or on a previous visit here) — no flash of
+    // the wrong theme, and no more always-resetting to 'light'.
+    const [theme, setTheme] = useState<Theme>(getInitialTheme);
+    const colorTheme: ColorTheme =
+        settings.theme === 'roads' ? 'roads' : 'default';
     const [lang, setLang] = useState<Lang>('en');
+
     const themeValue = {
         theme,
-        toggle: () => setTheme((v) => (v === 'light' ? 'dark' : 'light')),
+        toggle: () =>
+            setTheme((v) => {
+                const next: Theme = v === 'light' ? 'dark' : 'light';
+                persist('appearance', next);
+                return next;
+            }),
+    };
+    const colorThemeValue = {
+        colorTheme,
+
+        toggle: () => {},
     };
     const langValue = {
         lang,
@@ -985,19 +1012,23 @@ export function PageShell({ children }: { children: React.ReactNode }) {
 
     return (
         <ThemeContext.Provider value={themeValue}>
-            <LanguageContext.Provider value={langValue}>
-                <Shell>{children}</Shell>
-            </LanguageContext.Provider>
+            <ColorThemeContext.Provider value={colorThemeValue}>
+                <LanguageContext.Provider value={langValue}>
+                    <Shell>{children}</Shell>
+                </LanguageContext.Provider>
+            </ColorThemeContext.Provider>
         </ThemeContext.Provider>
     );
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
     const { theme } = useTheme();
+    const { colorTheme } = useColorTheme();
 
     return (
         <div
             className={`grms-root min-h-screen ${theme === 'dark' ? 'dark' : ''}`}
+            data-theme={colorTheme === 'roads' ? 'roads' : undefined}
         >
             <FontStyles />
             {children}
@@ -1060,6 +1091,7 @@ function ThemeToggle() {
 export function NavBar() {
     const [open, setOpen] = useState(false);
     const { t } = useI18n();
+    const settings = useApplicationSettings();
     const links = [
         { label: t.nav.product, href: `${HOME_URL}#features` },
         { label: t.nav.howItWorks, href: `${HOME_URL}#how-it-works` },
@@ -1088,25 +1120,27 @@ export function NavBar() {
                 {t.funding}
             </div>
             <div className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-6 py-3.5">
-{/* Left: logo + project name */}
+                {/* Left: logo + project name */}
                 <Link
                     href={HOME_URL}
                     className="flex shrink-0 items-center gap-2.5"
                 >
                     <img
-                        src="/logo.png"
-                        alt={PRODUCT_NAME}
+                        src={settings.logo_url ?? '/logo.png'}
+                        alt={settings.short_name ?? PRODUCT_NAME}
                         className="h-9 w-9 rounded-sm object-contain"
                     />
                     <div className="hidden leading-tight sm:block">
                         <div className="font-display text-lg font-semibold tracking-tight whitespace-nowrap">
-                            {PRODUCT_NAME}
+                            {settings.short_name ??
+                                settings.project_name ??
+                                PRODUCT_NAME}
                         </div>
                         <div
                             className="text-[11px] whitespace-nowrap"
                             style={{ color: 'var(--text-secondary)' }}
                         >
-                            {AUTHORITY}
+                            {settings.tagline ?? AUTHORITY}
                         </div>
                     </div>
                 </Link>
@@ -1183,14 +1217,14 @@ export function NavBar() {
                             {l.label}
                         </Link>
                     ))}
-                        <Button
-                            asChild
-                            variant="outline"
-                            className="w-full"
-                            style={{ borderColor: 'var(--border)' }}
-                        >
-                            <Link href={LOGIN_URL}>{t.nav.signIn}</Link>
-                        </Button>
+                    <Button
+                        asChild
+                        variant="outline"
+                        className="w-full"
+                        style={{ borderColor: 'var(--border)' }}
+                    >
+                        <Link href={LOGIN_URL}>{t.nav.signIn}</Link>
+                    </Button>
                 </div>
             )}
         </header>
@@ -1201,6 +1235,7 @@ export function NavBar() {
 
 export function Footer() {
     const { t } = useI18n();
+    const settings = useApplicationSettings();
 
     return (
         <footer className="border-t" style={{ borderColor: 'var(--border)' }}>
@@ -1208,20 +1243,24 @@ export function Footer() {
                 <div className="col-span-2 md:col-span-1">
                     <div className="mb-3 flex items-center gap-2">
                         <img
-                            src="/logo.png"
-                            alt={PRODUCT_NAME}
+                            src={settings.logo_url ?? '/logo.png'}
+                            alt={settings.short_name ?? PRODUCT_NAME}
                             className="h-4 w-4 object-contain"
-                            style={{ filter: 'drop-shadow(0 0 2px var(--accent))' }}
+                            style={{
+                                filter: 'drop-shadow(0 0 2px var(--accent))',
+                            }}
                         />
                         <span className="font-display font-semibold">
-                            {PRODUCT_NAME}
+                            {settings.short_name ??
+                                settings.project_name ??
+                                PRODUCT_NAME}
                         </span>
                     </div>
                     <p
                         className="mb-3 text-xs"
                         style={{ color: 'var(--text-secondary)' }}
                     >
-                        {t.footer.tagline}
+                        {settings.tagline ?? t.footer.tagline}
                     </p>
                     <p
                         className="text-xs leading-relaxed"
@@ -1305,7 +1344,10 @@ export function Footer() {
                     >
                         {t.footer.colContact}
                     </p>
-                    {t.contactPage.addressLines.map((line) => (
+                    {(settings.address_line
+                        ? [settings.address_line]
+                        : t.contactPage.addressLines
+                    ).map((line) => (
                         <p
                             key={line}
                             className="text-sm"
@@ -1318,13 +1360,13 @@ export function Footer() {
                         className="text-sm"
                         style={{ color: 'var(--text-secondary)' }}
                     >
-                        {t.contactPage.email}
+                        {settings.email ?? t.contactPage.email}
                     </p>
                     <p
                         className="text-sm"
                         style={{ color: 'var(--text-secondary)' }}
                     >
-                        {t.contactPage.phone}
+                        {settings.phone ?? t.contactPage.phone}
                     </p>
                 </div>
             </div>
@@ -1335,7 +1377,8 @@ export function Footer() {
                     color: 'var(--text-secondary)',
                 }}
             >
-                © {new Date().getFullYear()} {AUTHORITY}
+                {settings.footer_text ??
+                    `© ${new Date().getFullYear()} ${AUTHORITY}`}
             </div>
         </footer>
     );
