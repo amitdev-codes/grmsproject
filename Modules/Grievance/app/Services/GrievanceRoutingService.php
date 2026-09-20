@@ -129,6 +129,23 @@ class GrievanceRoutingService
         return $grievance;
     }
 
+    public function startInvestigation(Grievance $grievance, User $actor, ?string $remarks = null): Grievance
+    {
+        $from = $grievance->status;
+        $grievance = $this->grievances->update($grievance, ['status' => 'in_progress']);
+
+        $this->grievances->recordStatus(
+            $grievance,
+            $from,
+            'in_progress',
+            $actor->id,
+            $actor->getRoleNames()->first(),
+            $remarks,
+        );
+
+        return $grievance;
+    }
+
     public function close(Grievance $grievance, User $actor, string $reason): Grievance
     {
         $from = $grievance->status;

@@ -12,6 +12,7 @@ use Modules\Grievance\Http\Requests\CloseGrievanceRequest;
 use Modules\Grievance\Http\Requests\RejectAllocationRequest;
 use Modules\Grievance\Http\Requests\RejectGrievanceRequest;
 use Modules\Grievance\Http\Requests\ResolveGrievanceRequest;
+use Modules\Grievance\Http\Requests\StartInvestigationRequest;
 use Modules\Grievance\Models\Grievance;
 use Modules\Grievance\Services\GrievanceRoutingService;
 
@@ -74,6 +75,13 @@ class GrievanceRoutingController extends Controller
         $this->routing->resolve($grievance, $request->user(), $request->validated('reason'));
 
         return back()->with('success', 'Grievance resolved with a recorded reason.');
+    }
+
+    public function startInvestigation(StartInvestigationRequest $request, Grievance $grievance): RedirectResponse
+    {
+        $this->routing->startInvestigation($grievance, $request->user(), $request->validated('remarks'));
+
+        return redirect()->route('grievances.pending')->with('success', 'Investigation started.');
     }
 
     public function close(CloseGrievanceRequest $request, Grievance $grievance): RedirectResponse

@@ -85,4 +85,7 @@ Route::middleware(['auth', 'verified'])->prefix('grievances')->name('grievances.
     Route::post('/{grievance}/resolve', [GrievanceRoutingController::class, 'resolve'])
         ->middleware(['role:Helpdesk Officer|Section Manager|Director|Super Admin', 'permission:grievances.resolve'])
         ->name('resolve');
+    Route::post('/{grievance}/start-investigation', [GrievanceRoutingController::class, 'startInvestigation'])
+        ->middleware(['role:Helpdesk Officer|Content Editor', 'permission:grievances.edit'])
+        ->name('start-investigation');
 });

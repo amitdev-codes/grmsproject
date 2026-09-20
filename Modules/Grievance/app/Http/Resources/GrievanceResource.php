@@ -4,6 +4,7 @@ namespace Modules\Grievance\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Grievance\Enums\GrievanceStatus;
 use Modules\Grievance\Models\Grievance;
 
 class GrievanceResource extends JsonResource
@@ -16,6 +17,7 @@ class GrievanceResource extends JsonResource
             'description' => $this->description,
             'remarks' => $this->closed_reason,
             'status' => $this->status,
+            'status_label' => GrievanceStatus::tryFrom($this->status)?->label() ?? str_replace('_', ' ', ucfirst($this->status)),
             'priority' => $this->priority,
             'is_anonymous' => $this->is_anonymous,
             'complainant_name' => $this->complainant_name,
@@ -37,6 +39,11 @@ class GrievanceResource extends JsonResource
             'section' => $this->whenLoaded('section', fn () => $this->section ? [
                 'id' => $this->section->id, 'name' => $this->section->name,
             ] : null),
+            'assigned_officer_id' => $this->assigned_officer_id,
+            'assigned_officer' => $this->whenLoaded('assignedOfficer', fn () => $this->assignedOfficer ? [
+                'id' => $this->assignedOfficer->id,
+                'name' => $this->assignedOfficer->name,
+            ] : null),
             'attachments' => $this->getMedia(Grievance::MEDIA_COLLECTION)->map(fn ($m) => [
                 'id' => $m->id,
                 'name' => $m->name,
@@ -50,6 +57,7 @@ class GrievanceResource extends JsonResource
                 'id' => $history->id,
                 'from_status' => $history->from_status,
                 'to_status' => $history->to_status,
+                'to_status_label' => GrievanceStatus::tryFrom($history->to_status)?->label() ?? str_replace('_', ' ', ucfirst($history->to_status)),
                 'actor_role' => $history->actor_role,
                 'reason' => $history->reason,
                 'created_at' => $history->created_at,

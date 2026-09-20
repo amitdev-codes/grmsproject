@@ -47,7 +47,7 @@ export function GrievanceViewContent({ grievance }: { grievance: Grievance }) {
                 <Field label="Section" value={grievance.section?.name} />
                 <Field
                     label="Assigned Officer"
-                    value="Assigned through Section Manager workflow"
+                    value={grievance.assigned_officer?.name}
                 />
                 <Field label="Submitted Via" value={grievance.channel?.name} />
                 <Field

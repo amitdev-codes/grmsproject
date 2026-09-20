@@ -119,7 +119,7 @@ export function AppTopMenu() {
             icon: ClipboardList,
             permission: 'grievances.view',
             badge: pendingGrievances.count,
-            visible: isPrivileged || pendingGrievances.visible,
+            visible: pendingGrievances.visible,
         },
         {
             label: 'menu.grievances',

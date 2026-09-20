@@ -48,6 +48,7 @@ export interface StatusHistory {
     id: number;
     from_status: string | null;
     to_status: string;
+    to_status_label?: string;
     actor_role: string | null;
     reason: string | null;
     created_at: string;
@@ -71,6 +72,8 @@ export interface Grievance {
     // Not yet present on GrievanceResource — add once the movement/routing module lands.
     division?: Division | null;
     section?: Section | null;
+    assigned_officer_id?: number | null;
+    assigned_officer?: { id: number; name: string } | null;
     sla_due_at?: string | null;
     attachments: Attachment[];
     status_histories?: StatusHistory[];

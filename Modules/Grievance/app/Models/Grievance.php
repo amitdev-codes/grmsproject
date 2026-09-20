@@ -127,4 +127,9 @@ class Grievance extends Model implements Auditable, HasMedia
     {
         return $this->hasMany(GrievanceStatusHistory::class);
     }
+
+    public function resolutions(): HasMany
+    {
+        return $this->hasMany(Resolution::class);
+    }
 }

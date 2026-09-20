@@ -2,6 +2,7 @@
 
 namespace Modules\Grievance\Repositories;
 
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -78,6 +79,10 @@ class GrievanceRepository implements GrievanceRepositoryInterface
             ->when($filters['division_id'] ?? null, fn ($q, $v) => $q->where('division_id', $v))
             ->when($filters['section_id'] ?? null, fn ($q, $v) => $q->where('section_id', $v))
             ->when($filters['assigned_officer_id'] ?? null, fn ($q, $v) => $q->where('assigned_officer_id', $v))
+            ->when($filters['terminal_assigned_to'] ?? null, fn ($q, $v) => $q->where(function ($query) use ($v) {
+                $query->whereNotIn('status', ['resolved', 'closed'])
+                    ->orWhere('assigned_officer_id', $v);
+            }))
             ->when($filters['pending_no_division'] ?? false, fn ($q) => $q->whereNull('division_id'))
             ->when($filters['date_from'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
             ->when($filters['date_to'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
@@ -118,12 +123,33 @@ class GrievanceRepository implements GrievanceRepositoryInterface
             'actor_role' => $actorRole,
             'reason' => $reason,
         ]);
+
+        $actor = $actorId ? User::find($actorId) : null;
+
+        $activity = activity('grievance')
+            ->performedOn($grievance)
+            ->event('status_changed')
+            ->withProperties([
+                'from_status' => $from,
+                'to_status' => $to,
+                'actor_role' => $actorRole,
+                'reason' => $reason,
+                'division_id' => $grievance->division_id,
+                'section_id' => $grievance->section_id,
+                'assigned_officer_id' => $grievance->assigned_officer_id,
+            ]);
+
+        if ($actor) {
+            $activity->causedBy($actor);
+        }
+
+        $activity->log("Grievance {$grievance->reference_no} changed from {$from} to {$to}.");
     }
     // EloquentGrievanceRepository
 
     public function findForTracking(string $referenceNo, ?string $contact): ?Grievance
     {
-        $grievance = Grievance::with(['category', 'channel', 'district', 'statusHistories', 'messages'])
+        $grievance = Grievance::with(['category', 'channel', 'district', 'statusHistories', 'messages', 'resolutions'])
             ->where('reference_no', $referenceNo)
             ->first();
 

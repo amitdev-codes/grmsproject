@@ -220,6 +220,14 @@ export default function Form({
         );
     };
 
+    const startInvestigation = () => {
+        router.post(
+            route('grievances.start-investigation', grievance!.id),
+            { remarks: data.remarks },
+            { preserveScroll: true },
+        );
+    };
+
     const submit = (e: React.SyntheticEvent) => {
         e.preventDefault();
 
@@ -710,6 +718,15 @@ export default function Form({
                                 onClick={() => workflowAction('reject')}
                             >
                                 {t('Reject')}
+                            </Button>
+                        )}
+                    {roles.some((role) =>
+                        ['Helpdesk Officer', 'Content Editor'].includes(role),
+                    ) &&
+                        grievance!.assigned_officer_id === user?.id &&
+                        grievance!.status === 'assigned_officer' && (
+                            <Button type="button" onClick={startInvestigation}>
+                                {t('Start investigation')}
                             </Button>
                         )}
                     {roles.includes('Helpdesk Officer') &&

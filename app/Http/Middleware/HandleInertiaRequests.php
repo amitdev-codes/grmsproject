@@ -101,7 +101,7 @@ class HandleInertiaRequests extends Middleware
         $query = Grievance::query();
         $href = '/grievances?pending=1';
 
-        if ($user->hasAnyRole(['Director', 'Super Admin', 'IT Admin', 'Admin', 'Developer'])) {
+        if ($user->hasRole('Director')) {
             $query->whereIn('status', ['submitted', 'reallocation_required'])->whereNull('division_id');
             $href = '/grievances?pending=1';
         } elseif ($user->hasRole('Division Director') && $user->division_id) {

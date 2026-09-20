@@ -1,7 +1,8 @@
 // components/layouts/IndexLayout.tsx
 
 import { Head } from '@inertiajs/react';
-import Breadcrumb, { type BreadcrumbItem } from '@/components/Breadcrumb';
+import Breadcrumb from '@/components/Breadcrumb';
+import type { BreadcrumbItem } from '@/components/Breadcrumb';
 
 interface IndexLayoutProps {
     title: string;
@@ -20,7 +21,7 @@ export default function IndexLayout({
         <>
             <Head title={headTitle ?? title} />
 
-            <div className="flex flex-col gap-2 p-2">
+            <div className="flex flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:p-6">
                 <Breadcrumb items={breadcrumbs} />
                 {children}
             </div>

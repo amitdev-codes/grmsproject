@@ -34,11 +34,12 @@ class GrievanceController extends Controller
             'channel', 'status', 'category_id', 'district_id',
             'division_id', 'section_id', 'date_from', 'date_to', 'search',
         ]);
+        $filters['terminal_assigned_to'] = $request->user()->id;
 
         if ($request->boolean('pending') || $request->routeIs('grievances.pending')) {
             $user = $request->user();
 
-            if ($user->hasAnyRole(['Director', 'Super Admin', 'IT Admin', 'Admin', 'Developer'])) {
+            if ($user->hasRole('Director')) {
                 $filters['status'] = ['submitted', 'reallocation_required'];
                 $filters['pending_no_division'] = true;
             } elseif ($user->hasRole('Division Director') && $user->division_id) {
@@ -118,7 +119,7 @@ class GrievanceController extends Controller
 
     public function edit(Grievance $grievance): Response
     {
-        $grievance->load(['category', 'channel', 'district', 'division', 'section', 'media', 'statusHistories']);
+        $grievance->load(['category', 'channel', 'district', 'division', 'section', 'assignedOfficer', 'media', 'statusHistories']);
 
         return Inertia::render('Grievance::Grievances/GrievanceForm', [
             'grievance' => new GrievanceResource($grievance),
