@@ -15,8 +15,8 @@ class ApplicationSettingSeeder extends Seeder
                 // Identity
                 'project_name' => 'Grievance Redress Management System',
                 'short_name' => 'GRMS',
-                'tagline' => 'Register, track, and resolve grievances transparently.',
-                'description' => 'A national platform for citizens to register grievances against government services and track their resolution through to closure.',
+                'tagline' => 'A clear path from grievance to resolution.',
+                'description' => 'The Roads Directorate Grievance Redress Management System helps people file, track, and resolve concerns about public services, road works, land, resettlement, and contractors across Lesotho.',
 
                 // Branding
                 'logo_path' => null,
@@ -44,14 +44,17 @@ class ApplicationSettingSeeder extends Seeder
                 ],
 
                 // SEO
-                'seo_title' => 'GRMS — Grievance Redress Management System',
-                'seo_description' => 'Register and track grievances against government services online.',
-                'seo_keywords' => 'grievance, complaint, redress, lesotho, government',
+                'seo_title' => 'File and Track a Grievance | Roads Directorate GRMS',
+                'seo_description' => 'File, track, and resolve a grievance with the Roads Directorate Grievance Redress Management System in Lesotho.',
+                'seo_keywords' => 'Lesotho grievance redress, Roads Directorate complaints, file grievance, track complaint, road works complaints, public service complaints',
                 'og_image_path' => null,
                 'seo_meta' => [
                     'robots' => 'index, follow',
                     'twitter_card' => 'summary_large_image',
                     'canonical_url' => null,
+                    'author' => 'Roads Directorate, Government of Lesotho',
+                    'og_type' => 'website',
+                    'og_locale' => 'en_LS',
                 ],
 
                 // GRMS config

@@ -4,6 +4,7 @@ namespace Modules\Setting\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Modules\Setting\Models\ApplicationSetting;
 
 class UpdateApplicationSettingRequest extends FormRequest
 {
@@ -14,10 +15,18 @@ class UpdateApplicationSettingRequest extends FormRequest
 
     public function rules(): array
     {
+        $currentSettings = ApplicationSetting::current();
+
         return [
             // Identity
             'project_name' => ['required', 'string', 'max:255'],
-            'project_slug' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('application_settings', 'project_slug')->ignore($this->route('setting')?->id)],
+            'project_slug' => [
+                'required',
+                'string',
+                'max:255',
+                'alpha_dash',
+                Rule::unique('application_settings', 'project_slug')->ignore($currentSettings->id),
+            ],
             'short_name' => ['nullable', 'string', 'max:50'],
             'tagline' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],

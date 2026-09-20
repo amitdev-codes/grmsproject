@@ -271,7 +271,6 @@ export function AppTopMenu() {
                     title: 'menu.application_settings',
                     href: '/settings/application',
                     icon: Globe,
-                    permission: 'settings.edit',
                 },
             ],
         },
