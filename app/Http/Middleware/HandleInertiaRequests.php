@@ -81,7 +81,7 @@ class HandleInertiaRequests extends Middleware
     /**
      * Return the queue the signed-in user can act on next.
      *
-     * @return array{count: int, href: string, label: string}
+     * @return array{count: int, href: string, label: string, visible: bool}
      */
     protected function pendingGrievances(?object $user): array
     {
@@ -92,15 +92,17 @@ class HandleInertiaRequests extends Middleware
         $query = Grievance::query();
         $href = '/grievances?pending=1';
 
-        if ($user->hasAnyRole(['Director', 'Super Admin'])) {
+        if ($user->hasAnyRole(['Director', 'Super Admin', 'IT Admin', 'Admin', 'Developer'])) {
             $query->whereIn('status', ['submitted', 'reallocation_required'])->whereNull('division_id');
-            $href = '/grievances/triage';
+            $href = '/grievances?pending=1';
         } elseif ($user->hasRole('Division Director') && $user->division_id) {
             $query->where('status', 'allocated_division')->where('division_id', $user->division_id);
             $href = '/grievances/division-queue';
         } elseif ($user->hasRole('Section Manager') && $user->section_id) {
             $query->where('status', 'allocated_section')->where('section_id', $user->section_id);
-            $href = '/grievances/section-queue';
+        } elseif ($user->hasAnyRole(['Helpdesk Officer', 'Content Editor'])) {
+            $query->whereIn('status', ['assigned_officer', 'assigned', 'in_progress', 'escalated'])
+                ->where('assigned_officer_id', $user->id);
         } else {
             return ['count' => 0, 'href' => $href, 'label' => 'Pending Grievances', 'visible' => false];
         }

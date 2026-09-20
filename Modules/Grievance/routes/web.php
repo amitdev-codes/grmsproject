@@ -44,17 +44,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('resolutions', ResolutionController::class)->names('resolutions');
 });
 // Route::middleware(['auth', 'role:Helpdesk Officer|IT Admin|Super Admin'])
-Route::middleware(['auth'])
+Route::middleware(['auth', 'verified', 'permission:grievances.view'])
     ->prefix('grievances')->name('grievances.')->group(function () {
         Route::get('/', [GrievanceController::class, 'index'])->name('index');
-        Route::get('/export', [GrievanceController::class, 'export'])->name('export');
+        Route::get('/export', [GrievanceController::class, 'export'])->middleware('permission:grievances.export')->name('export');
         Route::get('/pending', [GrievanceController::class, 'index'])->name('pending');
-        Route::get('/create', [GrievanceController::class, 'create'])->name('create');
-        Route::post('/', [GrievanceController::class, 'store'])->name('store');
-        Route::get('/{grievance}/edit', [GrievanceController::class, 'edit'])->name('edit');
-        Route::put('/{grievance}', [GrievanceController::class, 'update'])->name('update');
-        Route::delete('/{grievance}', [GrievanceController::class, 'destroy'])->name('destroy');
-        Route::delete('/bulk', [GrievanceController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::get('/create', [GrievanceController::class, 'create'])->middleware('permission:grievances.create')->name('create');
+        Route::post('/', [GrievanceController::class, 'store'])->middleware('permission:grievances.create')->name('store');
+        Route::get('/{grievance}/edit', [GrievanceController::class, 'edit'])->middleware('permission:grievances.edit')->name('edit');
+        Route::put('/{grievance}', [GrievanceController::class, 'update'])->middleware('permission:grievances.edit')->name('update');
+        Route::delete('/bulk', [GrievanceController::class, 'bulkDestroy'])->middleware('permission:grievances.delete')->name('bulk-destroy');
+        Route::delete('/{grievance}', [GrievanceController::class, 'destroy'])->middleware('permission:grievances.delete')->name('destroy');
     });
 Route::prefix('grievances')->group(function () {
     Route::get('/captcha', [PublicGrievanceController::class, 'captcha']);
@@ -62,22 +62,26 @@ Route::prefix('grievances')->group(function () {
     Route::get('/track', [PublicGrievanceController::class, 'track']);
     Route::post('/{grievance:reference_no}/messages', [PublicGrievanceController::class, 'storeMessage']);
 });
-Route::middleware(['auth'])->prefix('grievances')->name('grievances.')->group(function () {
-    Route::middleware('role:Director|Super Admin')->group(function () {
+Route::middleware(['auth', 'verified'])->prefix('grievances')->name('grievances.')->group(function () {
+    Route::middleware(['role:Director|Super Admin', 'permission:grievances.view'])->group(function () {
         Route::get('/triage', [GrievanceRoutingController::class, 'triageQueue'])->name('triage');
-        Route::post('/{grievance}/allocate-division', [GrievanceRoutingController::class, 'allocateDivision'])->name('allocate-division');
-        Route::post('/{grievance}/reject', [GrievanceRoutingController::class, 'reject'])->name('reject');
-        Route::post('/{grievance}/close', [GrievanceRoutingController::class, 'close'])->name('close');
+        Route::post('/{grievance}/allocate-division', [GrievanceRoutingController::class, 'allocateDivision'])->middleware('permission:grievances.allocate')->name('allocate-division');
+        Route::post('/{grievance}/reject', [GrievanceRoutingController::class, 'reject'])->middleware('permission:grievances.close')->name('reject');
+        Route::post('/{grievance}/close', [GrievanceRoutingController::class, 'close'])->middleware('permission:grievances.close')->name('close');
     });
 
-    Route::middleware('role:Division Director|Super Admin')->group(function () {
+    Route::middleware(['role:Division Director|Super Admin', 'permission:grievances.allocate'])->group(function () {
         Route::get('/division-queue', [GrievanceRoutingController::class, 'divisionQueue'])->name('division-queue');
         Route::post('/{grievance}/allocate-section', [GrievanceRoutingController::class, 'allocateSection'])->name('allocate-section');
     });
 
-    Route::middleware('role:Section Manager|Super Admin')->group(function () {
+    Route::middleware(['role:Section Manager|Super Admin', 'permission:grievances.assign'])->group(function () {
         Route::get('/section-queue', [GrievanceRoutingController::class, 'sectionQueue'])->name('section-queue');
         Route::post('/{grievance}/reject-allocation', [GrievanceRoutingController::class, 'rejectAllocation'])->name('reject-allocation');
         Route::post('/{grievance}/assign-officer', [GrievanceRoutingController::class, 'assignOfficer'])->name('assign-officer');
     });
+
+    Route::post('/{grievance}/resolve', [GrievanceRoutingController::class, 'resolve'])
+        ->middleware(['role:Helpdesk Officer|Section Manager|Director|Super Admin', 'permission:grievances.resolve'])
+        ->name('resolve');
 });

@@ -46,6 +46,9 @@ class GrievanceController extends Controller
             } elseif ($user->hasRole('Section Manager') && $user->section_id) {
                 $filters['status'] = 'allocated_section';
                 $filters['section_id'] = $user->section_id;
+            } elseif ($user->hasAnyRole(['Helpdesk Officer', 'Content Editor'])) {
+                $filters['status'] = ['assigned_officer', 'assigned', 'in_progress', 'escalated'];
+                $filters['assigned_officer_id'] = $user->id;
             } else {
                 abort(403);
             }
@@ -112,13 +115,18 @@ class GrievanceController extends Controller
 
     public function edit(Grievance $grievance): Response
     {
+        $grievance->load(['category', 'channel', 'district', 'division', 'section', 'media']);
+
         return Inertia::render('Grievance::Grievances/GrievanceForm', [
-            'grievance' => new GrievanceResource($grievance->load('category', 'channel', 'district', 'division', 'section', 'media')),
+            'grievance' => new GrievanceResource($grievance),
             'categories' => GrievanceCategory::active()->get(['id', 'code', 'name_en']),
             'channels' => GrievanceChannel::active()->get(['id', 'code', 'name']),
             'districts' => District::orderBy('name')->get(['id', 'code', 'name']),
             'divisions' => Division::orderBy('name')->get(['id', 'code', 'name']),
-            'sections' => Section::orderBy('name')->get(['id', 'code', 'name']),
+            'sections' => Section::query()
+                ->when($grievance->division_id, fn ($query) => $query->where('division_id', $grievance->division_id))
+                ->orderBy('name')
+                ->get(['id', 'code', 'name', 'division_id']),
         ]);
     }
 

@@ -77,6 +77,7 @@ class GrievanceRepository implements GrievanceRepositoryInterface
             ->when($filters['district_id'] ?? null, fn ($q, $v) => $q->where('district_id', $v))
             ->when($filters['division_id'] ?? null, fn ($q, $v) => $q->where('division_id', $v))
             ->when($filters['section_id'] ?? null, fn ($q, $v) => $q->where('section_id', $v))
+            ->when($filters['assigned_officer_id'] ?? null, fn ($q, $v) => $q->where('assigned_officer_id', $v))
             ->when($filters['pending_no_division'] ?? false, fn ($q) => $q->whereNull('division_id'))
             ->when($filters['date_from'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
             ->when($filters['date_to'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '<=', $v))

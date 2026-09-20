@@ -2,13 +2,28 @@
 
 This document follows a grievance from submission through routing, investigation, resolution, and closure.
 
+## 0. Development login accounts and first owner
+
+The fixed development accounts use the password `password` and can authenticate with **username, email, or phone**:
+
+| Role | Username | Email | Phone | First workflow responsibility |
+| --- | --- | --- | --- | --- |
+| Director | `director` | `director@grms.com` | `+266 58000003` | Receives cases that cannot be automatically assigned to a division; can triage and allocate them. |
+| Division Director | `division.director` | `division.director@grms.com` | `+266 58000004` | Receives cases automatically allocated to division `NR`; allocates them to a section. |
+| Section Manager | `section.manager` | `section.manager@grms.com` | `+266 58000005` | Receives cases allocated to section `Berea Section`; assigns an investigating officer. |
+| Helpdesk Officer | `helpdesk.officer` | `helpdesk@grms.com` | `+266 58000006` | Registers staff-mediated cases and investigates cases after assignment. |
+
+After changing role permissions or seeded account scopes, run the User Management database seeder so Spatie role permissions and fixed account assignments are refreshed.
+
+**First owner rule:** after submission, the case belongs to the responsible Division Director when category/district routing resolves a division. It belongs to the Director only when routing cannot resolve a division. It is not sent to all roles. The investigating officer receives a notification only after the Section Manager assigns that officer.
+
 ## 1. Submission channels
 
 All intake paths are normalised into `GrievanceIntakeData`. The registration service is the single application entry point that creates a grievance row.
 
 | Channel | Code | Intake behavior |
 | --- | --- | --- |
-| Public web form | `web` | `POST /grievances/add`; validates the CAPTCHA, accepts attachments, creates the reference immediately, then dispatches asynchronous processing. |
+| Public web form | `web` | `POST /grievances/add`; validates the CAPTCHA, accepts attachments, creates the reference, then completes classification/routing before returning so the responsible manager notification is available immediately. |
 | Mobile API | `mobile_app` | Supported by `GrievanceIntakeData::fromMobileApi`; the authenticated API resource is available under `/api/v1/grievances`. |
 | SMS | `sms` | Parses the message and optional category/district codes; free text can be classified by AI. |
 | USSD | `ussd` | Captures category, district, description, and phone through the USSD flow. |
@@ -27,7 +42,7 @@ The quick registration path performs one database transaction:
 4. Preserves anonymous submissions without contact details.
 5. Returns the reference number to the web client when the public form is used.
 
-Public web submissions use `submitQuick()` and dispatch `SubmitGrievanceJob` after the row is created. This keeps the reference response fast. SMS, USSD, and the legacy staff registration path use the full `submit()` flow and process classification/routing in the request path.
+Public web submissions use `submitQuick()` and run `SubmitGrievanceJob` synchronously after the row is created. This guarantees that classification, routing, acknowledgement, and the responsible-manager notification exist when the response returns. SMS, USSD, and the staff registration path use the full `submit()` flow and process classification/routing in the request path.
 
 ## 3. Classification and automatic routing
 
@@ -60,7 +75,7 @@ All queue queries are FIFO and return the oldest eligible grievances first. Role
 The operational sequence is:
 
 1. Director triage allocates the case to a division.
-2. The Division Director allocates it to a section.
+2. The Division Director selects a section in the edit workflow or uses the allocation action. This changes the case to `allocated_section`, appends an assignment record, and notifies Section Managers assigned to that section.
 3. The Section Manager assigns an investigating officer.
 4. The officer investigates and moves the case through active work.
 5. The case is resolved, then closed, or rejected with a recorded reason.
@@ -86,7 +101,7 @@ The system queues:
 - A status update when a grievance is rejected, resolved, or closed, using SMS when a phone number exists and email otherwise.
 - Database notifications when a grievance is automatically or manually allocated, assigned, or returned for reallocation.
 
-The authenticated header shows a bell icon with the unread count for grievance notification classes and links to `/notifications`. The **Pending Grievances** count is in the navigation menu directly after User Management and links each role to its actionable queue.
+The authenticated header shows a bell icon with the unread count for grievance notification classes and links to `/notifications`. The **Pending Grievances** count is in the navigation menu directly after User Management and links each role to its actionable queue. A Division Director is notified at automatic division allocation; an investigating officer is notified only after a Section Manager assigns that officer.
 
 ## 7. Main implementation locations
 

@@ -12,6 +12,11 @@ $turnstileTestSecret = in_array(env('APP_ENV'), ['local', 'testing'], true)
 return [
     'name' => 'Grievance',
     'public_sla_days' => (int) env('GRIEVANCE_PUBLIC_SLA_DAYS', 10),
+    'ai' => [
+        'enabled' => (bool) env('GRIEVANCE_AI_ENABLED', false),
+        'provider' => env('GRIEVANCE_AI_PROVIDER', 'anthropic'),
+        'confidence_threshold' => (float) env('GRIEVANCE_AI_CONFIDENCE_THRESHOLD', 0.70),
+    ],
     // Cloudflare Turnstile is free and privacy-friendly. Server-side verification
     // is mandatory. Local development uses Cloudflare's official test pair.
     'turnstile_site_key' => env('TURNSTILE_SITE_KEY', $turnstileTestKey),

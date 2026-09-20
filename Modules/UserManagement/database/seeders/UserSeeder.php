@@ -26,6 +26,7 @@ class UserSeeder extends Seeder
                 'name' => 'Super Admin',
                 'username' => 'superadmin',
                 'email' => 'superadmin@grms.com',
+                'phone' => '+266 58000001',
                 'staff' => true,
                 'mfa' => true,
             ],
@@ -34,14 +35,25 @@ class UserSeeder extends Seeder
                 'name' => 'Admin',
                 'username' => 'admin',
                 'email' => 'admin@grms.com',
+                'phone' => '+266 58000002',
                 'staff' => true,
                 'mfa' => true,
+            ],
+            [
+                'role' => 'Developer',
+                'name' => 'Developer',
+                'username' => 'developer',
+                'email' => 'developer@grms.com',
+                'phone' => '+266 58000007',
+                'staff' => true,
+                'mfa' => false,
             ],
             [
                 'role' => 'Director',
                 'name' => 'Director',
                 'username' => 'director',
                 'email' => 'director@grms.com',
+                'phone' => '+266 58000003',
                 'staff' => true,
                 'mfa' => true,
             ],
@@ -50,40 +62,43 @@ class UserSeeder extends Seeder
                 'name' => 'Division Director',
                 'username' => 'division.director',
                 'email' => 'division.director@grms.com',
+                'phone' => '+266 58000004',
                 'staff' => true,
                 'mfa' => false,
-                'division' => 'MAINT',
-                'section' => 'Pothole & Surface Repair',
-                'district' => 'MSU',
+                'division' => 'NR',
+                'section' => 'Berea Section',
+                'district' => 'BE',
             ],
             [
                 'role' => 'Section Manager',
                 'name' => 'Section Manager',
                 'username' => 'section.manager',
                 'email' => 'section.manager@grms.com',
+                'phone' => '+266 58000005',
                 'staff' => true,
                 'mfa' => false,
-                'division' => 'MAINT',
-                'section' => 'Pothole & Surface Repair',
-                'district' => 'MSU',
+                'division' => 'NR',
+                'section' => 'Berea Section',
+                'district' => 'BE',
             ],
             [
                 'role' => 'Helpdesk Officer',
                 'name' => 'Helpdesk Officer',
                 'username' => 'helpdesk.officer',
                 'email' => 'helpdesk@grms.com',
+                'phone' => '+266 58000006',
                 'staff' => true,
                 'mfa' => false,
             ],
         ];
 
         foreach ($fixedUsers as $fixed) {
-            $user = User::firstOrCreate(
+            $user = User::updateOrCreate(
                 ['email' => $fixed['email']],
                 [
                     'name' => $fixed['name'],
                     'username' => $fixed['username'],
-                    'phone' => $this->lesothoPhone(),
+                    'phone' => $fixed['phone'] ?? $this->lesothoPhone(),
                     'password' => bcrypt('password'), // ⚠ dev-only
                     'bio' => "Works in {$fixed['role']} at the Roads Directorate.",
                     'urls' => json_encode([]),
@@ -126,14 +141,14 @@ class UserSeeder extends Seeder
         // Divisions/sections rotate across staff so they're not all piled
         // into one bucket — makes the admin panel's filtered lists testable.
         $orgRotation = [
-            ['division' => 'MAINT', 'section' => 'Pothole & Surface Repair', 'district' => 'MSU'],
-            ['division' => 'MAINT', 'section' => 'Drainage & Culverts', 'district' => 'BER'],
-            ['division' => 'CONST', 'section' => 'Contractor Supervision', 'district' => 'LRB'],
-            ['division' => 'SAFE', 'section' => 'Land Acquisition & Compensation', 'district' => 'MFT'],
-            ['division' => 'SAFE', 'section' => 'GBV/SEA & Social Safeguards', 'district' => 'QTG'],
-            ['division' => 'PLAN', 'section' => 'Project Scheduling', 'district' => 'THT'],
+            ['division' => 'NR', 'section' => 'Berea Section', 'district' => 'BE'],
+            ['division' => 'NR', 'section' => 'Leribe Section', 'district' => 'LE'],
+            ['division' => 'CR', 'section' => 'Maseru Section', 'district' => 'MS'],
+            ['division' => 'SR', 'section' => 'Mafeteng Section', 'district' => 'MF'],
+            ['division' => 'SR', 'section' => "Mohale's Hoek Section", 'district' => 'MH'],
+            ['division' => 'SR', 'section' => 'Thaba-Tseka Section', 'district' => 'TT'],
         ];
-        $citizenDistricts = ['MSU', 'BER', 'LRB', 'MFT', 'MHK', 'QTG', 'QNK', 'BTB', 'MKH', 'THT'];
+        $citizenDistricts = ['BE', 'BB', 'LE', 'MF', 'MS', 'MH', 'QN', 'QT', 'MK', 'TT'];
 
         $orgIndex = 0;
         $citizenIndex = 0;

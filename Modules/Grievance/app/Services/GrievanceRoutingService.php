@@ -3,18 +3,17 @@
 namespace Modules\Grievance\Services;
 
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Modules\Grievance\Interface\GrievanceRepositoryInterface;
 use Modules\Grievance\Models\Grievance;
 use Modules\Grievance\Notifications\GrievanceAllocated;
+use Modules\Grievance\Notifications\GrievanceAssigned;
 use Modules\Grievance\Notifications\GrievanceReAllocationRequested;
-use Illuminate\Support\Facades\DB;
 
 class GrievanceRoutingService
 {
-    public function __construct(protected GrievanceRepositoryInterface $grievances)
-    {
-    }
+    public function __construct(protected GrievanceRepositoryInterface $grievances) {}
 
     public function queueForDirector(int $perPage = 20)
     {
@@ -86,7 +85,7 @@ class GrievanceRoutingService
 
         Notification::send(
             User::role('Director')->get(),
-            new GrievanceReallocationRequested($grievance)
+            new GrievanceReAllocationRequested($grievance)
         );
 
         return $grievance;
@@ -124,7 +123,7 @@ class GrievanceRoutingService
     {
         $from = $grievance->status;
         $grievance = $this->grievances->update($grievance, ['status' => 'resolved', 'closed_by' => $actor->id, 'closed_reason' => $reason, 'closed_at' => now()]);
-        $this->grievances->recordStatus($grievance, $from, 'resolved', $actor->id, 'director', $reason);
+        $this->grievances->recordStatus($grievance, $from, 'resolved', $actor->id, $actor->getRoleNames()->first(), $reason);
         $this->queueCitizenCommunication($grievance, 'status_update', "Grievance {$grievance->reference_no} has been resolved. Reason: {$reason}");
 
         return $grievance;
@@ -134,7 +133,7 @@ class GrievanceRoutingService
     {
         $from = $grievance->status;
         $grievance = $this->grievances->update($grievance, ['status' => 'closed', 'closed_by' => $actor->id, 'closed_reason' => $reason, 'closed_at' => now()]);
-        $this->grievances->recordStatus($grievance, $from, 'closed', $actor->id, 'director', $reason);
+        $this->grievances->recordStatus($grievance, $from, 'closed', $actor->id, $actor->getRoleNames()->first(), $reason);
         $this->queueCitizenCommunication($grievance, 'status_update', "Grievance {$grievance->reference_no} has been closed. Reason: {$reason}");
 
         return $grievance;

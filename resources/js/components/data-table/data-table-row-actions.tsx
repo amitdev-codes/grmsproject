@@ -17,8 +17,8 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
+import { cn } from '@/lib/utils';
 import type { DataTableRoutes } from '@/types/data-table';
 
 interface DataTableRowActionsProps<TData> {
@@ -30,7 +30,7 @@ interface DataTableRowActionsProps<TData> {
     onEdit?: (row: TData) => void;
 }
 
-function safeRoute(name: string, params?: Record<string, unknown>) {
+function safeRoute(name: string, params?: unknown) {
     if (typeof route !== 'function') {
         console.warn(
             '[DataTableRowActions] `route()` is not defined globally — cannot build URL.',
@@ -60,7 +60,7 @@ export function DataTableRowActions<TData>({
             return onView(row);
         }
 
-        const url = safeRoute(routes.view as string, { id });
+        const url = safeRoute(routes.view as string, id);
 
         if (url) {
             router.visit(url);
@@ -72,7 +72,7 @@ export function DataTableRowActions<TData>({
             return onEdit(row);
         }
 
-        const url = safeRoute(routes.edit as string, { id });
+        const url = safeRoute(routes.edit as string, id);
 
         if (url) {
             router.visit(url);
@@ -80,7 +80,7 @@ export function DataTableRowActions<TData>({
     };
 
     const handleDelete = () => {
-        const url = safeRoute(routes.destroy as string, { id });
+        const url = safeRoute(routes.destroy as string, id);
 
         if (url) {
             router.delete(url, { preserveScroll: true });
@@ -152,14 +152,17 @@ export function DataTableRowActions<TData>({
                     <AlertDialogContent>
                         <AlertDialogHeader>
                             <AlertDialogTitle>
-                                {t('menu.delete')} {label ? `"${label}"` : t('menu.this_record')}?
+                                {t('menu.delete')}{' '}
+                                {label ? `"${label}"` : t('menu.this_record')}?
                             </AlertDialogTitle>
                             <AlertDialogDescription>
                                 {t('menu.cannot_be_undone')}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel>{t('menu.cancel')}</AlertDialogCancel>
+                            <AlertDialogCancel>
+                                {t('menu.cancel')}
+                            </AlertDialogCancel>
                             <AlertDialogAction onClick={handleDelete}>
                                 {t('menu.delete')}
                             </AlertDialogAction>

@@ -1,5 +1,4 @@
 import { Form, Head } from '@inertiajs/react';
-import { MapPinned } from 'lucide-react';
 import { useState } from 'react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -19,17 +18,15 @@ import {
     useI18n,
     LanguageToggle,
     PRODUCT_NAME,
-    AUTHORITY,
 } from '@modules/Frontend/pages/site-shared';
 import type { Lang } from '@modules/Frontend/pages/site-shared';
 
 type Props = {
     status?: string;
     canResetPassword: boolean;
-    appLogoUrl?: string | null;
 };
 
-function LoginContent({ status, canResetPassword, appLogoUrl = null }: Props) {
+function LoginContent({ status, canResetPassword }: Props) {
     const { t } = useI18n();
 
     return (
@@ -42,16 +39,16 @@ function LoginContent({ status, canResetPassword, appLogoUrl = null }: Props) {
                 </div>
 
                 <div className="flex flex-col items-center gap-2">
-<div className="flex items-center gap-2.5">
-                    <img
-                        src="/logo.png"
-                        alt={PRODUCT_NAME}
-                        className="h-9 w-9 rounded-sm object-contain"
-                    />
-                    <span className="font-display text-lg font-semibold tracking-tight text-foreground">
-                        {PRODUCT_NAME}
-                    </span>
-                </div>
+                    <div className="flex items-center gap-2.5">
+                        <img
+                            src="/logo.png"
+                            alt={PRODUCT_NAME}
+                            className="h-9 w-9 rounded-sm object-contain"
+                        />
+                        <span className="font-display text-lg font-semibold tracking-tight text-foreground">
+                            {PRODUCT_NAME}
+                        </span>
+                    </div>
                 </div>
 
                 <div className="mt-4 space-y-1 text-center">
@@ -73,20 +70,20 @@ function LoginContent({ status, canResetPassword, appLogoUrl = null }: Props) {
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="email">
-                                    {t.auth.login.emailLabel}
+                                <Label htmlFor="login">
+                                    Email, username or phone
                                 </Label>
                                 <Input
-                                    id="email"
-                                    type="email"
-                                    name="email"
+                                    id="login"
+                                    type="text"
+                                    name="login"
                                     required
                                     autoFocus
                                     tabIndex={1}
-                                    autoComplete="email"
-                                    placeholder="email@example.com"
+                                    autoComplete="username"
+                                    placeholder="email@example.com or username"
                                 />
-                                <InputError message={errors.email} />
+                                <InputError message={errors.login} />
                             </div>
 
                             <div className="grid gap-2">

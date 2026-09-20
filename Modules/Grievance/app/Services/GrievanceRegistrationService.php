@@ -7,6 +7,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Modules\Grievance\Datatable\GrievanceDataTable;
@@ -63,9 +64,9 @@ class GrievanceRegistrationService
     {
         $intakeData = GrievanceIntakeData::fromPublicWebRequest($data, $attachments);
 
-        // Use new quick submit + async pattern
+        // Create the reference first, then complete routing before returning.
         $grievance = $this->submitQuick($intakeData);
-        SubmitGrievanceJob::dispatch($grievance->id);
+        SubmitGrievanceJob::dispatchSync($grievance->id);
 
         return $grievance;
     }
@@ -329,6 +330,11 @@ class GrievanceRegistrationService
                 User::role('Division Director')->where('division_id', $divisionId)->get(),
                 new GrievanceAllocated($grievance)
             );
+        } else {
+            Notification::send(
+                User::role('Director')->get(),
+                new GrievanceAllocated($grievance)
+            );
         }
     }
 
@@ -370,7 +376,54 @@ class GrievanceRegistrationService
 
     public function update(Grievance $grievance, array $data, array $newAttachments = [], array $removeMediaIds = []): Grievance
     {
+        $previousStatus = $grievance->status;
+        $previousSectionId = $grievance->section_id;
+        $actor = Auth::user();
         $grievance = $this->grievances->update($grievance, $data);
+
+        $remarks = $data['closed_reason'] ?? null;
+
+        if ($actor?->hasRole('Division Director')
+            && array_key_exists('section_id', $data)
+            && $data['section_id']
+            && (int) $data['section_id'] !== (int) $previousSectionId
+            && $previousStatus === 'allocated_division') {
+            $grievance = $this->grievances->update($grievance, ['status' => 'allocated_section']);
+            $this->grievances->recordStatus(
+                $grievance,
+                $previousStatus,
+                'allocated_section',
+                $actor->id,
+                $actor->getRoleNames()->first(),
+                $remarks ?: 'Allocated to section from Division Director edit.',
+            );
+
+            DB::table('grievance_assignments')->insert([
+                'grievance_id' => $grievance->id,
+                'action' => 'allocated',
+                'to_division_id' => $grievance->division_id,
+                'to_section_id' => $data['section_id'],
+                'acted_by' => $actor->id,
+                'reason' => $remarks ?: 'Allocated to section.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            Notification::send(
+                User::role('Section Manager')->where('section_id', $data['section_id'])->get(),
+                new GrievanceAllocated($grievance),
+            );
+        }
+
+        $this->grievances->recordStatus(
+            $grievance,
+            $grievance->status,
+            $grievance->status,
+            $actor?->id,
+            $actor?->getRoleNames()->first(),
+            $remarks ?: 'Case details or evidence updated.',
+        );
+
         $this->attachMedia($grievance, $newAttachments);
         $this->removeMedia($grievance, $removeMediaIds);
 

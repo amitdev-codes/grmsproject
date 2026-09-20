@@ -40,8 +40,10 @@ class PublicGrievanceController extends Controller
 
         $grievance = $this->service->submitQuick($intakeData);
 
-        // Dispatch async job for AI classification, routing, notifications
-        SubmitGrievanceJob::dispatch($grievance->id);
+        // Process now so routing and the responsible-manager notification are
+        // created before the submission response is returned. Deployments can
+        // move this back to a queue once a worker is guaranteed to be running.
+        SubmitGrievanceJob::dispatchSync($grievance->id);
 
         return response()->json([
             'data' => [

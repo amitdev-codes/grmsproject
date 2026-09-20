@@ -73,6 +73,11 @@ export function AppTopMenu() {
     const auth = page.props.auth as
         { user?: { permissions?: string[] } } | undefined;
     const permissions = auth?.user?.permissions ?? [];
+    const roleNames =
+        auth?.user?.role_names?.split(',').map((role) => role.trim()) ?? [];
+    const isPrivileged = roleNames.some((role) =>
+        ['Super Admin', 'IT Admin', 'Admin', 'Developer'].includes(role),
+    );
     const pendingGrievances = page.props.pendingGrievances as {
         count: number;
         href: string;
@@ -106,6 +111,7 @@ export function AppTopMenu() {
                 },
             ],
             permission: 'users.view',
+            visible: isPrivileged,
         },
         {
             label: pendingGrievances.label,
@@ -113,7 +119,7 @@ export function AppTopMenu() {
             icon: ClipboardList,
             permission: 'grievances.view',
             badge: pendingGrievances.count,
-            visible: pendingGrievances.visible,
+            visible: isPrivileged || pendingGrievances.visible,
         },
         {
             label: 'menu.grievances',
@@ -163,6 +169,7 @@ export function AppTopMenu() {
                 },
             ],
             permission: 'grievances.view',
+            visible: isPrivileged,
         },
         {
             label: 'menu.master',
@@ -218,6 +225,7 @@ export function AppTopMenu() {
                 },
             ],
             permission: 'districts.view',
+            visible: isPrivileged,
         },
         {
             label: 'menu.reports',
@@ -237,6 +245,7 @@ export function AppTopMenu() {
                 },
             ],
             permission: 'reports.view',
+            visible: isPrivileged,
         },
         {
             label: 'menu.logs',
@@ -250,10 +259,12 @@ export function AppTopMenu() {
                 },
             ],
             permission: 'audit_logs.view',
+            visible: isPrivileged,
         },
         {
             label: 'menu.settings',
             icon: Settings,
+            visible: isPrivileged,
             items: [
                 {
                     title: 'menu.profile_settings',
