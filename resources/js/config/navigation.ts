@@ -172,7 +172,24 @@ export const reportsNavItems: NavItem[] = [
 export const logsNavItems: NavItem[] = [
     {
         title: 'menu.logs',
-        href: '/logs',
+        href: '#',
         icon: ScrollText,
+        items: [
+            {
+                title: 'menu.activity_logs',
+                href: '/logs/activity-logs',
+                icon: List,
+            },
+            {
+                title: 'menu.audit_logs',
+                href: '/logs/audit-logs',
+                icon: ClipboardCheck,
+            },
+            {
+                title: 'menu.system_logs',
+                href: '/logs/system-logs',
+                icon: Server,
+            },
+        ],
     },
 ];

@@ -7,6 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -31,6 +32,10 @@ class AppServiceProvider extends ServiceProvider
         JsonResource::withoutWrapping();
         Blueprint::macro('publicId', function () {
             $this->ulid('ulid')->unique()->after('id');
+        });
+
+        Gate::before(function ($user, $ability) {
+            return $user->hasRole(['Super Admin', 'Developer']) ? true : null;
         });
     }
 

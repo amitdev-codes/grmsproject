@@ -1332,13 +1332,21 @@ export function Footer() {
                     </p>
                     {settings.site_total !== null &&
                         settings.site_total !== undefined && (
-                            <p
-                                className="mt-3 text-[10px] text-muted-foreground"
-                                style={{ color: 'var(--text-secondary)' }}
+                            <div
+                                className="mt-3 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium"
+                                style={{
+                                    borderColor: 'var(--border)',
+                                    background: 'var(--bg-raised)',
+                                    color: 'var(--text-primary)',
+                                }}
                             >
-                                {t.footer.totalSiteVisits}:{' '}
-                                {Number(settings.site_total).toLocaleString()}
-                            </p>
+                                <span>{t.footer.totalSiteVisits}:</span>
+                                <span className="font-mono font-bold">
+                                    {Number(
+                                        settings.site_total,
+                                    ).toLocaleString()}
+                                </span>
+                            </div>
                         )}
                 </div>
 
@@ -1486,14 +1494,33 @@ export function Footer() {
                 </div>
             </div>
             <div
-                className="border-t py-4 text-center text-xs"
+                className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t px-6 py-4 text-xs"
                 style={{
                     borderColor: 'var(--border)',
                     color: 'var(--text-secondary)',
                 }}
             >
-                {settings.footer_text ??
-                    `© ${new Date().getFullYear()} ${AUTHORITY}`}
+                <div>
+                    {settings.footer_text ??
+                        `© ${new Date().getFullYear()} ${AUTHORITY}`}
+                </div>
+                {settings.site_total !== null &&
+                    settings.site_total !== undefined && (
+                        <div
+                            className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium"
+                            style={{
+                                borderColor: 'var(--border)',
+                                background: 'var(--bg-raised)',
+                                color: 'var(--text-primary)',
+                            }}
+                        >
+                            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                            <span>{t.footer.totalSiteVisits}:</span>
+                            <span className="font-mono font-bold">
+                                {Number(settings.site_total).toLocaleString()}
+                            </span>
+                        </div>
+                    )}
             </div>
         </footer>
     );

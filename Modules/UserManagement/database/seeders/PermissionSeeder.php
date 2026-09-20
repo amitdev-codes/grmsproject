@@ -64,8 +64,10 @@ class PermissionSeeder extends Seeder
 
             // Reports & Logs
             'reports' => ['view', 'export'],
+            'activity_logs' => ['view', 'export'],
             'audit_logs' => ['view', 'export'],
             'logs' => ['view'],
+            'page_view_counters' => ['view'],
 
             // Notifications
             'notifications' => ['view', 'create', 'edit', 'delete', 'export'],

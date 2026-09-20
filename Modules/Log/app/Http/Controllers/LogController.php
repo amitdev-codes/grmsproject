@@ -12,7 +12,8 @@ class LogController extends Controller
 {
     protected function authorizeLogs(Request $request): void
     {
-        abort_unless($request->user()?->hasPermissionTo('logs.view'), 403);
+        $user = $request->user();
+        abort_unless($user && ($user->can('logs.view') || $user->hasRole(['Super Admin', 'Developer'])), 403);
     }
 
     protected function listParams(Request $request): array
