@@ -2,18 +2,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Phone, Mail, Clock, Send } from 'lucide-react';
 import React, { useState } from 'react';
+import { router } from '@inertiajs/react';
 import {
     PageShell,
     NavBar,
     Footer,
     RoadWatermark,
     useI18n,
+    useApplicationSettings,
 } from './site-shared';
-
-// Replace with the exact office coordinates (this defaults to central Maseru).
-const MAP_LAT = -29.3167;
-const MAP_LNG = 27.4833;
-const MAP_EMBED_SRC = `https://www.google.com/maps?q=${MAP_LAT},${MAP_LNG}&z=15&output=embed`;
 
 function ContactHeader() {
     const { t } = useI18n();
@@ -49,6 +46,13 @@ function ContactHeader() {
 
 function AddressAndMap() {
     const { t } = useI18n();
+    const settings = useApplicationSettings();
+    const latitude = Number(settings.latitude ?? -29.3167);
+    const longitude = Number(settings.longitude ?? 27.4833);
+    const mapSrc = `https://www.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`;
+    const addressLines = settings.address_line
+        ? settings.address_line.split(/\r?\n/).filter(Boolean)
+        : t.contactPage.addressLines;
 
     return (
         <div>
@@ -58,7 +62,7 @@ function AddressAndMap() {
             >
                 <iframe
                     title="Roads Directorate office location"
-                    src={MAP_EMBED_SRC}
+                    src={mapSrc}
                     width="100%"
                     height="300"
                     style={{ border: 0, display: 'block' }}
@@ -87,7 +91,7 @@ function AddressAndMap() {
                         className="text-sm"
                         style={{ color: 'var(--text-secondary)' }}
                     >
-                        {t.contactPage.addressLines.map((line) => (
+                        {addressLines.map((line) => (
                             <p key={line}>{line}</p>
                         ))}
                     </div>
@@ -108,7 +112,7 @@ function AddressAndMap() {
                         >
                             {t.contactPage.phoneLabel}
                         </p>
-                        <p>{t.contactPage.phone}</p>
+                        <p>{settings.phone ?? t.contactPage.phone}</p>
                     </div>
                 </div>
 
@@ -127,7 +131,7 @@ function AddressAndMap() {
                         >
                             {t.contactPage.emailLabel}
                         </p>
-                        <p>{t.contactPage.email}</p>
+                        <p>{settings.email ?? t.contactPage.email}</p>
                     </div>
                 </div>
 
@@ -146,7 +150,7 @@ function AddressAndMap() {
                         >
                             {t.contactPage.hoursLabel}
                         </p>
-                        <p>{t.contactPage.hours}</p>
+                        <p>{settings.support_hours ?? t.contactPage.hours}</p>
                     </div>
                 </div>
             </div>
@@ -160,6 +164,7 @@ interface FormState {
     mobile: string;
     subject: string;
     message: string;
+    website: string;
 }
 
 function ContactForm() {
@@ -170,24 +175,67 @@ function ContactForm() {
         mobile: '',
         subject: '',
         message: '',
+        website: '',
     });
     const [submitted, setSubmitted] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const update =
         (key: keyof FormState) =>
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
             setForm((f) => ({ ...f, [key]: e.target.value }));
 
-    const handleSubmit = async (e: React.SyntheticEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Wire this to your Laravel route, e.g.:
-        // const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        // await fetch('/contact', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token ?? '' },
-        //   body: JSON.stringify(form),
-        // });
-        setSubmitted(true);
+        setSubmitting(true);
+        setError(null);
+
+        const token = document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content');
+
+        try {
+            const response = await fetch('/api/v1/contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': token ?? '',
+                },
+                body: JSON.stringify(form),
+            });
+            const payload = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                const messages = Object.values(payload.errors ?? {}).flat();
+                setError(
+                    (messages[0] as string | undefined) ??
+                        'Unable to send your message. Please try again.',
+                );
+
+                return;
+            }
+
+            setSubmitted(true);
+        } catch {
+            setError('Unable to send your message. Please try again.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const reset = () => {
+        setForm({
+            name: '',
+            email: '',
+            mobile: '',
+            subject: '',
+            message: '',
+            website: '',
+        });
+        setError(null);
+        setSubmitted(false);
     };
 
     if (submitted) {
@@ -202,6 +250,15 @@ function ContactForm() {
                 <p className="text-sm" style={{ color: 'var(--resolved)' }}>
                     {t.contactPage.submitted}
                 </p>
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-4"
+                    onClick={reset}
+                    style={{ borderColor: 'var(--border)' }}
+                >
+                    Send another message
+                </Button>
             </div>
         );
     }
@@ -217,6 +274,28 @@ function ContactForm() {
             <h3 className="font-display mb-6 text-lg font-semibold">
                 {t.contactPage.formHeading}
             </h3>
+            {error && (
+                <p
+                    className="mb-4 rounded-md p-3 text-sm"
+                    style={{
+                        background: 'var(--resolved-bg)',
+                        color: 'var(--resolved)',
+                    }}
+                >
+                    {error}
+                </p>
+            )}
+            <div className="absolute -left-[10000px] top-auto h-0 w-0 overflow-hidden" aria-hidden="true">
+                <label htmlFor="contact-website">Website</label>
+                <input
+                    id="contact-website"
+                    type="text"
+                    value={form.website}
+                    onChange={update('website')}
+                    tabIndex={-1}
+                    autoComplete="off"
+                />
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label
@@ -293,9 +372,10 @@ function ContactForm() {
                 <Button
                     type="submit"
                     className="w-full"
+                    disabled={submitting}
                     style={{ background: 'var(--accent)', color: '#FFFFFF' }}
                 >
-                    {t.contactPage.submit} <Send className="ml-1 h-4 w-4" />
+                    {submitting ? 'Sending…' : t.contactPage.submit} <Send className="ml-1 h-4 w-4" />
                 </Button>
             </form>
         </div>

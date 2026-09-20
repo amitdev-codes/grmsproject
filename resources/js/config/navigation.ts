@@ -22,6 +22,9 @@ import {
     Building2,
     Timer,
     ArrowUpRight,
+    List,
+    ClipboardCheck,
+    Server,
 } from 'lucide-react';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';

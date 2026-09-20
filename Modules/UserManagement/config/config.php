@@ -133,7 +133,6 @@ return [
             'districts.*', 'divisions.*', 'sections.*',
             'project_types.*', 'projects.*', 'service_providers.*',
             'settings.*', 'application_settings.*',
-            'audit_logs.*', 'logs.*',
             'grievances.view',
             'grievances.edit',
             'grievance_categories.*', 'grievance_channels.*',

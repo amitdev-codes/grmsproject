@@ -17,7 +17,7 @@ class ApplicationSettingRepository extends BaseRepository
     public function current(): Model
     {
         return $this->model->query()->firstOrCreate(
-            [],
+            ['id' => 1],
             [
                 'project_name' => config('app.name'),
                 'project_slug' => str(config('app.name'))->slug(),

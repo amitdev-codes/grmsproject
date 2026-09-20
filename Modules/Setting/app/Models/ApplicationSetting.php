@@ -43,7 +43,7 @@ class ApplicationSetting extends Model
         // firstOrCreate guarantees exactly one row ever exists, and callers
         // never have to null-check "what if settings were never configured".
         return static::query()->firstOrCreate(
-            [],
+            ['id' => 1],
             ['project_name' => config('app.name'), 'project_slug' => str(config('app.name'))->slug()],
         );
     }

@@ -50,51 +50,36 @@ import {
     useI18n,
     FILE_GRIEVANCE_URL,
     useApplicationSettings,
+    useLandingStats,
 } from './site-shared';
 import { Combobox } from '@/components/ui/combobox';
 
-// Sample data — wire this up to your real case records (e.g. a /api/grievances/monthly endpoint).
-const MONTHLY_DATA = [
-    { month: 'Jan', received: 42, resolved: 35 },
-    { month: 'Feb', received: 51, resolved: 44 },
-    { month: 'Mar', received: 38, resolved: 36 },
-    { month: 'Apr', received: 60, resolved: 52 },
-    { month: 'May', received: 47, resolved: 45 },
-    { month: 'Jun', received: 55, resolved: 50 },
-];
-
-// Running total across the year — feeds the area chart.
-const CUMULATIVE_DATA = MONTHLY_DATA.reduce<
-    { month: string; received: number; resolved: number }[]
->((acc, m, i) => {
-    const prev = acc[i - 1] ?? { received: 0, resolved: 0 };
-    acc.push({
-        month: m.month,
-        received: prev.received + m.received,
-        resolved: prev.resolved + m.resolved,
-    });
-
-    return acc;
-}, []);
-
-// Sample data — wire up to your live case table.
-const STATUS_PIE_DATA = [
-    { key: 'statusResolved', value: 148 },
-    { key: 'statusInProgress', value: 34 },
-    { key: 'statusPending', value: 21 },
-];
 const STATUS_COLORS = [
     'var(--resolved)',
     'var(--accent)',
     'var(--text-secondary)',
 ];
-
-const RESOLUTION_RATE = 82; // percent, current year to date
-const RATIO_DONUT_DATA = [
-    { key: 'resolvedLabel', value: RESOLUTION_RATE },
-    { key: 'unresolved', value: 100 - RESOLUTION_RATE },
-];
 const RATIO_COLORS = ['var(--resolved)', 'var(--border)'];
+
+function getCumulativeData(
+    monthly: { month: string; received: number; resolved: number }[],
+): { month: string; received: number; resolved: number }[] {
+    return monthly.reduce<{
+        month: string;
+        received: number;
+        resolved: number;
+    }[]>((acc, item) => {
+        const previous = acc[acc.length - 1] ?? { received: 0, resolved: 0 };
+
+        acc.push({
+            month: item.month,
+            received: previous.received + item.received,
+            resolved: previous.resolved + item.resolved,
+        });
+
+        return acc;
+    }, []);
+}
 
 const TICKET_ICONS: IconType[] = [
     FileText,
@@ -401,6 +386,13 @@ function ChartCard({
 
 function ResolutionChart() {
     const { t } = useI18n();
+    const stats = useLandingStats();
+    const monthlyData = stats?.monthly ?? [];
+    const cumulativeData = getCumulativeData(monthlyData);
+    const resolutionRate = Math.max(
+        0,
+        Math.min(100, Math.round(stats?.resolutionRate ?? 0)),
+    );
     const tooltipStyle = {
         background: 'var(--bg-page)',
         border: '1px solid var(--border)',
@@ -408,16 +400,16 @@ function ResolutionChart() {
         color: 'var(--text-primary)',
         fontSize: 13,
     };
-    const statusData = STATUS_PIE_DATA.map((d) => ({
+    const statusData = (stats?.status ?? []).map((d) => ({
         name: t.chart[
             d.key as 'statusResolved' | 'statusInProgress' | 'statusPending'
         ],
         value: d.value,
     }));
-    const ratioData = RATIO_DONUT_DATA.map((d) => ({
-        name: t.chart[d.key as 'resolvedLabel' | 'unresolved'],
-        value: d.value,
-    }));
+    const ratioData = [
+        { name: t.chart.resolvedLabel, value: resolutionRate },
+        { name: t.chart.unresolved, value: 100 - resolutionRate },
+    ];
 
     return (
         <section
@@ -444,7 +436,7 @@ function ResolutionChart() {
                 >
                     <div style={{ width: '100%', height: 280 }}>
                         <ResponsiveContainer>
-                            <BarChart data={MONTHLY_DATA} barGap={6}>
+                            <BarChart data={monthlyData} barGap={6}>
                                 <CartesianGrid
                                     strokeDasharray="3 3"
                                     stroke="var(--border)"
@@ -492,7 +484,7 @@ function ResolutionChart() {
                     <ChartCard title={t.chart.trendHeading}>
                         <div style={{ width: '100%', height: 220 }}>
                             <ResponsiveContainer>
-                                <AreaChart data={CUMULATIVE_DATA}>
+                                <AreaChart data={cumulativeData}>
                                     <defs>
                                         <linearGradient
                                             id="receivedFill"
@@ -591,7 +583,11 @@ function ResolutionChart() {
                                         {statusData.map((_, i) => (
                                             <Cell
                                                 key={i}
-                                                fill={STATUS_COLORS[i]}
+                                                fill={
+                                                    STATUS_COLORS[
+                                                        i % STATUS_COLORS.length
+                                                    ]
+                                                }
                                             />
                                         ))}
                                     </Pie>
@@ -641,7 +637,7 @@ function ResolutionChart() {
                                     className="font-display text-2xl font-semibold"
                                     style={{ color: 'var(--resolved)' }}
                                 >
-                                    {RESOLUTION_RATE}%
+                                    {resolutionRate}%
                                 </span>
                                 <span
                                     className="text-[11px]"

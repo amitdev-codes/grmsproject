@@ -12,6 +12,7 @@ import {
     Footer,
     RoadWatermark,
     useI18n,
+    useFaqs,
 } from './site-shared';
 
 function FAQHeader() {
@@ -48,24 +49,37 @@ function FAQHeader() {
 
 function FAQList() {
     const { t } = useI18n();
+    const faqs = useFaqs();
+    const items =
+        faqs.length > 0
+            ? faqs.map((faq) => ({
+                  key: String(faq.id),
+                  question: faq.question,
+                  answer: faq.answer,
+              }))
+            : t.faqPage.items.map((faq, index) => ({
+                  key: `fallback-${index}`,
+                  question: faq.q,
+                  answer: faq.a,
+              }));
 
     return (
         <section className="mx-auto max-w-3xl px-6 py-16">
             <Accordion type="single" collapsible className="w-full">
-                {t.faqPage.items.map((f, i) => (
+                {items.map((faq) => (
                     <AccordionItem
-                        key={i}
-                        value={`item-${i}`}
+                        key={faq.key}
+                        value={faq.key}
                         style={{ borderColor: 'var(--border)' }}
                     >
                         <AccordionTrigger className="text-left text-sm font-semibold">
-                            {f.q}
+                            {faq.question}
                         </AccordionTrigger>
                         <AccordionContent
                             className="text-sm"
                             style={{ color: 'var(--text-secondary)' }}
                         >
-                            {f.a}
+                            {faq.answer}
                         </AccordionContent>
                     </AccordionItem>
                 ))}

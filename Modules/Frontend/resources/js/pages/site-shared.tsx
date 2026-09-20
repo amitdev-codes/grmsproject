@@ -15,16 +15,56 @@ export const AUTHORITY = 'Roads Directorate · Government of Lesotho';
 
 export interface ApplicationSettings {
     project_name?: string | null;
+    project_slug?: string | null;
     short_name?: string | null;
     tagline?: string | null;
     description?: string | null;
     theme?: 'default' | 'roads';
     logo_url?: string | null;
+    logo_path?: string | null;
+    favicon_path?: string | null;
     email?: string | null;
     phone?: string | null;
+    whatsapp?: string | null;
     address_line?: string | null;
+    latitude?: number | string | null;
+    longitude?: number | string | null;
     support_hours?: string | null;
     footer_text?: string | null;
+    social_links?: Record<string, string | null> | null;
+    seo_title?: string | null;
+    seo_description?: string | null;
+    seo_keywords?: string | null;
+    seo_meta?: Record<string, string | null> | null;
+    default_locale?: string | null;
+    privacy_policy_url?: string | null;
+    terms_url?: string | null;
+    site_total?: number | null;
+}
+
+export interface PublicFaq {
+    id: number;
+    question: string;
+    answer: string;
+    sort_order: number;
+}
+
+export interface MonthlyGrievanceStat {
+    month: string;
+    received: number;
+    resolved: number;
+}
+
+export interface StatusGrievanceStat {
+    key: 'statusResolved' | 'statusInProgress' | 'statusPending' | string;
+    value: number;
+}
+
+export interface LandingStats {
+    monthly: MonthlyGrievanceStat[];
+    status: StatusGrievanceStat[];
+    resolutionRate: number;
+    total: number;
 }
 
 export function useApplicationSettings(): ApplicationSettings {
@@ -34,6 +74,18 @@ export function useApplicationSettings(): ApplicationSettings {
         (page.props.applicationSettings as ApplicationSettings | undefined) ??
         {}
     );
+}
+
+export function useFaqs(): PublicFaq[] {
+    const page = usePage();
+
+    return (page.props.faqs as PublicFaq[] | undefined) ?? [];
+}
+
+export function useLandingStats(): LandingStats | undefined {
+    const page = usePage();
+
+    return page.props.landingStats as LandingStats | undefined;
 }
 
 // Routes — point these at your real Laravel routes.
@@ -209,6 +261,7 @@ export interface Translations {
         colContact: string;
         about: string;
         fundingLong: string;
+        totalSiteVisits: string;
     };
     auth: {
         login: {
@@ -275,7 +328,7 @@ export const translations: Record<Lang, Translations> = {
         chart: {
             heading: 'Complaints and resolutions',
             sub: 'A running view of cases received against cases closed, month by month.',
-            note: 'Sample data shown — connect these charts to your live case records.',
+            note: 'Live grievance data from the current year.',
             legendReceived: 'Received',
             legendResolved: 'Resolved',
             trendHeading: 'Cumulative trend (year to date)',
@@ -492,6 +545,7 @@ export const translations: Record<Lang, Translations> = {
             about: 'About the LITTL Project',
             fundingLong:
                 'Developed under the Lesotho Integrated Transport, Trade and Logistics (LITTL) Project, funded by the Government of Lesotho and the International Development Association (IDA), World Bank Group.',
+            totalSiteVisits: 'Site visits',
         },
         auth: {
             login: {
@@ -561,7 +615,7 @@ export const translations: Record<Lang, Translations> = {
         chart: {
             heading: 'Litletlebo le Tharollo',
             sub: 'Pono ea linyeoe tse amohetsoeng khahlanong le tse koetsoeng, khoeli le khoeli.',
-            note: 'Ke data ea mohlala — hokahanya lichate tsena le lirekoto tsa nyeoe tsa sebele.',
+            note: 'Ke data ea nnete ea litletlebo tsa selemo sena.',
             legendReceived: 'Tse amohetsoeng',
             legendResolved: 'Tse rarolotsoeng',
             trendHeading: 'Tšusumetso e kopantsoeng (selemong sena)',
@@ -779,6 +833,7 @@ export const translations: Record<Lang, Translations> = {
             about: 'Ka Morero oa LITTL',
             fundingLong:
                 "E hlophisitsoe tlas'a Morero oa Lesotho Integrated Transport, Trade and Logistics (LITTL), o tšehetsoang ke 'Muso oa Lesotho le International Development Association (IDA), sehlopha sa World Bank.",
+            totalSiteVisits: 'Jithafo tsa pampiring',
         },
         auth: {
             login: {
@@ -1236,6 +1291,15 @@ export function NavBar() {
 export function Footer() {
     const { t } = useI18n();
     const settings = useApplicationSettings();
+    const socialLinks = Object.entries(settings.social_links ?? {})
+        .filter((entry): entry is [string, string] => Boolean(entry[1]))
+        .map(([platform, url]) => ({
+            platform: platform[0]?.toUpperCase() + platform.slice(1),
+            url,
+        }));
+    const logoUrl = settings.logo_url ?? settings.logo_path ?? '/logo.png';
+    const projectName =
+        settings.short_name ?? settings.project_name ?? PRODUCT_NAME;
 
     return (
         <footer className="border-t" style={{ borderColor: 'var(--border)' }}>
@@ -1243,17 +1307,15 @@ export function Footer() {
                 <div className="col-span-2 md:col-span-1">
                     <div className="mb-3 flex items-center gap-2">
                         <img
-                            src={settings.logo_url ?? '/logo.png'}
-                            alt={settings.short_name ?? PRODUCT_NAME}
+                            src={logoUrl}
+                            alt={projectName}
                             className="h-4 w-4 object-contain"
                             style={{
                                 filter: 'drop-shadow(0 0 2px var(--accent))',
                             }}
                         />
                         <span className="font-display font-semibold">
-                            {settings.short_name ??
-                                settings.project_name ??
-                                PRODUCT_NAME}
+                            {projectName}
                         </span>
                     </div>
                     <p
@@ -1268,6 +1330,16 @@ export function Footer() {
                     >
                         {t.footer.fundingLong}
                     </p>
+                    {settings.site_total !== null &&
+                        settings.site_total !== undefined && (
+                            <p
+                                className="mt-3 text-[10px] text-muted-foreground"
+                                style={{ color: 'var(--text-secondary)' }}
+                            >
+                                {t.footer.totalSiteVisits}:{' '}
+                                {Number(settings.site_total).toLocaleString()}
+                            </p>
+                        )}
                 </div>
 
                 <div className="space-y-2">
@@ -1335,6 +1407,24 @@ export function Footer() {
                     >
                         {t.nav.contact}
                     </Link>
+                    {settings.privacy_policy_url && (
+                        <a
+                            href={settings.privacy_policy_url}
+                            className="block text-sm"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            Privacy policy
+                        </a>
+                    )}
+                    {settings.terms_url && (
+                        <a
+                            href={settings.terms_url}
+                            className="block text-sm"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            Terms of use
+                        </a>
+                    )}
                 </div>
 
                 <div className="space-y-2">
@@ -1356,18 +1446,43 @@ export function Footer() {
                             {line}
                         </p>
                     ))}
-                    <p
-                        className="text-sm"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
-                        {settings.email ?? t.contactPage.email}
-                    </p>
-                    <p
-                        className="text-sm"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
-                        {settings.phone ?? t.contactPage.phone}
-                    </p>
+                    {settings.email && (
+                        <a
+                            href={`mailto:${settings.email}`}
+                            className="block text-sm"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            {settings.email}
+                        </a>
+                    )}
+                    {settings.phone && (
+                        <a
+                            href={`tel:${settings.phone.replace(/[^\d+]/g, '')}`}
+                            className="block text-sm"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            {settings.phone}
+                        </a>
+                    )}
+                    {settings.whatsapp && (
+                        <a
+                            href={`https://wa.me/${settings.whatsapp.replace(/[^\d]/g, '')}`}
+                            className="block text-sm"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            WhatsApp
+                        </a>
+                    )}
+                    {socialLinks.map((link) => (
+                        <a
+                            key={link.platform}
+                            href={link.url}
+                            className="block text-sm"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            {link.platform}
+                        </a>
+                    ))}
                 </div>
             </div>
             <div
