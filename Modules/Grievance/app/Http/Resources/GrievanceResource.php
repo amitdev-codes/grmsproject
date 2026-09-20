@@ -14,6 +14,7 @@ class GrievanceResource extends JsonResource
             'id' => $this->id,
             'reference_no' => $this->reference_no,
             'description' => $this->description,
+            'remarks' => $this->closed_reason,
             'status' => $this->status,
             'priority' => $this->priority,
             'is_anonymous' => $this->is_anonymous,

@@ -48,6 +48,7 @@ export interface Grievance {
     id: number;
     reference_no: string;
     description: string;
+    remarks?: string | null;
     status: string;
     // Not yet present on GrievanceResource — add it server-side to populate this column.
     priority?: 'low' | 'normal' | 'high';

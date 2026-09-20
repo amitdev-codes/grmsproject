@@ -182,6 +182,7 @@ class GrievanceRegistrationService
     {
         if ($grievance->grievance_category_id) {
             $category = GrievanceCategory::findOrFail($grievance->grievance_category_id);
+
             return [$category, ['category_id' => $category->id, 'confidence' => 1.0]];
         }
 

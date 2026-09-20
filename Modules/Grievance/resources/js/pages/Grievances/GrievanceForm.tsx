@@ -60,6 +60,7 @@ interface FormValues {
     complainant_phone: string;
     complainant_email: string;
     description: string;
+    remarks: string;
     location_description: string;
     latitude: string;
     longitude: string;
@@ -68,13 +69,13 @@ interface FormValues {
 }
 
 export default function Form({
-                                 grievance,
-                                 categories,
-                                 channels,
-                                 districts,
-                                 divisions,
-                                 sections,
-                             }: GrievanceFormProps) {
+    grievance,
+    categories,
+    channels,
+    districts,
+    divisions,
+    sections,
+}: GrievanceFormProps) {
     const isEdit = !!grievance;
     const { t } = useTranslation();
     const [locating, setLocating] = useState(false);
@@ -107,6 +108,7 @@ export default function Form({
         complainant_phone: grievance?.complainant_phone ?? '',
         complainant_email: grievance?.complainant_email ?? '',
         description: grievance?.description ?? '',
+        remarks: grievance?.remarks ?? '',
         location_description: '',
         latitude: '',
         longitude: '',
@@ -127,8 +129,8 @@ export default function Form({
             ...(isAnonymous
                 ? {}
                 : {
-                    complainant_name: [rules.required()],
-                }),
+                      complainant_name: [rules.required()],
+                  }),
         });
 
         if (Object.keys(clientErrors).length > 0) {
@@ -156,9 +158,9 @@ export default function Form({
             metadata:
                 formData.latitude || formData.longitude
                     ? {
-                        latitude: formData.latitude || null,
-                        longitude: formData.longitude || null,
-                    }
+                          latitude: formData.latitude || null,
+                          longitude: formData.longitude || null,
+                      }
                     : null,
             latitude: undefined,
             longitude: undefined,
@@ -226,10 +228,12 @@ export default function Form({
             (err) => {
                 const msg =
                     err.code === err.PERMISSION_DENIED
-                        ? t('Location permission denied. Please enable it in your browser settings.')
+                        ? t(
+                              'Location permission denied. Please enable it in your browser settings.',
+                          )
                         : err.code === err.TIMEOUT
-                            ? t('Location request timed out. Please try again.')
-                            : t('Unable to retrieve location. Please try again.');
+                          ? t('Location request timed out. Please try again.')
+                          : t('Unable to retrieve location. Please try again.');
                 setLocError(msg);
                 setLocating(false);
             },
@@ -243,8 +247,8 @@ export default function Form({
             description={
                 isEdit
                     ? t('Update case :ref.', {
-                        ref: grievance!.reference_no,
-                    })
+                          ref: grievance!.reference_no,
+                      })
                     : t('Register a new grievance on behalf of a complainant.')
             }
             breadcrumbs={[
@@ -412,6 +416,25 @@ export default function Form({
                 )}
             </div>
 
+            <div className="space-y-1.5">
+                <label htmlFor="remarks" className="text-sm font-medium">
+                    {t('Officer Remarks')}
+                </label>
+                <textarea
+                    id="remarks"
+                    rows={4}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    value={data.remarks}
+                    onChange={(e) => setData('remarks', e.target.value)}
+                    placeholder={t(
+                        'Add investigation notes or handover remarks…',
+                    )}
+                />
+                {errors.remarks && (
+                    <p className="text-sm text-destructive">{errors.remarks}</p>
+                )}
+            </div>
+
             <TextField
                 id="location_description"
                 label={t('Location')}
@@ -459,9 +482,7 @@ export default function Form({
                     {t('Auto-capture coordinates from your device.')}
                 </span>
             </div>
-            {locError && (
-                <p className="text-sm text-destructive">{locError}</p>
-            )}
+            {locError && <p className="text-sm text-destructive">{locError}</p>}
 
             {/* Evidence attachments. FileDropzone's existingPreviewUrl/
                 onRemoveExisting props are single-file-only (per its own
@@ -484,20 +505,18 @@ export default function Form({
                     existingFiles={
                         isEdit
                             ? (grievance!.attachments ?? [])
-                                .filter(
-                                    (a) =>
-                                        !data.remove_attachment_ids.includes(
-                                            a.id,
-                                        ),
-                                )
-                                .map((a) => ({
-                                    id: a.id,
-                                    url: a.url,
-                                    name: a.file_name,
-                                    isImage: a.mime_type.startsWith(
-                                        'image/',
-                                    ),
-                                }))
+                                  .filter(
+                                      (a) =>
+                                          !data.remove_attachment_ids.includes(
+                                              a.id,
+                                          ),
+                                  )
+                                  .map((a) => ({
+                                      id: a.id,
+                                      url: a.url,
+                                      name: a.file_name,
+                                      isImage: a.mime_type.startsWith('image/'),
+                                  }))
                             : []
                     }
                     onRemoveExistingFile={(id) =>

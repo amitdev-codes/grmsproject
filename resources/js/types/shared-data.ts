@@ -14,6 +14,15 @@ export interface Auth {
 
 export interface SharedData {
     auth: Auth;
+    notifications: {
+        count: number;
+    };
+    pendingGrievances: {
+        count: number;
+        href: string;
+        label: string;
+        visible: boolean;
+    };
     locale: string;
     locales: Record<string, string>;
     translations: Record<string, string>;

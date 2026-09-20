@@ -48,10 +48,12 @@ Route::middleware(['auth'])
     ->prefix('grievances')->name('grievances.')->group(function () {
         Route::get('/', [GrievanceController::class, 'index'])->name('index');
         Route::get('/export', [GrievanceController::class, 'export'])->name('export');
+        Route::get('/pending', [GrievanceController::class, 'index'])->name('pending');
         Route::get('/create', [GrievanceController::class, 'create'])->name('create');
         Route::post('/', [GrievanceController::class, 'store'])->name('store');
         Route::get('/{grievance}/edit', [GrievanceController::class, 'edit'])->name('edit');
         Route::put('/{grievance}', [GrievanceController::class, 'update'])->name('update');
+        Route::delete('/{grievance}', [GrievanceController::class, 'destroy'])->name('destroy');
         Route::delete('/bulk', [GrievanceController::class, 'bulkDestroy'])->name('bulk-destroy');
     });
 Route::prefix('grievances')->group(function () {

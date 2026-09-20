@@ -25,6 +25,7 @@ class GrievanceRepository implements GrievanceRepositoryInterface
     public function update(Grievance $grievance, array $data): Grievance
     {
         $grievance->update($data);
+
         return $grievance->refresh();
     }
 
@@ -55,7 +56,7 @@ class GrievanceRepository implements GrievanceRepositoryInterface
         return DB::transaction(function () use ($year) {
             $sequence = ReferenceSequence::where('scope', 'grievance')->where('year', $year)->lockForUpdate()->first();
 
-            if (!$sequence) {
+            if (! $sequence) {
                 ReferenceSequence::create(['scope' => 'grievance', 'year' => $year, 'last_number' => 0]);
                 $sequence = ReferenceSequence::where('scope', 'grievance')->where('year', $year)->lockForUpdate()->first();
             }
@@ -71,9 +72,12 @@ class GrievanceRepository implements GrievanceRepositoryInterface
         return Grievance::query()
             ->with(['category', 'channel', 'district'])
             ->when($filters['channel'] ?? null, fn ($q, $v) => $q->whereHas('channel', fn ($q2) => $q2->where('code', $v)))
-            ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
+            ->when($filters['status'] ?? null, fn ($q, $v) => is_array($v) ? $q->whereIn('status', $v) : $q->where('status', $v))
             ->when($filters['category_id'] ?? null, fn ($q, $v) => $q->where('grievance_category_id', $v))
             ->when($filters['district_id'] ?? null, fn ($q, $v) => $q->where('district_id', $v))
+            ->when($filters['division_id'] ?? null, fn ($q, $v) => $q->where('division_id', $v))
+            ->when($filters['section_id'] ?? null, fn ($q, $v) => $q->where('section_id', $v))
+            ->when($filters['pending_no_division'] ?? false, fn ($q) => $q->whereNull('division_id'))
             ->when($filters['date_from'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
             ->when($filters['date_to'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
             ->when($filters['search'] ?? null, fn ($q, $v) => $q->where(function ($q2) use ($v) {
@@ -122,7 +126,7 @@ class GrievanceRepository implements GrievanceRepositoryInterface
             ->where('reference_no', $referenceNo)
             ->first();
 
-        if (!$grievance) {
+        if (! $grievance) {
             return null;
         }
 
@@ -130,7 +134,7 @@ class GrievanceRepository implements GrievanceRepositoryInterface
             return $grievance; // reference number is the only credential by design
         }
 
-        if (!$contact) {
+        if (! $contact) {
             return null;
         }
 

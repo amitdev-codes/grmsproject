@@ -34,24 +34,41 @@ class GrievanceController extends Controller
             'division_id', 'section_id', 'date_from', 'date_to', 'search',
         ]);
 
+        if ($request->boolean('pending') || $request->routeIs('grievances.pending')) {
+            $user = $request->user();
+
+            if ($user->hasAnyRole(['Director', 'Super Admin'])) {
+                $filters['status'] = ['submitted', 'reallocation_required'];
+                $filters['pending_no_division'] = true;
+            } elseif ($user->hasRole('Division Director') && $user->division_id) {
+                $filters['status'] = 'allocated_division';
+                $filters['division_id'] = $user->division_id;
+            } elseif ($user->hasRole('Section Manager') && $user->section_id) {
+                $filters['status'] = 'allocated_section';
+                $filters['section_id'] = $user->section_id;
+            } else {
+                abort(403);
+            }
+        }
+
         $paginator = $this->service->paginate($filters);
 
         return Inertia::render('Grievance::Grievances/Index', [
             'data' => GrievanceResource::collection($paginator->items()),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
-                'from'         => $paginator->firstItem(),
-                'last_page'    => $paginator->lastPage(),
-                'per_page'     => $paginator->perPage(),
-                'to'           => $paginator->lastItem(),
-                'total'        => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'to' => $paginator->lastItem(),
+                'total' => $paginator->total(),
             ],
             'pendingSms' => InboundSms::where('status', 'pending')->latest()->limit(20)->get(),
             'categories' => GrievanceCategory::active()->get(['id', 'code', 'name_en']),
-            'districts'  => District::orderBy('name')->get(['id', 'code', 'name']),
-            'divisions'  => Division::orderBy('name')->get(['id', 'code', 'name']),
-            'sections'   => Section::orderBy('name')->get(['id', 'code', 'name']),
-            'filters'    => $filters,
+            'districts' => District::orderBy('name')->get(['id', 'code', 'name']),
+            'divisions' => Division::orderBy('name')->get(['id', 'code', 'name']),
+            'sections' => Section::orderBy('name')->get(['id', 'code', 'name']),
+            'filters' => $filters,
         ]);
     }
 
@@ -62,7 +79,7 @@ class GrievanceController extends Controller
             'categories' => GrievanceCategory::active()->get(['id', 'code', 'name_en']),
             'districts' => District::orderBy('name')->get(['id', 'code', 'name']),
             'divisions' => Division::orderBy('name')->get(['id', 'code', 'name']),
-            'sections'   => Section::orderBy('name')->get(['id', 'code', 'name']),
+            'sections' => Section::orderBy('name')->get(['id', 'code', 'name']),
             'fromInboundSms' => InboundSms::whereKey($request->input('inbound_sms_id'))->first(),
         ]);
     }
@@ -101,22 +118,33 @@ class GrievanceController extends Controller
             'channels' => GrievanceChannel::active()->get(['id', 'code', 'name']),
             'districts' => District::orderBy('name')->get(['id', 'code', 'name']),
             'divisions' => Division::orderBy('name')->get(['id', 'code', 'name']),
-            'sections'   => Section::orderBy('name')->get(['id', 'code', 'name']),
+            'sections' => Section::orderBy('name')->get(['id', 'code', 'name']),
         ]);
     }
 
     public function update(UpdateGrievanceRequest $request, Grievance $grievance): RedirectResponse
     {
-        $data = $request->safe()->except(['attachments', 'remove_media_ids']);
+        $data = $request->safe()->except(['attachments', 'remove_attachment_ids']);
+        if (array_key_exists('remarks', $data)) {
+            $data['closed_reason'] = $data['remarks'];
+            unset($data['remarks']);
+        }
 
         $this->service->update(
             $grievance,
             $data,
             $request->file('attachments', []),
-            $request->input('remove_media_ids', []),
+            $request->input('remove_attachment_ids', []),
         );
 
         return redirect()->route('grievances.index')->with('success', 'Grievance updated.');
+    }
+
+    public function destroy(Grievance $grievance): RedirectResponse
+    {
+        $grievance->delete();
+
+        return back()->with('success', 'Grievance deleted.');
     }
 
     public function bulkDestroy(BulkDeleteGrievanceRequest $request): RedirectResponse
