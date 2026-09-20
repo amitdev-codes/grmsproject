@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Combobox } from '@/components/ui/combobox';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Link } from '@inertiajs/react';
@@ -52,7 +53,6 @@ import {
     useApplicationSettings,
     useLandingStats,
 } from './site-shared';
-import { Combobox } from '@/components/ui/combobox';
 
 const STATUS_COLORS = [
     'var(--resolved)',
@@ -243,11 +243,17 @@ function Hero() {
         let cancelled = false;
         fetch('/api/v1/grievance-categories')
             .then((res) => {
-                if (!res.ok) throw new Error('Failed to load categories');
+                if (!res.ok) {
+throw new Error('Failed to load categories');
+}
+
                 return res.json();
             })
             .then((json) => {
-                if (cancelled) return;
+                if (cancelled) {
+return;
+}
+
                 const data = json.data ?? json;
                 setCategories(
                     data.map(
@@ -265,10 +271,14 @@ function Hero() {
                 );
             })
             .catch(() => {
-                if (!cancelled) setCategories([]);
+                if (!cancelled) {
+setCategories([]);
+}
             })
             .finally(() => {
-                if (!cancelled) setLoading(false);
+                if (!cancelled) {
+setLoading(false);
+}
             });
 
         return () => {

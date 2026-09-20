@@ -137,6 +137,7 @@ const getInitialTheme = (): Theme => {
     }
 
     const stored = localStorage.getItem('appearance'); // 'light' | 'dark' | 'system' | null
+
     if (stored === 'dark') {
         return 'dark';
     }
@@ -1051,6 +1052,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
             setTheme((v) => {
                 const next: Theme = v === 'light' ? 'dark' : 'light';
                 persist('appearance', next);
+
                 return next;
             }),
     };

@@ -1,7 +1,5 @@
-import { Head, router } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
-import { Search, Clock } from 'lucide-react';
 
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import IndexLayout from '@/components/index-layout';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -13,9 +11,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { useTranslation } from '@/hooks/use-translation';
 import type { PaginationMeta } from '@/types/data-table';
+import { Head, router } from '@inertiajs/react';
+import { Search, Clock } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { JsonCell, formatDateTime } from '../LogsCells';
 
 interface AuditRow {

@@ -1,7 +1,5 @@
-import { Head, router } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
-import { Search, Clock } from 'lucide-react';
 
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import IndexLayout from '@/components/index-layout';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -13,9 +11,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { useTranslation } from '@/hooks/use-translation';
 import type { PaginationMeta } from '@/types/data-table';
+import { Head, router } from '@inertiajs/react';
+import { Search, Clock } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { JsonCell, formatDateTime } from '../LogsCells';
 
 interface ActivityRow {
@@ -37,7 +37,9 @@ interface Props {
 export default function ActivityLogs({ data, meta }: Props) {
     const { t } = useTranslation();
     const [search, setSearch] = useState('');
-    const searchDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const searchDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(
+        undefined,
+    );
 
     const currentMeta = meta ?? {
         current_page: 1,
@@ -52,7 +54,10 @@ export default function ActivityLogs({ data, meta }: Props) {
         const page = overrides.page ?? 1;
         const perPage = overrides.per_page ?? currentMeta.per_page;
 
-        const params: Record<string, string | number> = { page, per_page: perPage };
+        const params: Record<string, string | number> = {
+            page,
+            per_page: perPage,
+        };
 
         if (search) {
             params.search = search;
@@ -110,16 +115,28 @@ export default function ActivityLogs({ data, meta }: Props) {
                         </div>
                     </div>
 
-                    <div className="border bg-card rounded-md">
+                    <div className="rounded-md border bg-card">
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-muted/40">
-                                    <TableHead className="text-[11px] uppercase">{t('menu.log_name')}</TableHead>
-                                    <TableHead className="text-[11px] uppercase">{t('menu.log_description')}</TableHead>
-                                    <TableHead className="text-[11px] uppercase">{t('menu.log_event')}</TableHead>
-                                    <TableHead className="text-[11px] uppercase">{t('menu.log_causer')}</TableHead>
-                                    <TableHead className="text-[11px] uppercase">{t('menu.log_old_values')}</TableHead>
-                                    <TableHead className="text-[11px] uppercase">{t('menu.created_at')}</TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.log_name')}
+                                    </TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.log_description')}
+                                    </TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.log_event')}
+                                    </TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.log_causer')}
+                                    </TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.log_old_values')}
+                                    </TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.created_at')}
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -127,30 +144,46 @@ export default function ActivityLogs({ data, meta }: Props) {
                                     data.map((row) => (
                                         <TableRow key={row.id}>
                                             <TableCell>
-                                                <Badge variant="outline" className="font-mono">
+                                                <Badge
+                                                    variant="outline"
+                                                    className="font-mono"
+                                                >
                                                     {row.log_name || '—'}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="max-w-md">{row.description}</TableCell>
+                                            <TableCell className="max-w-md">
+                                                {row.description}
+                                            </TableCell>
                                             <TableCell>
                                                 {row.event ? (
-                                                    <Badge variant="secondary">{row.event}</Badge>
+                                                    <Badge variant="secondary">
+                                                        {row.event}
+                                                    </Badge>
                                                 ) : (
                                                     '—'
                                                 )}
                                             </TableCell>
-                                            <TableCell className="font-mono text-xs">{row.causer}</TableCell>
-                                            <TableCell>
-                                                <JsonCell value={row.attribute_changes} />
+                                            <TableCell className="font-mono text-xs">
+                                                {row.causer}
                                             </TableCell>
-                                            <TableCell className="whitespace-nowrap text-xs">
+                                            <TableCell>
+                                                <JsonCell
+                                                    value={
+                                                        row.attribute_changes
+                                                    }
+                                                />
+                                            </TableCell>
+                                            <TableCell className="text-xs whitespace-nowrap">
                                                 {formatDateTime(row.created_at)}
                                             </TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-20 text-center text-muted-foreground">
+                                        <TableCell
+                                            colSpan={6}
+                                            className="h-20 text-center text-muted-foreground"
+                                        >
                                             {t('menu.no_results')}
                                         </TableCell>
                                     </TableRow>

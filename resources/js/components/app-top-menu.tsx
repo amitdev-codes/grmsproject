@@ -25,6 +25,9 @@ import {
     ArrowUpRight,
     Globe,
     ClipboardList,
+    List,
+    ClipboardCheck,
+    Server,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { Button } from '@/components/ui/button';
@@ -253,15 +256,25 @@ export function AppTopMenu() {
             icon: ScrollText,
             items: [
                 {
-                    title: 'menu.logs',
-                    href: '/logs',
-                    icon: ScrollText,
-                    permission: 'audit_logs.view',
+                    title: 'menu.activity_logs',
+                    href: '/logs/activity-logs',
+                    icon: List,
+                },
+                {
+                    title: 'menu.audit_logs',
+                    href: '/logs/audit-logs',
+                    icon: ClipboardCheck,
+                },
+                {
+                    title: 'menu.system_logs',
+                    href: '/logs/system-logs',
+                    icon: Server,
                 },
             ],
             permission: 'audit_logs.view',
             visible: isPrivileged,
         },
+
         {
             label: 'menu.settings',
             icon: Settings,
