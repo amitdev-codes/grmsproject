@@ -8,7 +8,7 @@ class ResolveGrievanceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['Helpdesk Officer', 'Section Manager', 'Director', 'Super Admin']) ?? false;
+        return $this->user()?->hasAnyRole(['Helpdesk Officer', 'Section Manager', 'Director']) ?? false;
     }
 
     public function rules(): array

@@ -36,16 +36,16 @@ class GrievanceRoutingController extends Controller
 
     public function allocateDivision(AllocateDivisionRequest $request, Grievance $grievance): RedirectResponse
     {
-        $this->routing->allocateToDivision($grievance, $request->validated('division_id'), $request->user());
+        $this->routing->allocateToDivision($grievance, $request->validated('division_id'), $request->user(), $request->validated('remarks'));
 
-        return back()->with('success', 'Grievance allocated to division.');
+        return redirect()->route('grievances.pending')->with('success', 'Grievance allocated to division.');
     }
 
     public function allocateSection(AllocateSectionRequest $request, Grievance $grievance): RedirectResponse
     {
-        $this->routing->allocateToSection($grievance, $request->validated('section_id'), $request->user());
+        $this->routing->allocateToSection($grievance, $request->validated('section_id'), $request->user(), $request->validated('remarks'));
 
-        return back()->with('success', 'Grievance allocated to section.');
+        return redirect()->route('grievances.pending')->with('success', 'Grievance allocated to section.');
     }
 
     public function rejectAllocation(RejectAllocationRequest $request, Grievance $grievance): RedirectResponse
@@ -59,7 +59,7 @@ class GrievanceRoutingController extends Controller
     {
         $this->routing->assignOfficer($grievance, $request->validated('officer_id'), $request->user());
 
-        return back()->with('success', 'Officer assigned.');
+        return redirect()->route('grievances.pending')->with('success', 'Investigating officer assigned.');
     }
 
     public function reject(RejectGrievanceRequest $request, Grievance $grievance): RedirectResponse

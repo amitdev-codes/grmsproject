@@ -77,6 +77,7 @@ interface DataTableProps<TData, TValue> {
     viewContent?: (row: TData, close: () => void) => React.ReactNode;
     onCreate?: () => void;
     onEdit?: (row: TData) => void;
+    rowActions?: (row: TData) => React.ReactNode;
     /** Header actions — omit a handler to hide that button */
     onExport?: () => void;
     onImport?: () => void;
@@ -104,6 +105,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
     viewContent,
     onCreate,
     onEdit,
+    rowActions,
     onExport,
     onImport,
     exportLabel,
@@ -124,8 +126,10 @@ export function DataTable<TData extends { id: number | string }, TValue>({
     const showImport = Boolean(onImport || routes.import);
     const showCreate = Boolean(onCreate || routes.create);
 
-    const resolvedSearchPlaceholder = searchPlaceholder ?? t('menu.search_placeholder');
-    const resolvedResourceLabel = resourceLabel ?? t('menu.new_resource', { resource: title });
+    const resolvedSearchPlaceholder =
+        searchPlaceholder ?? t('menu.search_placeholder');
+    const resolvedResourceLabel =
+        resourceLabel ?? t('menu.new_resource', { resource: title });
     const resolvedExportLabel = exportLabel ?? t('menu.export');
     const resolvedImportLabel = importLabel ?? t('menu.import');
 
@@ -240,6 +244,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
                                 viewContent ? (r) => setViewRow(r) : undefined
                             }
                             onEdit={onEdit}
+                            extraActions={rowActions}
                         />
                     </div>
                 ),
@@ -249,7 +254,17 @@ export function DataTable<TData extends { id: number | string }, TValue>({
         }
 
         return cols;
-    }, [showSelection, columns, showActions, getRowId, routes, getRowLabel, viewContent, onEdit]);
+    }, [
+        showSelection,
+        columns,
+        showActions,
+        getRowId,
+        routes,
+        getRowLabel,
+        viewContent,
+        onEdit,
+        rowActions,
+    ]);
 
     const sortingState: SortingState = dt.query.sort
         ? [{ id: dt.query.sort, desc: dt.query.order === 'desc' }]

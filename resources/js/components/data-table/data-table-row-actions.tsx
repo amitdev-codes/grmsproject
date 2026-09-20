@@ -28,6 +28,7 @@ interface DataTableRowActionsProps<TData> {
     label?: string;
     onView?: (row: TData) => void;
     onEdit?: (row: TData) => void;
+    extraActions?: (row: TData) => React.ReactNode;
 }
 
 function safeRoute(name: string, params?: unknown) {
@@ -49,6 +50,7 @@ export function DataTableRowActions<TData>({
     label,
     onView,
     onEdit,
+    extraActions,
 }: DataTableRowActionsProps<TData>) {
     const { t } = useTranslation();
     const showView = Boolean(onView || routes.view);
@@ -89,6 +91,7 @@ export function DataTableRowActions<TData>({
 
     return (
         <div className="flex items-center gap-1">
+            {extraActions?.(row)}
             {showView && (
                 <Tooltip>
                     <TooltipTrigger asChild>

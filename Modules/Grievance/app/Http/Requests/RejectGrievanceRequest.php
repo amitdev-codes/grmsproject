@@ -8,7 +8,7 @@ class RejectGrievanceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['Director', 'Super Admin']) ?? false;
+        return $this->user()?->hasRole('Director') ?? false;
     }
 
     public function rules(): array

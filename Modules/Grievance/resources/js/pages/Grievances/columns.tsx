@@ -44,6 +44,15 @@ export interface Attachment {
     thumb_url: string;
 }
 
+export interface StatusHistory {
+    id: number;
+    from_status: string | null;
+    to_status: string;
+    actor_role: string | null;
+    reason: string | null;
+    created_at: string;
+}
+
 export interface Grievance {
     id: number;
     reference_no: string;
@@ -64,6 +73,7 @@ export interface Grievance {
     section?: Section | null;
     sla_due_at?: string | null;
     attachments: Attachment[];
+    status_histories?: StatusHistory[];
     created_at: string;
 }
 

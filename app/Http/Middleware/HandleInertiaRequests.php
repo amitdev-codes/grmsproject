@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 use Modules\Grievance\Models\Grievance;
+use Modules\Grievance\Notifications\GrievanceAllocated;
+use Modules\Grievance\Notifications\GrievanceAssigned;
+use Modules\Grievance\Notifications\GrievanceReAllocationRequested;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -59,13 +62,19 @@ class HandleInertiaRequests extends Middleware
                         'avatar' => $user->avatar,
                         'locale' => $user->locale,
                         'role_names' => $user->getRoleNames()->implode(', '),
+                        'division_id' => $user->division_id,
+                        'section_id' => $user->section_id,
                         'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
                     ]
                     : null,
             ],
             'notifications' => [
                 'count' => $user
-                    ? $user->unreadNotifications()->where('type', 'like', 'Modules\\Grievance\\Notifications\\%')->count()
+                    ? $user->unreadNotifications()->whereIn('type', [
+                        GrievanceAllocated::class,
+                        GrievanceAssigned::class,
+                        GrievanceReAllocationRequested::class,
+                    ])->count()
                     : 0,
             ],
             'pendingGrievances' => $this->pendingGrievances($user),

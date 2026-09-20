@@ -3,6 +3,7 @@
 namespace Modules\Grievance\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -24,9 +25,12 @@ class ResolutionController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('Grievance::Resolutions/ResolutionForm', $this->resolutionService->forCreate());
+        return Inertia::render('Grievance::Resolutions/ResolutionForm', [
+            ...$this->resolutionService->forCreate(),
+            'lockedGrievanceId' => $request->integer('grievance_id') ?: null,
+        ]);
     }
 
     public function edit(Resolution $resolution): Response
@@ -84,5 +88,13 @@ class ResolutionController extends Controller
         return back()
             ->with('success', "Imported {$result['created']} Resolution.")
             ->with('import_failures', $result['failures']);
+    }
+
+    public function print(Resolution $resolution)
+    {
+        $resolution->load(['grievance', 'proposedBy', 'approvedBy']);
+
+        return Pdf::loadView('grievance::resolutions.print', compact('resolution'))
+            ->download("resolution-{$resolution->id}.pdf");
     }
 }

@@ -1,12 +1,14 @@
 // resources/js/Pages/Resolutions/index.tsx
 import { DataTable } from '@/components/data-table/data-table';
 import IndexLayout from '@/components/index-layout';
+import { Button } from '@/components/ui/button';
 import type {
     DataTableFilterField,
     DataTableRoutes,
     PaginationMeta,
 } from '@/types/data-table';
 import { CheckCircle2 } from 'lucide-react';
+import { route } from 'ziggy-js';
 import { columns } from './columns';
 import type { Resolution } from './columns';
 import { ResolutionViewContent } from './ResolutionViewContent';
@@ -59,6 +61,21 @@ export default function ResolutionIndex({ data, meta }: ResolutionIndexProps) {
                     defaultSort="created_at"
                     defaultOrder="desc"
                     getRowLabel={(row) => `Resolution #${row.id}`}
+                    rowActions={(row) => (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                                window.open(
+                                    route('resolutions.print', row.id),
+                                    '_blank',
+                                )
+                            }
+                        >
+                            Print
+                        </Button>
+                    )}
                     viewContent={(row) => (
                         <ResolutionViewContent resolution={row} />
                     )}

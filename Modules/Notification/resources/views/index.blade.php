@@ -5,9 +5,18 @@
         @forelse ($notifications as $notification)
             @php($data = $notification->data)
             <article style="border: 1px solid #d9dee8; border-radius: 8px; margin-bottom: 12px; padding: 16px; background: {{ $notification->read_at ? '#fff' : '#f2f7ff' }};">
-                <strong>{{ str_ends_with($notification->type, 'GrievanceAllocated') ? 'Grievance allocated' : 'Grievance requires reallocation' }}</strong>
+                <strong>{{ $data['title'] ?? 'Grievance notification' }}</strong>
+                @if (!empty($data['message']))
+                    <div style="margin-top: 6px;">{{ $data['message'] }}</div>
+                @endif
                 @if (!empty($data['reference_no']))
-                    <div style="margin-top: 6px;">Reference: {{ $data['reference_no'] }}</div>
+                    <div style="margin-top: 6px; color: #5e6879;">Reference: {{ $data['reference_no'] }}</div>
+                @endif
+                @if (!empty($data['reason']))
+                    <div style="margin-top: 6px; white-space: pre-wrap;">Remarks: {{ $data['reason'] }}</div>
+                @endif
+                @if (!empty($data['action_url']))
+                    <a href="{{ $data['action_url'] }}" style="display: inline-block; margin-top: 12px; color: #1d4ed8;">Open grievance</a>
                 @endif
                 <small style="display: block; margin-top: 8px; color: #5e6879;">{{ $notification->created_at->diffForHumans() }}</small>
             </article>

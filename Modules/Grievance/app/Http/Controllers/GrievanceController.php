@@ -3,6 +3,7 @@
 namespace Modules\Grievance\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -37,7 +38,7 @@ class GrievanceController extends Controller
         if ($request->boolean('pending') || $request->routeIs('grievances.pending')) {
             $user = $request->user();
 
-            if ($user->hasAnyRole(['Director', 'Super Admin'])) {
+            if ($user->hasAnyRole(['Director', 'Super Admin', 'IT Admin', 'Admin', 'Developer'])) {
                 $filters['status'] = ['submitted', 'reallocation_required'];
                 $filters['pending_no_division'] = true;
             } elseif ($user->hasRole('Division Director') && $user->division_id) {
@@ -55,6 +56,7 @@ class GrievanceController extends Controller
         }
 
         $paginator = $this->service->paginate($filters);
+        $paginator->setCollection($paginator->getCollection()->load('statusHistories'));
 
         return Inertia::render('Grievance::Grievances/Index', [
             'data' => GrievanceResource::collection($paginator->items()),
@@ -71,6 +73,7 @@ class GrievanceController extends Controller
             'districts' => District::orderBy('name')->get(['id', 'code', 'name']),
             'divisions' => Division::orderBy('name')->get(['id', 'code', 'name']),
             'sections' => Section::orderBy('name')->get(['id', 'code', 'name']),
+            'officers' => User::role('Helpdesk Officer')->orderBy('name')->get(['id', 'name', 'section_id']),
             'filters' => $filters,
         ]);
     }
@@ -115,7 +118,7 @@ class GrievanceController extends Controller
 
     public function edit(Grievance $grievance): Response
     {
-        $grievance->load(['category', 'channel', 'district', 'division', 'section', 'media']);
+        $grievance->load(['category', 'channel', 'district', 'division', 'section', 'media', 'statusHistories']);
 
         return Inertia::render('Grievance::Grievances/GrievanceForm', [
             'grievance' => new GrievanceResource($grievance),
@@ -127,6 +130,9 @@ class GrievanceController extends Controller
                 ->when($grievance->division_id, fn ($query) => $query->where('division_id', $grievance->division_id))
                 ->orderBy('name')
                 ->get(['id', 'code', 'name', 'division_id']),
+            'officers' => User::role('Helpdesk Officer')
+                ->when($grievance->section_id, fn ($query) => $query->where('section_id', $grievance->section_id))
+                ->orderBy('name')->get(['id', 'name']),
         ]);
     }
 

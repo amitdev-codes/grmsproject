@@ -21,6 +21,7 @@ interface ResolutionFormProps {
 
 interface FormValues {
     grievance_id: string;
+    document_type: 'note' | 'memo' | 'report';
     resolution_text: string;
 }
 
@@ -51,6 +52,7 @@ export default function Form({
             : lockedGrievanceId
               ? String(lockedGrievanceId)
               : '',
+        document_type: resolution?.document_type ?? 'note',
         resolution_text: resolution?.resolution_text ?? '',
     });
 
@@ -59,6 +61,7 @@ export default function Form({
 
         const clientErrors = validateForm(data, {
             grievance_id: [rules.required()],
+            document_type: [rules.required()],
             resolution_text: [rules.required()],
         });
 
@@ -129,6 +132,23 @@ export default function Form({
                 options={grievanceOptions}
                 placeholder={t('Select a grievance')}
                 error={errors.grievance_id}
+            />
+
+            <Select2Field
+                id="document_type"
+                required
+                label={t('Document type')}
+                value={data.document_type}
+                onChange={(v) =>
+                    setData('document_type', v as FormValues['document_type'])
+                }
+                options={[
+                    { value: 'note', label: t('Investigation note') },
+                    { value: 'memo', label: t('Resolution memo') },
+                    { value: 'report', label: t('Investigation report') },
+                ]}
+                error={errors.document_type}
+                placeholder={t('Select a document type')}
             />
 
             <TextareaField

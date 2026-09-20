@@ -8,13 +8,14 @@ class AllocateSectionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['Division Director', 'Super Admin']) ?? false;
+        return $this->user()?->hasRole('Division Director') ?? false;
     }
 
     public function rules(): array
     {
         return [
             'section_id' => ['required', 'exists:sections,id'],
+            'remarks' => ['nullable', 'string', 'max:5000'],
         ];
     }
 }

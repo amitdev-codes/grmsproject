@@ -46,6 +46,14 @@ class GrievanceResource extends JsonResource
                 'url' => $m->getUrl(),
                 'thumb_url' => $m->hasGeneratedConversion('thumb') ? $m->getUrl('thumb') : $m->getUrl(),
             ]),
+            'status_histories' => $this->whenLoaded('statusHistories', fn () => $this->statusHistories->map(fn ($history) => [
+                'id' => $history->id,
+                'from_status' => $history->from_status,
+                'to_status' => $history->to_status,
+                'actor_role' => $history->actor_role,
+                'reason' => $history->reason,
+                'created_at' => $history->created_at,
+            ])),
             'created_at' => $this->created_at,
         ];
     }

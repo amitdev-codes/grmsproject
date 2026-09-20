@@ -8,7 +8,7 @@ class RejectAllocationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['Section Manager', 'Super Admin']) ?? false;
+        return $this->user()?->hasRole('Section Manager') ?? false;
     }
 
     public function rules(): array

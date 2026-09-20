@@ -9,10 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Resolution extends Model
 {
     protected $guarded = ['id'];
+
     protected $fillable = [
-        'grievance_id', 'proposed_by', 'approved_by', 'resolution_text',
+        'grievance_id', 'proposed_by', 'approved_by', 'document_type', 'resolution_text',
         'approved_at', 'complainant_confirmed_at', 'rejected_reason',
     ];
+
     protected function casts(): array
     {
         return [

@@ -1,5 +1,7 @@
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { route } from 'ziggy-js';
 import type { Grievance } from './columns';
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -18,7 +20,7 @@ export function GrievanceViewContent({ grievance }: { grievance: Grievance }) {
         <div className="space-y-5">
             <div className="flex items-center justify-between">
                 <span className="font-mono text-sm text-muted-foreground">
-                    {grievance.reference_number}
+                    {grievance.reference_no}
                 </span>
                 <div className="flex gap-2">
                     <Badge className="capitalize">{grievance.priority}</Badge>
@@ -36,18 +38,18 @@ export function GrievanceViewContent({ grievance }: { grievance: Grievance }) {
                     value={
                         grievance.is_anonymous
                             ? 'Anonymous'
-                            : grievance.contact_name
+                            : grievance.complainant_name
                     }
                 />
                 <Field label="Category" value={grievance.category?.name_en} />
-                <Field label="District" value={grievance.district?.name_en} />
+                <Field label="District" value={grievance.district?.name} />
                 <Field label="Division" value={grievance.division?.name} />
                 <Field label="Section" value={grievance.section?.name} />
                 <Field
                     label="Assigned Officer"
-                    value={grievance.assigned_officer?.name ?? 'Unassigned'}
+                    value="Assigned through Section Manager workflow"
                 />
-                <Field label="Submitted Via" value={grievance.submitted_via} />
+                <Field label="Submitted Via" value={grievance.channel?.name} />
                 <Field
                     label="SLA Due"
                     value={
@@ -86,6 +88,82 @@ export function GrievanceViewContent({ grievance }: { grievance: Grievance }) {
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {grievance.description}
                 </p>
+                {['assigned_officer', 'in_progress', 'escalated'].includes(
+                    grievance.status,
+                ) && (
+                    <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                    >
+                        <a
+                            href={route('resolutions.create', {
+                                grievance_id: grievance.id,
+                            })}
+                        >
+                            Prepare resolution note, memo or report
+                        </a>
+                    </Button>
+                )}
+            </div>
+
+            <Separator />
+            <div>
+                <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                    Documents
+                </p>
+                <div className="space-y-1 text-sm">
+                    {(grievance.attachments ?? []).length === 0 && (
+                        <p className="text-muted-foreground">
+                            No documents attached.
+                        </p>
+                    )}
+                    {(grievance.attachments ?? []).map((attachment) => (
+                        <a
+                            key={attachment.id}
+                            href={attachment.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block text-primary underline"
+                        >
+                            {attachment.file_name}
+                        </a>
+                    ))}
+                </div>
+            </div>
+
+            <Separator />
+            <div>
+                <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                    Status Timeline
+                </p>
+                <div className="space-y-3">
+                    {(grievance.status_histories ?? []).length === 0 && (
+                        <p className="text-sm text-muted-foreground">
+                            No status history available.
+                        </p>
+                    )}
+                    {(grievance.status_histories ?? []).map((history) => (
+                        <div
+                            key={history.id}
+                            className="border-l-2 pl-3 text-sm"
+                        >
+                            <p className="font-medium">
+                                {history.to_status.replaceAll('_', ' ')}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {history.actor_role ?? 'System'} ·{' '}
+                                {new Date(history.created_at).toLocaleString()}
+                            </p>
+                            {history.reason && (
+                                <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
+                                    {history.reason}
+                                </p>
+                            )}
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );

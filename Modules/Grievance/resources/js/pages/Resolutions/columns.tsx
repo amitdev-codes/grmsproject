@@ -18,6 +18,7 @@ export interface Resolution {
     proposed_by: number | null;
     approved_by: number | null;
     resolution_text: string;
+    document_type: 'note' | 'memo' | 'report';
     approved_at: string | null;
     complainant_confirmed_at: string | null;
     rejected_reason: string | null;
@@ -32,16 +33,16 @@ type ResolutionState = 'proposed' | 'approved' | 'confirmed' | 'rejected';
 
 const resolveState = (r: Resolution): ResolutionState => {
     if (r.rejected_reason) {
-return 'rejected';
-}
+        return 'rejected';
+    }
 
     if (r.complainant_confirmed_at) {
-return 'confirmed';
-}
+        return 'confirmed';
+    }
 
     if (r.approved_at) {
-return 'approved';
-}
+        return 'approved';
+    }
 
     return 'proposed';
 };

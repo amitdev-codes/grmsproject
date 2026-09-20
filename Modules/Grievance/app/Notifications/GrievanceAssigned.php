@@ -17,9 +17,13 @@ class GrievanceAssigned extends Notification
     public function toArray($notifiable): array
     {
         return [
+            'title' => 'Investigation assigned',
+            'message' => "Grievance {$this->grievance->reference_no} has been assigned to you for investigation.",
             'grievance_id' => $this->grievance->id,
             'reference_no' => $this->grievance->reference_no,
-            'reason'=> $this->grievance->statusHistories()->latest()->value('reason')
-            ];
+            'status' => $this->grievance->status,
+            'reason' => $this->grievance->statusHistories()->latest()->value('reason'),
+            'action_url' => route('grievances.edit', $this->grievance),
+        ];
     }
 }

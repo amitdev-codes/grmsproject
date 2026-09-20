@@ -11,12 +11,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Master\Models\District;
 use Modules\Master\Models\Division;
 use Modules\Master\Models\Section;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+use OwenIt\Auditing\Contracts\Auditable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Grievance extends Model implements HasMedia
+class Grievance extends Model implements Auditable, HasMedia
 {
+    use AuditableTrait;
     use HasPublicUlid;
     use InteractsWithMedia, SoftDeletes;
 

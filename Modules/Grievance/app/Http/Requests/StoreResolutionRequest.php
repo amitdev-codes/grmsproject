@@ -13,6 +13,7 @@ class StoreResolutionRequest extends FormRequest
     {
         return [
             'grievance_id' => ['required', 'integer', 'exists:grievances,id'],
+            'document_type' => ['required', 'in:note,memo,report'],
             'resolution_text' => ['required', 'string'],
         ];
     }

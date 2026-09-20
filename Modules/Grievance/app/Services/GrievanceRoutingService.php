@@ -30,7 +30,7 @@ class GrievanceRoutingService
         return $this->grievances->queueForSection($sectionId, $perPage);
     }
 
-    public function allocateToDivision(Grievance $grievance, int $divisionId, User $actor): Grievance
+    public function allocateToDivision(Grievance $grievance, int $divisionId, User $actor, ?string $remarks = null): Grievance
     {
         $from = $grievance->status;
 
@@ -39,8 +39,8 @@ class GrievanceRoutingService
             'status' => 'allocated_division',
         ]);
 
-        $this->grievances->recordStatus($grievance, $from, 'allocated_division', $actor->id, 'director');
-        $this->recordAssignment($grievance, 'allocated', $actor->id, toDivisionId: $divisionId);
+        $this->grievances->recordStatus($grievance, $from, 'allocated_division', $actor->id, 'director', $remarks);
+        $this->recordAssignment($grievance, 'allocated', $actor->id, toDivisionId: $divisionId, reason: $remarks);
 
         Notification::send(
             User::role('Division Director')->where('division_id', $divisionId)->get(),
@@ -50,7 +50,7 @@ class GrievanceRoutingService
         return $grievance;
     }
 
-    public function allocateToSection(Grievance $grievance, int $sectionId, User $actor): Grievance
+    public function allocateToSection(Grievance $grievance, int $sectionId, User $actor, ?string $remarks = null): Grievance
     {
         $from = $grievance->status;
 
@@ -59,8 +59,8 @@ class GrievanceRoutingService
             'status' => 'allocated_section',
         ]);
 
-        $this->grievances->recordStatus($grievance, $from, 'allocated_section', $actor->id, 'division_director');
-        $this->recordAssignment($grievance, 'allocated', $actor->id, toDivisionId: $grievance->division_id, toSectionId: $sectionId);
+        $this->grievances->recordStatus($grievance, $from, 'allocated_section', $actor->id, 'division_director', $remarks);
+        $this->recordAssignment($grievance, 'allocated', $actor->id, toDivisionId: $grievance->division_id, toSectionId: $sectionId, reason: $remarks);
 
         Notification::send(
             User::role('Section Manager')->where('section_id', $sectionId)->get(),

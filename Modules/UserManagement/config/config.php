@@ -135,6 +135,7 @@ return [
             'settings.*', 'application_settings.*',
             'audit_logs.*', 'logs.*',
             'grievances.view',
+            'grievances.edit',
             'grievance_categories.*', 'grievance_channels.*',
             'grievance_sla_policies.*', 'grievance_escalation_rules.*',
             'notifications.*',
@@ -143,14 +144,14 @@ return [
         'Developer' => '*',
 
         'Director' => [
-            'grievances.view', 'grievances.edit', 'grievances.view_sensitive', 'grievances.allocate', 'grievances.resolve', 'grievances.close', 'grievances.escalate', 'grievances.export',
+            'grievances.view', 'grievances.view_sensitive', 'grievances.allocate', 'grievances.resolve', 'grievances.close', 'grievances.escalate', 'grievances.export',
             'grievance_categories.view', 'grievance_channels.view',
             'grievance_escalations.view', 'grievance_messages.view',
             'reports.*', 'audit_logs.*',
         ],
 
         'Division Director' => [
-            'grievances.view', 'grievances.edit', 'grievances.allocate', 'grievances.export',
+            'grievances.view', 'grievances.allocate', 'grievances.export',
             'grievance_categories.view', 'grievance_channels.view',
             'grievance_messages.view', 'grievance_status_histories.view',
             'grievance_sla_policies.view',
@@ -159,7 +160,7 @@ return [
         ],
 
         'Section Manager' => [
-            'grievances.view', 'grievances.edit', 'grievances.assign', 'grievances.resolve', 'grievances.close', 'grievances.escalate',
+            'grievances.view', 'grievances.assign', 'grievances.resolve', 'grievances.close', 'grievances.escalate',
             'grievance_categories.view', 'grievance_channels.view',
             'grievance_messages.view', 'grievance_status_histories.view',
             'grievance_escalations.view',
@@ -168,7 +169,7 @@ return [
         ],
 
         'Helpdesk Officer' => [
-            'grievances.view', 'grievances.create', 'grievances.edit', 'grievances.resolve',
+            'grievances.view', 'grievances.create', 'grievances.resolve',
             'grievance_categories.view', 'grievance_channels.view',
             'grievance_messages.create', 'grievance_messages.view',
             'districts.view', 'divisions.view', 'sections.view',

@@ -26,6 +26,7 @@ class UpdateResolutionRequest extends FormRequest
         $alreadyApproved = $resolution?->approved_at !== null;
 
         return [
+            'document_type' => ['sometimes', 'required', 'in:note,memo,report'],
             'resolution_text' => ['sometimes', 'required', 'string'],
 
             // Approval fields — only meaningful once, guarded by authorize()

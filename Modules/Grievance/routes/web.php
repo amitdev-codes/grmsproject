@@ -42,6 +42,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/resolutions/export', [ResolutionController::class, 'export'])->name('resolutions.export');
     Route::post('/resolutions/import', [ResolutionController::class, 'import'])->name('resolutions.import');
     Route::resource('resolutions', ResolutionController::class)->names('resolutions');
+    Route::get('/resolutions/{resolution}/print', [ResolutionController::class, 'print'])->name('resolutions.print');
 });
 // Route::middleware(['auth', 'role:Helpdesk Officer|IT Admin|Super Admin'])
 Route::middleware(['auth', 'verified', 'permission:grievances.view'])
@@ -51,7 +52,7 @@ Route::middleware(['auth', 'verified', 'permission:grievances.view'])
         Route::get('/pending', [GrievanceController::class, 'index'])->name('pending');
         Route::get('/create', [GrievanceController::class, 'create'])->middleware('permission:grievances.create')->name('create');
         Route::post('/', [GrievanceController::class, 'store'])->middleware('permission:grievances.create')->name('store');
-        Route::get('/{grievance}/edit', [GrievanceController::class, 'edit'])->middleware('permission:grievances.edit')->name('edit');
+        Route::get('/{grievance}/edit', [GrievanceController::class, 'edit'])->name('edit');
         Route::put('/{grievance}', [GrievanceController::class, 'update'])->middleware('permission:grievances.edit')->name('update');
         Route::delete('/bulk', [GrievanceController::class, 'bulkDestroy'])->middleware('permission:grievances.delete')->name('bulk-destroy');
         Route::delete('/{grievance}', [GrievanceController::class, 'destroy'])->middleware('permission:grievances.delete')->name('destroy');
