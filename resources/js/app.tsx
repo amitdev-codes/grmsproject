@@ -39,14 +39,16 @@ async function resolvePageComponent(
             `/Modules/${moduleName}/resources/js/pages/${pagePath}.tsx`,
         ];
 
-        let page = null;
+        const expectedSuffix = `/Modules/${moduleName}/resources/js/pages/${pagePath}.tsx`;
+        const pageEntry = Object.entries(modulePages).find(([path]) => {
+            const normalizedPath = path.replaceAll('\\', '/');
 
-        for (const path of pathFormats) {
-            if (modulePages[path]) {
-                page = modulePages[path];
-                break;
-            }
-        }
+            return (
+                pathFormats.includes(path) ||
+                normalizedPath.endsWith(expectedSuffix)
+            );
+        });
+        const page = pageEntry?.[1];
 
         if (!page) {
             throw new Error(

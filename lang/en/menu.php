@@ -40,6 +40,8 @@ return
     'created_at' => 'Created',
     'profile_settings' => 'Profile',
     'application_settings' => 'Application Setting',
+    'email_settings' => 'Email Settings',
+    'sms_settings' => 'SMS Settings',
     'master' => 'Master',
     'districts' => 'Districts',
     'divisions' => 'Division',

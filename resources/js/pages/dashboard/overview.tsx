@@ -1,4 +1,12 @@
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import {
+    Bar,
+    BarChart,
+    Cell,
+    ResponsiveContainer,
+    XAxis,
+    YAxis,
+    Tooltip,
+} from 'recharts';
 
 interface TrendData {
     month?: string;
@@ -36,11 +44,22 @@ export function Overview({ data }: { data: TrendData[] }) {
                         borderRadius: '6px',
                     }}
                 />
-                <Bar
-                    dataKey="total"
-                    fill="hsl(var(--primary))"
-                    radius={[4, 4, 0, 0]}
-                />
+                <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                    {chartData.map((entry, index) => (
+                        <Cell
+                            key={`bar-${entry.name}-${index}`}
+                            fill={
+                                [
+                                    '#38bdf8',
+                                    '#60a5fa',
+                                    '#818cf8',
+                                    '#a78bfa',
+                                    '#34d399',
+                                ][index % 5]
+                            }
+                        />
+                    ))}
+                </Bar>
             </BarChart>
         </ResponsiveContainer>
     );

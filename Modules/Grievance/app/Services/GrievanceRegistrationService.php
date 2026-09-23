@@ -91,6 +91,7 @@ class GrievanceRegistrationService
                 'complainant_email' => $data->contactEmail,
                 'is_anonymous' => $data->isAnonymous,
                 'raw_payload' => $data->rawPayload,
+                'ussd_session_id' => $data->ussdSessionId,
                 'status' => Grievance::STATUS_SUBMITTED,
                 'registered_by' => $data->registeredBy,
                 'project_id' => $data->projectId,
@@ -166,8 +167,6 @@ class GrievanceRegistrationService
         );
 
         $this->routeGrievance($grievance, $category, $intakeData);
-        $this->recordAcknowledgement($grievance, $intakeData);
-
         if ($grievance->is_previously_lodged || $grievance->is_previously_finalized) {
             Notification::send(User::role('Director')->get(), new GrievanceAllocated($grievance));
         }
@@ -221,6 +220,7 @@ class GrievanceRegistrationService
                 'complainant_email' => $data->contactEmail,
                 'is_anonymous' => $data->isAnonymous,
                 'raw_payload' => $data->rawPayload,
+                'ussd_session_id' => $data->ussdSessionId,
                 'status' => Grievance::STATUS_SUBMITTED,
                 'registered_by' => $data->registeredBy,
                 'project_id' => $data->projectId,
@@ -253,8 +253,6 @@ class GrievanceRegistrationService
             );
 
             $this->routeGrievance($grievance, $category, $data);
-            $this->recordAcknowledgement($grievance, $data);
-
             if ($data->isPreviouslyLodged || $data->isPreviouslyFinalized) {
                 Notification::send(User::role('Director')->get(), new GrievanceAllocated($grievance));
             }
@@ -336,21 +334,6 @@ class GrievanceRegistrationService
                 new GrievanceAllocated($grievance)
             );
         }
-    }
-
-    protected function recordAcknowledgement(Grievance $grievance, GrievanceIntakeData $data): void
-    {
-        DB::table('grievance_communications')->insert([
-            'grievance_id' => $grievance->id,
-            'message_type' => 'acknowledgement',
-            'channel' => $data->contactPhone ? 'sms' : 'email',
-            'recipient' => $data->isAnonymous ? null : ($data->contactPhone ?? $data->contactEmail),
-            'body' => "Grievance {$grievance->reference_no} received. You can track its status using this reference number.",
-            'template_data' => json_encode(['reference_no' => $grievance->reference_no]),
-            'delivery_status' => $data->isAnonymous ? 'not_applicable' : 'queued',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
     }
 
     private function resolveRoutingDivisionId(GrievanceCategory $category, ?int $districtId): ?int
@@ -480,10 +463,18 @@ class GrievanceRegistrationService
     protected function submitFromUssd(array $steps, string $phone, string $sessionId, string $rawText): string
     {
         [, $catIndex, $distIndex, $description] = $steps;
+        $description = trim($description);
+
+        $existing = Grievance::where('ussd_session_id', $sessionId)->first();
+        if ($existing) {
+            return "END Your grievance reference is {$existing->reference_no}.";
+        }
+
         $category = GrievanceCategory::active()->get()->get(((int) $catIndex) - 1);
         $district = District::orderBy('name')->get()->get(((int) $distIndex) - 1);
 
-        if (! $category || ! $district || trim($description) === '') {
+        if (! $category || ! $district || $description === ''
+            || mb_strlen($description) > (int) config('grievance.ussd.max_description_length', 500)) {
             return 'END Invalid selection. Please dial again.';
         }
 
@@ -493,6 +484,7 @@ class GrievanceRegistrationService
             description: $description,
             phone: $phone,
             rawPayload: ['session_id' => $sessionId, 'text' => $rawText],
+            sessionId: $sessionId,
         ));
 
         return "END Thank you. Your grievance reference is {$grievance->reference_no}. You will receive an SMS confirmation.";

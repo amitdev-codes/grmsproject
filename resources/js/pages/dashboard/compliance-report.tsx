@@ -15,6 +15,7 @@ import {
     LineChart,
     Line,
     CartesianGrid,
+    Legend,
 } from 'recharts';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -37,7 +38,10 @@ export function ComplianceReport({ data }: { data: ComplianceRow[] }) {
     return (
         <Card className="col-span-1">
             <CardHeader>
-                <CardTitle>{t('menu.monthly_compliance') || 'Monthly Compliance Reports'}</CardTitle>
+                <CardTitle>
+                    {t('menu.monthly_compliance') ||
+                        'Monthly Compliance Reports'}
+                </CardTitle>
                 <CardDescription>
                     {t('menu.compliance_desc') || 'Resolution rate per month'}
                 </CardDescription>
@@ -50,18 +54,50 @@ export function ComplianceReport({ data }: { data: ComplianceRow[] }) {
                         </h4>
                         <ResponsiveContainer width="100%" height={250}>
                             <BarChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                                <XAxis dataKey="month" stroke="#888888" fontSize={11} tickLine={false} />
-                                <YAxis stroke="#888888" fontSize={11} tickLine={false} />
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    stroke="#e2e8f0"
+                                />
+                                <XAxis
+                                    dataKey="month"
+                                    stroke="#64748b"
+                                    fontSize={11}
+                                    tickLine={false}
+                                />
+                                <YAxis
+                                    stroke="#64748b"
+                                    fontSize={11}
+                                    tickLine={false}
+                                />
                                 <Tooltip
                                     contentStyle={{
-                                        backgroundColor: 'hsl(var(--card))',
-                                        border: '1px solid hsl(var(--border))',
-                                        borderRadius: '6px',
+                                        backgroundColor: '#ffffff',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                        color: '#0f172a',
                                     }}
                                 />
-                                <Bar dataKey="resolved" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                <Legend
+                                    verticalAlign="top"
+                                    height={30}
+                                    iconType="circle"
+                                    wrapperStyle={{
+                                        fontSize: 12,
+                                        color: '#475569',
+                                    }}
+                                />
+                                <Bar
+                                    dataKey="resolved"
+                                    name="Resolved"
+                                    fill="#22c55e"
+                                    radius={[4, 4, 0, 0]}
+                                />
+                                <Bar
+                                    dataKey="total"
+                                    name="Total"
+                                    fill="#38bdf8"
+                                    radius={[4, 4, 0, 0]}
+                                />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -71,22 +107,42 @@ export function ComplianceReport({ data }: { data: ComplianceRow[] }) {
                         </h4>
                         <ResponsiveContainer width="100%" height={250}>
                             <LineChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                                <XAxis dataKey="month" stroke="#888888" fontSize={11} tickLine={false} />
-                                <YAxis stroke="#888888" fontSize={11} tickLine={false} domain={[0, 100]} />
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    stroke="#e2e8f0"
+                                />
+                                <XAxis
+                                    dataKey="month"
+                                    stroke="#64748b"
+                                    fontSize={11}
+                                    tickLine={false}
+                                />
+                                <YAxis
+                                    stroke="#64748b"
+                                    fontSize={11}
+                                    tickLine={false}
+                                    domain={[0, 100]}
+                                />
                                 <Tooltip
                                     contentStyle={{
-                                        backgroundColor: 'hsl(var(--card))',
-                                        border: '1px solid hsl(var(--border))',
-                                        borderRadius: '6px',
+                                        backgroundColor: '#ffffff',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                        color: '#0f172a',
                                     }}
                                 />
                                 <Line
                                     type="monotone"
                                     dataKey="rate"
-                                    stroke="hsl(var(--primary))"
-                                    strokeWidth={2}
-                                    dot={{ r: 4 }}
+                                    name="Compliance rate"
+                                    stroke="#f97316"
+                                    strokeWidth={3}
+                                    dot={{
+                                        r: 4,
+                                        fill: '#f97316',
+                                        stroke: '#ffffff',
+                                        strokeWidth: 2,
+                                    }}
                                 />
                             </LineChart>
                         </ResponsiveContainer>

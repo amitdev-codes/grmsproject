@@ -114,7 +114,6 @@ class GrievanceRoutingService
         $from = $grievance->status;
         $grievance = $this->grievances->update($grievance, ['status' => 'rejected', 'closed_by' => $actor->id, 'closed_reason' => $reason, 'closed_at' => now()]);
         $this->grievances->recordStatus($grievance, $from, 'rejected', $actor->id, 'director', $reason);
-        $this->queueCitizenCommunication($grievance, 'status_update', "Grievance {$grievance->reference_no} cannot proceed. Reason: {$reason}");
 
         return $grievance;
     }
@@ -124,7 +123,6 @@ class GrievanceRoutingService
         $from = $grievance->status;
         $grievance = $this->grievances->update($grievance, ['status' => 'resolved', 'closed_by' => $actor->id, 'closed_reason' => $reason, 'closed_at' => now()]);
         $this->grievances->recordStatus($grievance, $from, 'resolved', $actor->id, $actor->getRoleNames()->first(), $reason);
-        $this->queueCitizenCommunication($grievance, 'status_update', "Grievance {$grievance->reference_no} has been resolved. Reason: {$reason}");
 
         return $grievance;
     }
@@ -151,7 +149,6 @@ class GrievanceRoutingService
         $from = $grievance->status;
         $grievance = $this->grievances->update($grievance, ['status' => 'closed', 'closed_by' => $actor->id, 'closed_reason' => $reason, 'closed_at' => now()]);
         $this->grievances->recordStatus($grievance, $from, 'closed', $actor->id, $actor->getRoleNames()->first(), $reason);
-        $this->queueCitizenCommunication($grievance, 'status_update', "Grievance {$grievance->reference_no} has been closed. Reason: {$reason}");
 
         return $grievance;
     }
@@ -162,21 +159,6 @@ class GrievanceRoutingService
             'grievance_id' => $grievance->id, 'action' => $action, 'to_division_id' => $toDivisionId,
             'to_section_id' => $toSectionId, 'to_officer_id' => $toOfficerId, 'acted_by' => $actorId,
             'reason' => $reason, 'created_at' => now(), 'updated_at' => now(),
-        ]);
-    }
-
-    private function queueCitizenCommunication(Grievance $grievance, string $messageType, string $body): void
-    {
-        if ($grievance->is_anonymous || (! $grievance->complainant_phone && ! $grievance->complainant_email)) {
-            return;
-        }
-
-        DB::table('grievance_communications')->insert([
-            'grievance_id' => $grievance->id, 'message_type' => $messageType,
-            'channel' => $grievance->complainant_phone ? 'sms' : 'email',
-            'recipient' => $grievance->complainant_phone ?: $grievance->complainant_email,
-            'body' => $body, 'delivery_status' => 'queued',
-            'created_at' => now(), 'updated_at' => now(),
         ]);
     }
 }

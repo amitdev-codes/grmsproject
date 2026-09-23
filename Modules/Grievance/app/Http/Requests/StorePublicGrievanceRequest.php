@@ -17,6 +17,7 @@ class StorePublicGrievanceRequest extends FormRequest
         return [
             'category_id' => ['required', 'exists:grievance_categories,id'],
             'district_id' => ['nullable', 'exists:districts,id'],
+            'division_id' => ['nullable', 'exists:divisions,id'],
             'project_id' => ['nullable', 'exists:projects,id'],
             'source_grievance_reference' => ['nullable', 'string', 'max:20', 'exists:grievances,reference_no'],
             'is_previously_lodged' => ['sometimes', 'boolean'],

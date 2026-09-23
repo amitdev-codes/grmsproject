@@ -28,6 +28,7 @@ import {
     List,
     ClipboardCheck,
     Server,
+    Mail,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { Button } from '@/components/ui/button';
@@ -74,10 +75,11 @@ export function AppTopMenu() {
     const { t } = useTranslation();
 
     const auth = page.props.auth as
-        { user?: { permissions?: string[] } } | undefined;
+        | { user?: { permissions?: string[]; role_names?: string } }
+        | undefined;
     const permissions = auth?.user?.permissions ?? [];
     const roleNames =
-        auth?.user?.role_names?.split(',').map((role) => role.trim()) ?? [];
+        auth?.user?.role_names?.split(',').map((role: string) => role.trim()) ?? [];
     const isPrivileged = roleNames.some((role) =>
         ['Super Admin', 'IT Admin', 'Admin', 'Developer'].includes(role),
     );
@@ -284,6 +286,16 @@ export function AppTopMenu() {
                     title: 'menu.application_settings',
                     href: '/settings/application',
                     icon: Globe,
+                },
+                {
+                    title: 'menu.email_settings',
+                    href: '/settings/email',
+                    icon: Mail,
+                },
+                {
+                    title: 'menu.sms_settings',
+                    href: '/settings/sms',
+                    icon: MessageSquareText,
                 },
             ],
         },

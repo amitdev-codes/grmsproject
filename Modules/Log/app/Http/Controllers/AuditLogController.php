@@ -13,7 +13,7 @@ class AuditLogController extends LogController
         $this->authorizeLogs($request);
 
         [$search, $page, $perPage] = $this->listParams($request);
-        $result = $this->auditLogs($search, $page, $perPage);
+        $result = $this->auditLogs($search, $page, $perPage, $request->boolean('grievances_only'));
 
         return Inertia::render('Log::AuditLogs/Index', [
             'data' => $result['items'],

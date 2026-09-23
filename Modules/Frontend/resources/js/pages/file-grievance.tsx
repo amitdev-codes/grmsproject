@@ -84,7 +84,6 @@ interface ApiDistrict {
 interface ApiDivision {
     id: number;
     name: string;
-    district_id: number;
 }
 
 interface StatusHistoryEntry {
@@ -350,7 +349,7 @@ async function fetchDistricts(): Promise<ApiDistrict[]> {
 }
 
 async function fetchDivisions(): Promise<ApiDivision[]> {
-    const res = await fetch(`/api/v1/divisions`);
+    const res = await fetch('/api/v1/divisions');
 
     if (!res.ok) {
         throw new Error('Failed to load divisions');
@@ -476,6 +475,8 @@ function useDivisions(districtId: string): {
             })
             .then((d) => {
                 if (!cancelled) {
+                    // Divisions are national reference data; the selected
+                    // district is still submitted separately for routing.
                     setDivisions(d);
                 }
             })
@@ -854,7 +855,7 @@ function StepIndicator({ step }: { step: number }) {
                                         : 'transparent',
                                     border: `1.5px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
                                     color: active
-                                        ? '#14213D'
+                                        ? '#FFFFFF'
                                         : 'var(--text-secondary)',
                                 }}
                             >
@@ -1525,64 +1526,138 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             )}
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div
+                            className="space-y-4 rounded-md border p-4"
+                            style={{ borderColor: 'var(--border)' }}
+                        >
+                            <Label className="flex items-center gap-1.5 text-sm font-semibold">
+                                <MapPin
+                                    className="h-4 w-4"
+                                    style={{ color: 'var(--accent-dark)' }}
+                                />
+                                Where did this happen?
+                            </Label>
+
                             <div>
-                                <Label className="mb-2 block text-sm font-semibold">
+                                <Label
+                                    className="mb-2 block text-xs font-medium"
+                                    style={{ color: 'var(--text-secondary)' }}
+                                >
                                     District
                                 </Label>
-                                <Select
-                                    value={districtId}
-                                    onValueChange={(v) => {
-                                        setDistrictId(v);
-                                        setDivisionId('');
-                                    }}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select your district" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {districts.map((d) => (
-                                            <SelectItem
+                                <div className="flex flex-wrap gap-2">
+                                    {districts.map((d) => {
+                                        const selected =
+                                            String(d.id) === districtId;
+
+                                        return (
+                                            <button
                                                 key={d.id}
-                                                value={String(d.id)}
+                                                type="button"
+                                                aria-pressed={selected}
+                                                onClick={() => {
+                                                    setDistrictId(String(d.id));
+                                                    setDivisionId('');
+                                                }}
+                                                className="rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors"
+                                                style={{
+                                                    borderColor: selected
+                                                        ? 'var(--accent)'
+                                                        : 'var(--border)',
+                                                    background: selected
+                                                        ? 'var(--accent)'
+                                                        : 'var(--bg-raised)',
+                                                    color: selected
+                                                        ? '#FFFFFF'
+                                                        : 'var(--text-primary)',
+                                                }}
                                             >
                                                 {d.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
+
                             <div>
-                                <Label className="mb-2 block text-sm font-semibold">
-                                    Office (optional)
-                                </Label>
-                                <Select
-                                    value={divisionId}
-                                    onValueChange={setDivisionId}
-                                    disabled={!districtId}
+                                <Label
+                                    className="mb-2 block text-xs font-medium"
+                                    style={{ color: 'var(--text-secondary)' }}
                                 >
-                                    <SelectTrigger>
-                                        <SelectValue
-                                            placeholder={
-                                                !districtId
-                                                    ? 'Choose a district first'
-                                                    : divisionsLoading
-                                                      ? 'Loading offices...'
-                                                      : 'If you know it'
-                                            }
-                                        />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {divisionsForDistrict.map((d) => (
-                                            <SelectItem
-                                                key={d.id}
-                                                value={String(d.id)}
+                                    Division (optional)
+                                </Label>
+
+                                {/* Render divisions as open buttons like districts for clarity */}
+                                {districtId ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {!divisionsLoading &&
+                                        divisionsForDistrict.length > 0 ? (
+                                            divisionsForDistrict.map((d) => {
+                                                const selected =
+                                                    String(d.id) === divisionId;
+
+                                                return (
+                                                    <button
+                                                        key={d.id}
+                                                        type="button"
+                                                        aria-pressed={selected}
+                                                        onClick={() =>
+                                                            setDivisionId(
+                                                                String(d.id),
+                                                            )
+                                                        }
+                                                        className="rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors"
+                                                        style={{
+                                                            borderColor:
+                                                                selected
+                                                                    ? 'var(--accent)'
+                                                                    : 'var(--border)',
+                                                            background: selected
+                                                                ? 'var(--accent)'
+                                                                : 'var(--bg-raised)',
+                                                            color: selected
+                                                                ? '#FFFFFF'
+                                                                : 'var(--text-primary)',
+                                                        }}
+                                                    >
+                                                        {d.name}
+                                                    </button>
+                                                );
+                                            })
+                                        ) : divisionsLoading ? (
+                                            <div className="text-xs text-muted-foreground">
+                                                Loading divisions...
+                                            </div>
+                                        ) : (
+                                            <p
+                                                className="mt-1.5 text-xs"
+                                                style={{
+                                                    color: 'var(--text-secondary)',
+                                                }}
                                             >
-                                                {d.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                                We'll route this to the{' '}
+                                                {
+                                                    districts.find(
+                                                        (d) =>
+                                                            String(d.id) ===
+                                                            districtId,
+                                                    )?.name
+                                                }{' '}
+                                                district office directly.
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p
+                                        className="mt-1.5 text-xs"
+                                        style={{
+                                            color: 'var(--text-secondary)',
+                                        }}
+                                    >
+                                        Choose a district first to show
+                                        divisions.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -1726,44 +1801,51 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             className="rounded-md border p-4"
                             style={{ borderColor: 'var(--border)' }}
                         >
-                            <p className="mb-3 text-sm font-semibold">
-                                Is this related to an earlier grievance?
-                            </p>
-                            <label className="mb-2 flex items-center gap-2 text-sm">
-                                <input
-                                    type="checkbox"
-                                    checked={isPreviouslyLodged}
-                                    onChange={(event) =>
-                                        setIsPreviouslyLodged(
-                                            event.target.checked,
-                                        )
-                                    }
-                                />
-                                It was previously lodged.
-                            </label>
-                            <label className="flex items-center gap-2 text-sm">
-                                <input
-                                    type="checkbox"
-                                    checked={isPreviouslyFinalized}
-                                    onChange={(event) =>
-                                        setIsPreviouslyFinalized(
-                                            event.target.checked,
-                                        )
-                                    }
-                                />
-                                It was previously finalized.
-                            </label>
-                            {(isPreviouslyLodged || isPreviouslyFinalized) && (
-                                <Input
-                                    className="mt-3"
-                                    value={sourceGrievanceReference}
-                                    onChange={(event) =>
-                                        setSourceGrievanceReference(
-                                            event.target.value,
-                                        )
-                                    }
-                                    placeholder="Earlier reference number, if known (e.g. GRM-2026-000001)"
-                                />
+                            <div className="flex items-center justify-between">
+                                <p className="mb-0 text-sm font-semibold">
+                                    Is this related to an earlier grievance?
+                                </p>
+                                <label className="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        checked={isPreviouslyLodged}
+                                        onChange={(event) =>
+                                            setIsPreviouslyLodged(
+                                                event.target.checked,
+                                            )
+                                        }
+                                    />
+                                </label>
+                            </div>
+
+                            {isPreviouslyLodged && (
+                                <div className="mt-3 space-y-2">
+                                    <label className="flex items-center gap-2 text-sm">
+                                        <input
+                                            type="checkbox"
+                                            checked={isPreviouslyFinalized}
+                                            onChange={(event) =>
+                                                setIsPreviouslyFinalized(
+                                                    event.target.checked,
+                                                )
+                                            }
+                                        />
+                                        <span>
+                                            It was previously finalized.
+                                        </span>
+                                    </label>
+
+                                    <Input
+                                        className="mt-1"
+                                        value={sourceGrievanceReference}
+                                        onChange={(event) =>
+                                            setSourceGrievanceReference(
+                                                event.target.value,
+                                            )
+                                        }
+                                        placeholder="Earlier reference number, if known (e.g. GRM-2026-000001)"
+                                    />
+                                </div>
                             )}
                         </div>
 

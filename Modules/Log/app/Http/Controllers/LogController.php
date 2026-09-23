@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Response;
+use Modules\Grievance\Models\Grievance;
 
 class LogController extends Controller
 {
@@ -61,9 +62,13 @@ class LogController extends Controller
         ];
     }
 
-    protected function auditLogs(string $search, int $page, int $perPage): array
+    protected function auditLogs(string $search, int $page, int $perPage, bool $grievancesOnly = false): array
     {
         $query = DB::table('audits')->orderByDesc('created_at');
+
+        if ($grievancesOnly) {
+            $query->where('auditable_type', Grievance::class);
+        }
 
         if ($search !== '') {
             $query->where(function ($query) use ($search): void {
@@ -71,18 +76,27 @@ class LogController extends Controller
                     ->orWhere('url', 'like', "%{$search}%")
                     ->orWhere('tags', 'like', "%{$search}%")
                     ->orWhere('old_values', 'like', "%{$search}%")
-                    ->orWhere('new_values', 'like', "%{$search}%");
+                    ->orWhere('new_values', 'like', "%{$search}%")
+                    ->orWhere('auditable_id', 'like', "%{$search}%");
             });
         }
 
         $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+        $grievanceReferences = Grievance::withTrashed()
+            ->whereIn('id', collect($paginator->items())
+                ->filter(fn ($row): bool => $row->auditable_type === Grievance::class)
+                ->pluck('auditable_id')
+                ->all())
+            ->pluck('reference_no', 'id');
 
         return [
             'items' => collect($paginator->items())->map(fn ($row): array => [
                 'id' => $row->id,
                 'event' => $row->event,
                 'user' => $this->actorLabel($row->user_type, $row->user_id),
-                'auditable' => $this->actorLabel($row->auditable_type, $row->auditable_id),
+                'auditable' => $row->auditable_type === Grievance::class
+                    ? 'Grievance '.($grievanceReferences[$row->auditable_id] ?? '#'.$row->auditable_id)
+                    : $this->actorLabel($row->auditable_type, $row->auditable_id),
                 'old_values' => $this->decodeJson($row->old_values),
                 'new_values' => $this->decodeJson($row->new_values),
                 'url' => $row->url,

@@ -32,6 +32,7 @@ final class GrievanceIntakeData
         public readonly bool $isAnonymous = false,
         public readonly ?int $registeredBy = null,       // staff user id, when a person keyed it in
         public readonly ?string $actorRole = null,       // override; usually left null (see resolveActorRole())
+        public readonly ?string $ussdSessionId = null,
         public readonly ?string $locationDescription = null,
         public readonly ?float $latitude = null,
         public readonly ?float $longitude = null,
@@ -127,7 +128,7 @@ final class GrievanceIntakeData
         );
     }
 
-    public static function fromUssd(int $categoryId, int $districtId, string $description, string $phone, array $rawPayload): self
+    public static function fromUssd(int $categoryId, int $districtId, string $description, string $phone, array $rawPayload, ?string $sessionId = null): self
     {
         return new self(
             channel: 'ussd',
@@ -136,6 +137,7 @@ final class GrievanceIntakeData
             districtId: $districtId,
             contactPhone: $phone,
             rawPayload: $rawPayload,
+            ussdSessionId: $sessionId,
         );
     }
 

@@ -9,7 +9,10 @@ class DivisionResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        return ['id' => $this->id, 'name' => $this->name];
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'district_id' => $this->district_id,
+        ];
     }
 }
-

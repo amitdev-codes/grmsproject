@@ -14,6 +14,8 @@ class SettingDatabaseSeeder extends Seeder
         $this->call([
             FaqSeeder::class,
             ApplicationSettingSeeder::class,
+            EmailSettingSeeder::class,
+            SmsSettingSeeder::class,
         ]);
     }
 }

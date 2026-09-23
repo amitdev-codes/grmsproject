@@ -14,6 +14,7 @@ use Modules\Grievance\Models\GrievanceChannel;
 use Modules\Grievance\Models\GrievanceMessage;
 use Modules\Grievance\Models\GrievanceStatusHistory;
 use Modules\Grievance\Models\ReferenceSequence;
+use Modules\Grievance\Services\GrievanceCommunicationService;
 use Modules\Master\Models\District;
 
 class GrievanceRepository implements GrievanceRepositoryInterface
@@ -110,7 +111,9 @@ class GrievanceRepository implements GrievanceRepositoryInterface
 
     public function bulkDelete(array $ids): int
     {
-        return Grievance::whereIn('id', $ids)->delete(); // soft delete
+        // Query-builder deletes bypass Eloquent events and therefore bypass
+        // the immutable audit record created by OwenIt auditing.
+        return Grievance::whereIn('id', $ids)->get()->each->delete()->count();
     }
 
     public function recordStatus(Grievance $grievance, ?string $from, string $to, ?int $actorId = null, ?string $actorRole = null, ?string $reason = null): void
@@ -144,6 +147,15 @@ class GrievanceRepository implements GrievanceRepositoryInterface
         }
 
         $activity->log("Grievance {$grievance->reference_no} changed from {$from} to {$to}.");
+
+        if ($from !== $to || $from === null) {
+            app(GrievanceCommunicationService::class)->queueStatusUpdate(
+                $grievance->refresh(),
+                $from,
+                $to,
+                $reason,
+            );
+        }
     }
     // EloquentGrievanceRepository
 

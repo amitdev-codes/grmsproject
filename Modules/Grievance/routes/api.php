@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use Modules\Grievance\Http\Controllers\GrievanceController;
 use Modules\Grievance\Http\Controllers\PublicGrievanceController;
 use Modules\Grievance\Http\Controllers\ReferenceDataController;
+use Modules\Grievance\Http\Controllers\UssdController;
+
+Route::post('/ussd', [UssdController::class, 'handle'])->name('ussd.handle');
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::apiResource('grievances', GrievanceController::class)->names('grievance');

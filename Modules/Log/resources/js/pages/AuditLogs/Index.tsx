@@ -1,4 +1,3 @@
-
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import IndexLayout from '@/components/index-layout';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +39,9 @@ interface Props {
 export default function AuditLogs({ data, meta }: Props) {
     const { t } = useTranslation();
     const [search, setSearch] = useState('');
-    const searchDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const searchDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(
+        undefined,
+    );
 
     const currentMeta = meta ?? {
         current_page: 1,
@@ -55,7 +56,11 @@ export default function AuditLogs({ data, meta }: Props) {
         const page = overrides.page ?? 1;
         const perPage = overrides.per_page ?? currentMeta.per_page;
 
-        const params: Record<string, string | number> = { page, per_page: perPage };
+        const params: Record<string, string | number | boolean> = {
+            page,
+            per_page: perPage,
+            grievances_only: true,
+        };
 
         if (search) {
             params.search = search;
@@ -100,7 +105,7 @@ export default function AuditLogs({ data, meta }: Props) {
                 <div className="flex flex-col gap-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <h1 className="text-xl font-semibold">
-                            {t('menu.audit_logs')}
+                            Grievance audit trail
                         </h1>
                         <div className="relative w-full max-w-sm">
                             <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -113,19 +118,37 @@ export default function AuditLogs({ data, meta }: Props) {
                         </div>
                     </div>
 
-                    <div className="border bg-card rounded-md">
+                    <div className="rounded-md border bg-card">
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-muted/40">
-                                    <TableHead className="text-[11px] uppercase">{t('menu.log_event')}</TableHead>
-                                    <TableHead className="text-[11px] uppercase">{t('menu.log_user')}</TableHead>
-                                    <TableHead className="text-[11px] uppercase">{t('menu.log_auditable')}</TableHead>
-                                    <TableHead className="text-[11px] uppercase">{t('menu.log_url')}</TableHead>
-                                    <TableHead className="text-[11px] uppercase">{t('menu.log_ip')}</TableHead>
-                                    <TableHead className="text-[11px] uppercase">{t('menu.log_tags')}</TableHead>
-                                    <TableHead className="text-[11px] uppercase">{t('menu.log_old_values')}</TableHead>
-                                    <TableHead className="text-[11px] uppercase">{t('menu.log_new_values')}</TableHead>
-                                    <TableHead className="text-[11px] uppercase">{t('menu.created_at')}</TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.log_event')}
+                                    </TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.log_user')}
+                                    </TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        Grievance
+                                    </TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.log_url')}
+                                    </TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.log_ip')}
+                                    </TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.log_tags')}
+                                    </TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.log_old_values')}
+                                    </TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.log_new_values')}
+                                    </TableHead>
+                                    <TableHead className="text-[11px] uppercase">
+                                        {t('menu.created_at')}
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -133,27 +156,46 @@ export default function AuditLogs({ data, meta }: Props) {
                                     data.map((row) => (
                                         <TableRow key={row.id}>
                                             <TableCell>
-                                                <Badge variant="secondary">{row.event}</Badge>
+                                                <Badge variant="secondary">
+                                                    {row.event}
+                                                </Badge>
                                             </TableCell>
-                                            <TableCell className="font-mono text-xs">{row.user}</TableCell>
-                                            <TableCell className="font-mono text-xs">{row.auditable}</TableCell>
-                                            <TableCell className="max-w-xs break-all text-xs">{row.url || '—'}</TableCell>
-                                            <TableCell className="font-mono text-xs">{row.ip_address || '—'}</TableCell>
-                                            <TableCell className="font-mono text-xs">{row.tags || '—'}</TableCell>
+                                            <TableCell className="font-mono text-xs">
+                                                {row.user}
+                                            </TableCell>
+                                            <TableCell className="font-mono text-xs">
+                                                {row.auditable}
+                                            </TableCell>
+                                            <TableCell className="max-w-xs text-xs break-all">
+                                                {row.url || '—'}
+                                            </TableCell>
+                                            <TableCell className="font-mono text-xs">
+                                                {row.ip_address || '—'}
+                                            </TableCell>
+                                            <TableCell className="font-mono text-xs">
+                                                {row.tags || '—'}
+                                            </TableCell>
                                             <TableCell>
-                                                <JsonCell value={row.old_values} />
+                                                <JsonCell
+                                                    value={row.old_values}
+                                                />
                                             </TableCell>
                                             <TableCell>
-                                                <JsonCell value={row.new_values} />
+                                                <JsonCell
+                                                    value={row.new_values}
+                                                />
                                             </TableCell>
-                                            <TableCell className="whitespace-nowrap text-xs">
+                                            <TableCell className="text-xs whitespace-nowrap">
                                                 {formatDateTime(row.created_at)}
                                             </TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={9} className="h-20 text-center text-muted-foreground">
+                                        <TableCell
+                                            colSpan={9}
+                                            className="h-20 text-center text-muted-foreground"
+                                        >
                                             {t('menu.no_results')}
                                         </TableCell>
                                     </TableRow>
