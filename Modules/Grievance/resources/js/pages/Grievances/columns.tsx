@@ -2,6 +2,7 @@ import { DataTableColumnHeader } from '@/components/data-table/data-table-column
 import { DateCell } from '@/components/data-table/date-cell';
 import { Badge } from '@/components/ui/badge';
 import { GRIEVANCE_STATUS_OPTIONS } from '@/types/grievance-status';
+import { useTranslation } from '@/hooks/use-translation';
 import type { ColumnDef } from '@tanstack/react-table';
 
 export interface Category {
@@ -97,103 +98,110 @@ const priorityVariant = (
     }
 };
 
-export const columns: ColumnDef<Grievance>[] = [
-    {
-        accessorKey: 'reference_no',
-        header: ({ column }) => (
-            <DataTableColumnHeader column={column} title="Reference" />
-        ),
-        cell: ({ row }) => (
-            <span className="font-mono text-xs font-medium">
-                {row.original.reference_no}
-            </span>
-        ),
-    },
-    {
-        id: 'complainant',
-        header: ({ column }) => (
-            <DataTableColumnHeader column={column} title="Complainant" />
-        ),
-        cell: ({ row }) =>
-            row.original.is_anonymous ? (
-                <Badge variant="outline">Anonymous</Badge>
-            ) : (
-                <div className="flex flex-col">
-                    <span className="font-medium">
-                        {row.original.complainant_name ?? '—'}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                        {row.original.complainant_phone ??
-                            row.original.complainant_email ??
-                            ''}
-                    </span>
-                </div>
+export function useGrievanceColumns(): ColumnDef<Grievance>[] {
+    const { t } = useTranslation();
+
+    return [
+        {
+            accessorKey: 'reference_no',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title={t('Reference')} />
             ),
-        enableSorting: false,
-    },
-    {
-        id: 'category',
-        header: ({ column }) => (
-            <DataTableColumnHeader column={column} title="Category" />
-        ),
-        cell: ({ row }) => row.original.category?.name_en ?? '—',
-        enableSorting: false,
-    },
-    {
-        id: 'channel',
-        header: ({ column }) => (
-            <DataTableColumnHeader column={column} title="Channel" />
-        ),
-        cell: ({ row }) => row.original.channel?.name ?? '—',
-        enableSorting: false,
-    },
-    {
-        id: 'district',
-        header: ({ column }) => (
-            <DataTableColumnHeader column={column} title="District" />
-        ),
-        cell: ({ row }) => row.original.district?.name ?? '—',
-        enableSorting: false,
-    },
-    {
-        accessorKey: 'priority',
-        header: ({ column }) => (
-            <DataTableColumnHeader column={column} title="Priority" />
-        ),
-        cell: ({ row }) => (
-            <Badge variant={priorityVariant(row.original.priority)}>
-                {row.original.priority ?? 'normal'}
-            </Badge>
-        ),
-    },
-    {
-        accessorKey: 'status',
-        header: ({ column }) => (
-            <DataTableColumnHeader column={column} title="Status" />
-        ),
-        cell: ({ row }) => (
-            <Badge variant="secondary" className="capitalize">
-                {statusLabel(row.original.status)}
-            </Badge>
-        ),
-    },
-    {
-        accessorKey: 'sla_due_at',
-        header: ({ column }) => (
-            <DataTableColumnHeader column={column} title="SLA Due" />
-        ),
-        cell: ({ row }) =>
-            row.original.sla_due_at ? (
-                <DateCell value={row.original.sla_due_at} />
-            ) : (
-                <span className="text-xs text-muted-foreground">—</span>
+            cell: ({ row }) => (
+                <span className="font-mono text-xs font-medium">
+                    {row.original.reference_no}
+                </span>
             ),
-    },
-    {
-        accessorKey: 'created_at',
-        header: ({ column }) => (
-            <DataTableColumnHeader column={column} title="Created" />
-        ),
-        cell: ({ row }) => <DateCell value={row.original.created_at} />,
-    },
-];
+        },
+        {
+            id: 'complainant',
+            header: ({ column }) => (
+                <DataTableColumnHeader
+                    column={column}
+                    title={t('Complainant')}
+                />
+            ),
+            cell: ({ row }) =>
+                row.original.is_anonymous ? (
+                    <Badge variant="outline">{t('Anonymous')}</Badge>
+                ) : (
+                    <div className="flex flex-col">
+                        <span className="font-medium">
+                            {row.original.complainant_name ?? '—'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                            {row.original.complainant_phone ??
+                                row.original.complainant_email ??
+                                ''}
+                        </span>
+                    </div>
+                ),
+            enableSorting: false,
+        },
+        {
+            id: 'category',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title={t('Category')} />
+            ),
+            cell: ({ row }) => row.original.category?.name_en ?? '—',
+            enableSorting: false,
+        },
+        {
+            id: 'channel',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title={t('Channel')} />
+            ),
+            cell: ({ row }) => row.original.channel?.name ?? '—',
+            enableSorting: false,
+        },
+        {
+            id: 'district',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title={t('District')} />
+            ),
+            cell: ({ row }) => row.original.district?.name ?? '—',
+            enableSorting: false,
+        },
+        {
+            accessorKey: 'priority',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title={t('Priority')} />
+            ),
+            cell: ({ row }) => (
+                <Badge variant={priorityVariant(row.original.priority)}>
+                    {t(row.original.priority ?? 'normal')}
+                </Badge>
+            ),
+        },
+        {
+            accessorKey: 'status',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title={t('Status')} />
+            ),
+            cell: ({ row }) => (
+                <Badge variant="secondary" className="capitalize">
+                    {statusLabel(row.original.status)}
+                </Badge>
+            ),
+        },
+        {
+            accessorKey: 'sla_due_at',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title={t('SLA Due')} />
+            ),
+            cell: ({ row }) =>
+                row.original.sla_due_at ? (
+                    <DateCell value={row.original.sla_due_at} />
+                ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                ),
+        },
+        {
+            accessorKey: 'created_at',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title={t('Created')} />
+            ),
+            cell: ({ row }) => <DateCell value={row.original.created_at} />,
+        },
+    ];
+}

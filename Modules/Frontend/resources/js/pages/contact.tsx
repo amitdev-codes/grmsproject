@@ -33,7 +33,7 @@ function ContactHeader() {
                 >
                     {t.contactPage.eyebrow}
                 </Badge>
-                <h1 className="font-display mb-4 text-4xl font-semibold">
+                <h1 className="mb-4 font-display text-4xl font-semibold">
                     {t.contactPage.title}
                 </h1>
                 <p style={{ color: 'var(--text-secondary)' }}>
@@ -271,7 +271,7 @@ function ContactForm() {
                 background: 'var(--bg-raised)',
             }}
         >
-            <h3 className="font-display mb-6 text-lg font-semibold">
+            <h3 className="mb-6 font-display text-lg font-semibold">
                 {t.contactPage.formHeading}
             </h3>
             {error && (
@@ -285,8 +285,11 @@ function ContactForm() {
                     {error}
                 </p>
             )}
-            <div className="absolute -left-[10000px] top-auto h-0 w-0 overflow-hidden" aria-hidden="true">
-                <label htmlFor="contact-website">Website</label>
+            <div
+                className="absolute top-auto -left-[10000px] h-0 w-0 overflow-hidden"
+                aria-hidden="true"
+            >
+                <label htmlFor="contact-website">{t.contactPage.website}</label>
                 <input
                     id="contact-website"
                     type="text"
@@ -375,7 +378,8 @@ function ContactForm() {
                     disabled={submitting}
                     style={{ background: 'var(--accent)', color: '#FFFFFF' }}
                 >
-                    {submitting ? 'Sending…' : t.contactPage.submit} <Send className="ml-1 h-4 w-4" />
+                    {submitting ? t.contactPage.sending : t.contactPage.submit}{' '}
+                    <Send className="ml-1 h-4 w-4" />
                 </Button>
             </form>
         </div>

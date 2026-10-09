@@ -60,7 +60,14 @@ class FrontendController extends Controller
     {
         $this->incrementSiteVisits();
 
-        return Inertia::render('Frontend::file-grievance');
+        return Inertia::render('Frontend::file-grievance', [
+            'speechToText' => [
+                'enabled' => (bool) config('grievance.speech_to_text.enabled'),
+                'provider' => config('grievance.speech_to_text.provider'),
+                'language' => config('grievance.speech_to_text.language'),
+            ],
+            'aiCategorySuggestionEnabled' => (bool) config('grievance.ai.enabled'),
+        ]);
     }
 
     private function incrementSiteVisits(): void

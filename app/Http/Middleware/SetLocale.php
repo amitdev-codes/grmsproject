@@ -14,6 +14,7 @@ class SetLocale
         $supported = array_keys(config('locales.supported'));
 
         $locale = $request->user()?->locale
+            ?? $request->cookie('locale')
             ?? $request->session()->get('locale')
             ?? config('locales.default');
 

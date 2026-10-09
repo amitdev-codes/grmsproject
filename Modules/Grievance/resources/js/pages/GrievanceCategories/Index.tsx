@@ -1,14 +1,15 @@
 import { DataTable } from '@/components/data-table/data-table';
 import IndexLayout from '@/components/index-layout';
+import { useTranslation } from '@/hooks/use-translation';
 import type {
     DataTableFilterField,
     DataTableRoutes,
     PaginationMeta,
 } from '@/types/data-table';
 import { Tags } from 'lucide-react';
-import { columns } from './columns';
+import { useGrievanceCategoryColumns } from './columns';
 import type { GrievanceCategory } from './columns';
-import  {GrievanceCategoryViewContent}  from './GrievanceCategoryViewContent';
+import { GrievanceCategoryViewContent } from './GrievanceCategoryViewContent';
 
 interface GrievanceCategoryIndexProps {
     data: GrievanceCategory[];
@@ -29,29 +30,31 @@ export default function GrievanceCategoryIndex({
     data,
     meta,
 }: GrievanceCategoryIndexProps) {
+    const { t } = useTranslation();
+    const columns = useGrievanceCategoryColumns();
     const filterFields: DataTableFilterField[] = [
         {
             id: 'is_sensitive',
-            title: 'Sensitivity',
+            title: t('Sensitivity'),
             options: [
-                { label: 'Sensitive', value: 't' },
-                { label: 'Standard', value: 'f' },
+                { label: t('Sensitive'), value: 't' },
+                { label: t('Standard'), value: 'f' },
             ],
         },
         {
             id: 'is_active',
-            title: 'Status',
+            title: t('Status'),
             options: [
-                { label: 'Active', value: 't' },
-                { label: 'Inactive', value: 'f' },
+                { label: t('Active'), value: 't' },
+                { label: t('Inactive'), value: 'f' },
             ],
         },
     ];
 
     return (
         <IndexLayout
-            title="Grievance Categories"
-            breadcrumbs={[{ label: 'Grievance Categories', icon: Tags }]}
+            title={t('Grievance Categories')}
+            breadcrumbs={[{ label: t('Grievance Categories'), icon: Tags }]}
         >
             <div>
                 <DataTable<GrievanceCategory, unknown>
@@ -60,10 +63,10 @@ export default function GrievanceCategoryIndex({
                     meta={meta}
                     routes={routes}
                     filterFields={filterFields}
-                    title="Grievance Categories"
-                    description="Manage all Grievance Categories in your application."
-                    searchPlaceholder="Search by name, code or slug…"
-                    resourceLabel="New Category"
+                    title={t('Grievance Categories')}
+                    description={t('Manage all Grievance Categories in your application.')}
+                    searchPlaceholder={t('Search by name, code or slug…')}
+                    resourceLabel={t('New Category')}
                     defaultSort="sort_order"
                     defaultOrder="asc"
                     getRowLabel={(row) => row.name_en || row.code}

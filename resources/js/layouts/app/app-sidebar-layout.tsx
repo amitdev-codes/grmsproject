@@ -13,7 +13,7 @@ export default function AppSidebarLayout({
             <AppTopNavigation />
             <AppTopMenu />
             <AppContent variant="sidebar" className="flex flex-col overflow-x-hidden">
-                <div className="flex-1 p-4 md:p-6">{children}</div>
+                <div className="flex-1 p-6 md:p-6">{children}</div>
                 <AppFooter />
             </AppContent>
         </AppShell>

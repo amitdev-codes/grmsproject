@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useTranslation } from '@/hooks/use-translation';
 import { route } from 'ziggy-js';
 import type { Grievance } from './columns';
 
@@ -16,6 +17,8 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function GrievanceViewContent({ grievance }: { grievance: Grievance }) {
+    const { t } = useTranslation();
+
     return (
         <div className="space-y-5">
             <div className="flex items-center justify-between">
@@ -34,24 +37,24 @@ export function GrievanceViewContent({ grievance }: { grievance: Grievance }) {
 
             <div className="grid grid-cols-2 gap-4">
                 <Field
-                    label="Complainant"
+                    label={t('Complainant')}
                     value={
                         grievance.is_anonymous
-                            ? 'Anonymous'
+                            ? t('Anonymous')
                             : grievance.complainant_name
                     }
                 />
-                <Field label="Category" value={grievance.category?.name_en} />
-                <Field label="District" value={grievance.district?.name} />
-                <Field label="Division" value={grievance.division?.name} />
-                <Field label="Section" value={grievance.section?.name} />
+                <Field label={t('Category')} value={grievance.category?.name_en} />
+                <Field label={t('District')} value={grievance.district?.name} />
+                <Field label={t('Division')} value={grievance.division?.name} />
+                <Field label={t('Section')} value={grievance.section?.name} />
                 <Field
-                    label="Assigned Officer"
+                    label={t('Assigned Officer')}
                     value={grievance.assigned_officer?.name}
                 />
-                <Field label="Submitted Via" value={grievance.channel?.name} />
+                <Field label={t('Submitted Via')} value={grievance.channel?.name} />
                 <Field
-                    label="SLA Due"
+                    label={t('SLA Due')}
                     value={
                         grievance.sla_due_at
                             ? new Date(
@@ -67,14 +70,8 @@ export function GrievanceViewContent({ grievance }: { grievance: Grievance }) {
                     <>
                         <Separator />
                         <div className="grid grid-cols-2 gap-4">
-                            <Field
-                                label="Email"
-                                value={grievance.contact_email}
-                            />
-                            <Field
-                                label="Phone"
-                                value={grievance.contact_phone}
-                            />
+                            <Field label={t('Email')} value={grievance.contact_email} />
+                            <Field label={t('Phone')} value={grievance.contact_phone} />
                         </div>
                     </>
                 )}
@@ -83,7 +80,7 @@ export function GrievanceViewContent({ grievance }: { grievance: Grievance }) {
 
             <div>
                 <p className="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    Description
+                    {t('Description')}
                 </p>
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {grievance.description}
@@ -102,7 +99,7 @@ export function GrievanceViewContent({ grievance }: { grievance: Grievance }) {
                                 grievance_id: grievance.id,
                             })}
                         >
-                            Prepare resolution note, memo or report
+                            {t('Prepare resolution note, memo or report')}
                         </a>
                     </Button>
                 )}
@@ -111,12 +108,12 @@ export function GrievanceViewContent({ grievance }: { grievance: Grievance }) {
             <Separator />
             <div>
                 <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    Documents
+                    {t('Documents')}
                 </p>
                 <div className="space-y-1 text-sm">
                     {(grievance.attachments ?? []).length === 0 && (
                         <p className="text-muted-foreground">
-                            No documents attached.
+                            {t('No documents attached.')}
                         </p>
                     )}
                     {(grievance.attachments ?? []).map((attachment) => (
@@ -136,12 +133,12 @@ export function GrievanceViewContent({ grievance }: { grievance: Grievance }) {
             <Separator />
             <div>
                 <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    Status Timeline
+                    {t('Status Timeline')}
                 </p>
                 <div className="space-y-3">
                     {(grievance.status_histories ?? []).length === 0 && (
                         <p className="text-sm text-muted-foreground">
-                            No status history available.
+                            {t('No status history available.')}
                         </p>
                     )}
                     {(grievance.status_histories ?? []).map((history) => (

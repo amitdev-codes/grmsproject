@@ -75,7 +75,7 @@ function LoginContent({ status, canResetPassword }: Props) {
                         <div className="grid gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="login">
-                                    Email, username or phone
+                                    {t.auth.login.identifierLabel}
                                 </Label>
                                 <Input
                                     id="login"
@@ -85,7 +85,9 @@ function LoginContent({ status, canResetPassword }: Props) {
                                     autoFocus
                                     tabIndex={1}
                                     autoComplete="username"
-                                    placeholder="email@example.com or username"
+                                    placeholder={
+                                        t.auth.login.identifierPlaceholder
+                                    }
                                 />
                                 <InputError message={errors.login} />
                             </div>

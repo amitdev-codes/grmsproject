@@ -17,9 +17,10 @@ import { GRIEVANCE_STATUS_OPTIONS } from '@/types/grievance-status';
 import { router, usePage } from '@inertiajs/react';
 import { FileWarning } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from '@/hooks/use-translation';
 import { route } from 'ziggy-js';
 import IndexLayout from '../../../../../../resources/js/components/index-layout';
-import { columns } from './columns';
+import { useGrievanceColumns } from './columns';
 import type {
     Grievance,
     Category,
@@ -63,6 +64,8 @@ export default function GrievanceIndex({
     sections,
     officers,
 }: GrievanceIndexProps) {
+    const { t } = useTranslation();
+    const columns = useGrievanceColumns();
     const page = usePage<{
         auth: {
             user?: {
@@ -149,7 +152,7 @@ export default function GrievanceIndex({
                         className="h-6 px-2 text-[11px]"
                         onClick={() => openForwarding(row)}
                     >
-                        Forward
+                        {t('Forward')}
                     </Button>
                 )}
                 {canReject && (
@@ -160,7 +163,7 @@ export default function GrievanceIndex({
                         className="h-6 px-2 text-[11px]"
                         onClick={() => {
                             const reason = window.prompt(
-                                'Reason for rejection is required:',
+                                t('Reason for rejection is required:'),
                             );
 
                             if (!reason?.trim()) {
@@ -179,7 +182,7 @@ export default function GrievanceIndex({
                             );
                         }}
                     >
-                        Reject
+                        {t('Reject')}
                     </Button>
                 )}
             </>
@@ -187,11 +190,15 @@ export default function GrievanceIndex({
     };
 
     const filterFields: DataTableFilterField[] = [
-        { id: 'status', title: 'Status', options: GRIEVANCE_STATUS_OPTIONS },
-        { id: 'priority', title: 'Priority', options: PRIORITY_OPTIONS },
+        { id: 'status', title: t('Status'), options: GRIEVANCE_STATUS_OPTIONS },
+        {
+            id: 'priority',
+            title: t('Priority'),
+            options: PRIORITY_OPTIONS.map((o) => ({ ...o, label: t(o.label) })),
+        },
         {
             id: 'category_id',
-            title: 'Category',
+            title: t('Category'),
             options: categories.map((c) => ({
                 label: c.name_en,
                 value: String(c.id),
@@ -199,7 +206,7 @@ export default function GrievanceIndex({
         },
         {
             id: 'district_id',
-            title: 'District',
+            title: t('District'),
             options: districts.map((d) => ({
                 label: d.name,
                 value: String(d.id),
@@ -207,7 +214,7 @@ export default function GrievanceIndex({
         },
         {
             id: 'division_id',
-            title: 'Division',
+            title: t('Division'),
             options: divisions.map((d) => ({
                 label: d.name,
                 value: String(d.id),
@@ -215,7 +222,7 @@ export default function GrievanceIndex({
         },
         {
             id: 'section_id',
-            title: 'Section',
+            title: t('Section'),
             options: sections.map((s) => ({
                 label: s.name,
                 value: String(s.id),
@@ -225,8 +232,8 @@ export default function GrievanceIndex({
 
     return (
         <IndexLayout
-            title="Grievances"
-            breadcrumbs={[{ label: 'Grievances', icon: FileWarning }]}
+            title={t('Grievances')}
+            breadcrumbs={[{ label: t('Grievances'), icon: FileWarning }]}
         >
             <div>
                 <DataTable<Grievance, unknown>
@@ -235,9 +242,11 @@ export default function GrievanceIndex({
                     meta={meta}
                     routes={routes}
                     filterFields={filterFields}
-                    title="Grievances"
-                    searchPlaceholder="Search by reference number, complainant…"
-                    resourceLabel="New Grievance"
+                    title={t('Grievances')}
+                    searchPlaceholder={t(
+                        'Search by reference number, complainant…',
+                    )}
+                    resourceLabel={t('New Grievance')}
                     defaultSort="created_at"
                     defaultOrder="desc"
                     getRowLabel={(row) => row.reference_no}
@@ -253,20 +262,20 @@ export default function GrievanceIndex({
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Forward grievance</DialogTitle>
+                        <DialogTitle>{t('Forward grievance')}</DialogTitle>
                         <DialogDescription>
-                            {forwarding?.reference_no} will leave your queue
-                            after submission.
+                            {forwarding?.reference_no}{' '}
+                            {t('will leave your queue after submission.')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <label className="block space-y-1.5 text-sm font-medium">
                             <span>
                                 {forwardingMode === 'division'
-                                    ? 'Division'
+                                    ? t('Division')
                                     : forwardingMode === 'section'
-                                      ? 'Section'
-                                      : 'Investigating Officer'}
+                                      ? t('Section')
+                                      : t('Investigating Officer')}
                             </span>
                             <select
                                 className="h-10 w-full rounded-md border bg-background px-3 text-sm"
@@ -275,7 +284,9 @@ export default function GrievanceIndex({
                                     setDestination(event.target.value)
                                 }
                             >
-                                <option value="">Select destination</option>
+                                <option value="">
+                                    {t('Select destination')}
+                                </option>
                                 {forwardingMode === 'division' &&
                                     divisions.map((division) => (
                                         <option
@@ -320,7 +331,7 @@ export default function GrievanceIndex({
                             </select>
                         </label>
                         <label className="block space-y-1.5 text-sm font-medium">
-                            <span>Remarks</span>
+                            <span>{t('Remarks')}</span>
                             <textarea
                                 rows={4}
                                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -328,7 +339,9 @@ export default function GrievanceIndex({
                                 onChange={(event) =>
                                     setRemarks(event.target.value)
                                 }
-                                placeholder="Add handover or investigation remarks"
+                                placeholder={t(
+                                    'Add handover or investigation remarks',
+                                )}
                             />
                         </label>
                     </div>
@@ -337,13 +350,13 @@ export default function GrievanceIndex({
                             variant="outline"
                             onClick={() => setForwarding(null)}
                         >
-                            Cancel
+                            {t('Cancel')}
                         </Button>
                         <Button
                             disabled={!destination}
                             onClick={submitForwarding}
                         >
-                            Submit and forward
+                            {t('Submit and forward')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

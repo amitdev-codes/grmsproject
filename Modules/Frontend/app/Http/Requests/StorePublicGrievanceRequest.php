@@ -21,7 +21,7 @@ class StorePublicGrievanceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_id' => ['required', 'integer', 'exists:grievance_categories,id'],
+            'category_id' => ['nullable', 'integer', 'exists:grievance_categories,id'],
             'district_id' => ['nullable', 'integer', 'exists:districts,id'],
             'division_id' => ['nullable', 'integer', 'exists:divisions,id'],
 

@@ -17,6 +17,11 @@ return [
         'provider' => env('GRIEVANCE_AI_PROVIDER', 'anthropic'),
         'confidence_threshold' => (float) env('GRIEVANCE_AI_CONFIDENCE_THRESHOLD', 0.70),
     ],
+    'speech_to_text' => [
+        'enabled' => (bool) env('GRIEVANCE_SPEECH_TO_TEXT_ENABLED', true),
+        'provider' => env('GRIEVANCE_SPEECH_TO_TEXT_PROVIDER', 'browser'),
+        'language' => env('GRIEVANCE_SPEECH_TO_TEXT_LANGUAGE', 'en-ZA'),
+    ],
     'ussd' => [
         'enabled' => (bool) env('GRIEVANCE_USSD_ENABLED', true),
         'service_code' => env('GRIEVANCE_USSD_SERVICE_CODE'),

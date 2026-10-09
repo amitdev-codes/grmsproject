@@ -31,7 +31,10 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
         JsonResource::withoutWrapping();
         Blueprint::macro('publicId', function () {
-            $this->ulid('ulid')->unique()->after('id');
+            // `after()` is only valid when altering an existing MySQL table;
+            // it produces invalid SQL inside CREATE TABLE and is not portable
+            // to PostgreSQL or MariaDB.
+            $this->ulid('ulid')->unique();
         });
 
         Gate::before(function ($user, $ability) {

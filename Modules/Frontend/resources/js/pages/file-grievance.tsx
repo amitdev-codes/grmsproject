@@ -15,7 +15,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import {
     FileText,
     ClipboardCheck,
@@ -40,16 +40,13 @@ import {
     ImagePlus,
     X,
     UploadCloud,
-    Construction,
-    Landmark,
-    Droplets,
-    UserX,
-    HeartHandshake,
-    HelpCircle,
     AlertTriangle,
+    Mic,
+    MicOff,
 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { PageShell, NavBar, Footer } from './site-shared';
+import { useSpeechToText } from '../hooks/use-speech-to-text';
+import { PageShell, NavBar, Footer, useI18n } from './site-shared';
 type GrievanceStatus =
     | 'submitted'
     | 'acknowledged'
@@ -169,6 +166,18 @@ interface PendingFile {
     previewUrl: string;
     error: string | null;
 }
+
+interface SpeechToTextSettings {
+    enabled: boolean;
+    provider: string;
+    language: string;
+}
+
+interface FileGrievancePageProps {
+    speechToText?: SpeechToTextSettings;
+    aiCategorySuggestionEnabled?: boolean;
+}
+
 const WARNING = '#B8860B';
 const DANGER = '#B3261E';
 
@@ -295,29 +304,6 @@ const STATUS_META: StatusMetaMap = (
 
     return acc;
 }, {} as StatusMetaMap);
-
-const ICON_MAP: Record<string, typeof FileText> = {
-    road: Construction,
-    roads: Construction,
-    construction: Construction,
-    land: Landmark,
-    landmark: Landmark,
-    water: Droplets,
-    droplets: Droplets,
-    conduct: UserX,
-    officer: UserX,
-    welfare: HeartHandshake,
-    grant: HeartHandshake,
-    other: HelpCircle,
-};
-
-function resolveCategoryIcon(icon: string | null): typeof FileText {
-    if (!icon) {
-        return HelpCircle;
-    }
-
-    return ICON_MAP[icon.trim().toLowerCase()] ?? HelpCircle;
-}
 
 // ---------------------------------------------------------------------------
 // Reference-data API layer — categories, districts, divisions and status
@@ -500,7 +486,7 @@ function useDivisions(districtId: string): {
 }
 
 interface SubmitFields {
-    category_id: number;
+    category_id: number | null;
     district_id: number | null;
     division_id: number | null;
     description: string;
@@ -523,7 +509,10 @@ function buildSubmitFormData(
     captchaToken: string,
 ): FormData {
     const form = new FormData();
-    form.append('category_id', String(fields.category_id));
+
+    if (fields.category_id !== null) {
+        form.append('category_id', String(fields.category_id));
+    }
 
     if (fields.district_id) {
         form.append('district_id', String(fields.district_id));
@@ -834,15 +823,21 @@ function MetaErrorState({ message }: { message: string }) {
 // Filing wizard
 // ---------------------------------------------------------------------------
 
-const STEP_LABELS = ['Category', 'Details', 'Files', 'Contact', 'Review'];
-
 function StepIndicator({ step }: { step: number }) {
+    const { t } = useI18n();
+
+    // Fallback for missing grievancePage translations (defensive)
+    const gp = t.grievancePage ?? {
+        steps: ['Category', 'Details', 'Attachments', 'Contact', 'Review'],
+    };
+    const stepLabels = gp.steps;
+
     return (
         <div className="mb-8 flex items-center">
-            {STEP_LABELS.map((label, i) => {
+            {stepLabels.map((label, i) => {
                 const n = i + 1;
                 const active = n <= step;
-                const isLast = i === STEP_LABELS.length - 1;
+                const isLast = i === stepLabels.length - 1;
 
                 return (
                     <React.Fragment key={label}>
@@ -903,6 +898,12 @@ function AttachmentsStep({
     onAdd: (list: FileList | null) => void;
     onRemove: (id: string) => void;
 }) {
+    const { t } = useI18n();
+
+    // Fallback for missing grievancePage translations (defensive)
+    const gp = t.grievancePage ?? {
+        attachments: 'Add supporting files (optional)',
+    };
     const inputRef = useRef<HTMLInputElement>(null);
     const [dragOver, setDragOver] = useState(false);
 
@@ -910,7 +911,7 @@ function AttachmentsStep({
         <div className="space-y-4">
             <div>
                 <Label className="mb-1 block text-sm font-semibold">
-                    Add supporting files (optional)
+                    {gp.attachments}
                 </Label>
                 <p
                     className="mb-3 text-xs"
@@ -1041,14 +1042,18 @@ function GisLocationPicker({
     );
 
     useEffect(() => {
-        if (typeof window === 'undefined') return;
+        if (typeof window === 'undefined') {
+            return;
+        }
 
         if ((window as any).L) {
-            setIsLoaded(true);
+            Promise.resolve().then(() => setIsLoaded(true));
+
             return;
         }
 
         const cssId = 'leaflet-css';
+
         if (!document.getElementById(cssId)) {
             const link = document.createElement('link');
             link.id = cssId;
@@ -1058,6 +1063,7 @@ function GisLocationPicker({
         }
 
         const scriptId = 'leaflet-js';
+
         if (!document.getElementById(scriptId)) {
             const script = document.createElement('script');
             script.id = scriptId;
@@ -1071,15 +1077,21 @@ function GisLocationPicker({
                     clearInterval(interval);
                 }
             }, 100);
+
             return () => clearInterval(interval);
         }
     }, []);
 
     useEffect(() => {
-        if (!isLoaded || !mapContainerRef.current) return;
+        if (!isLoaded || !mapContainerRef.current) {
+            return;
+        }
 
         const L = (window as any).L;
-        if (!L) return;
+
+        if (!L) {
+            return;
+        }
 
         const hasCoords = Boolean(
             latitude &&
@@ -1132,6 +1144,7 @@ function GisLocationPicker({
                     icon: customIcon,
                 }).addTo(map);
             }
+
             map.setView([latNum, lngNum], Math.max(map.getZoom(), 13));
         } else if (markerRef.current) {
             map.removeLayer(markerRef.current);
@@ -1165,6 +1178,75 @@ function GisLocationPicker({
 
 function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
     const { categories, districts } = useGrievanceMeta();
+    const { t } = useI18n();
+
+    // Fallback for missing grievancePage translations (defensive)
+    const gp = t.grievancePage ?? {
+        eyebrow: 'File a grievance',
+        title: 'File a grievance',
+        steps: ['Category', 'Details', 'Attachments', 'Contact', 'Review'],
+        category: 'What is this about?',
+        selectAbout: 'Select what your grievance is about...',
+        aiCategoryHelp:
+            'Leave the category blank and AI will suggest one from your description when you submit.',
+        manualCategoryHelp: 'Choose a category for your grievance.',
+        sensitive: 'Sensitive',
+        sensitiveCase: 'Sensitive case',
+        selectedCategory: 'Selected category:',
+        where: 'Where did this happen?',
+        district: 'District',
+        divisionOptional: 'Division (optional)',
+        loadingDivisions: 'Loading divisions...',
+        chooseDistrict: 'Choose a district first to show divisions.',
+        happened: 'Tell us what happened',
+        dictate: 'Dictate',
+        stopDictation: 'Stop dictation',
+        speechListening: 'Listening... Speak clearly; your words will appear here.',
+        speechHint: 'Use your microphone to dictate. Review the text before submitting.',
+        speechUnsupported: 'Speech recognition is not supported in this browser.',
+        speechError: 'Speech recognition could not be used.',
+        locationLabel: 'Location / address description',
+        gisCoordinates: 'GIS coordinates',
+        currentLocation: 'Get Current Location',
+        attachments: 'Add supporting files (optional)',
+        contactQuestion: 'How should we reach you?',
+        shareContact: 'Share my contact details',
+        anonymous: 'File anonymously',
+        fullName: 'Full name',
+        yourName: 'Your name',
+        phone: 'Phone',
+        phonePlaceholder: 'e.g. +266 5900 1234',
+        email: 'Email',
+        emailPlaceholder: 'e.g. name@example.com',
+        reviewTitle: 'Review',
+        security: 'Security verification',
+        securityReminder: 'Security reminder',
+        securityReminderDetail: 'Only share what is necessary. We do not ask for sensitive personal details beyond the information needed to review your case.',
+        back: 'Back',
+        continue: 'Continue',
+        submit: 'Submit grievance',
+        submitting: 'Submitting...',
+        received: 'Grievance received',
+        track: 'Track',
+        describePlaceholder: 'Describe what happened, when, and who or what was involved. The more detail, the faster we can act.',
+        moreCharsNeeded: '{count} more characters needed',
+        detailsReady: 'Looks good',
+        locationManual: 'Location / Address Description (Manual)',
+        locationExample: 'e.g. Main North 1, near Ha Abia junction',
+        latitude: 'Latitude',
+        longitude: 'Longitude',
+        gisPicker: 'Interactive GIS Map Picker (Click map to set pin)',
+        earlierGrievance: 'Is this related to an earlier grievance?',
+        earlierFinalized: 'It was previously finalized.',
+        earlierReferencePlaceholder: 'Earlier reference number, if known (e.g. GRM-2026-000001)',
+        followUpContact: "An officer can follow up and you'll get updates as your case moves.",
+        noFollowUp: 'No follow-up messages, but your reference number still lets you check status.',
+        contactInfoHelp: 'Provide a phone number or an email so an officer can reach you.',
+        keepReference: "Keep this reference number safe. You'll need it to check the status of your case.",
+        targetResponseBy: 'Target response by {date}.',
+        trackThisGrievance: 'Track this grievance',
+        fileAnother: 'File another',
+    };
 
     const [step, setStep] = useState(1);
     const [submitting, setSubmitting] = useState(false);
@@ -1174,9 +1256,12 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
         slaDue: string;
     } | null>(null);
 
-    const initialCategory = usePage().url
+    const page = usePage();
+    const { speechToText, aiCategorySuggestionEnabled = false } =
+        page.props as typeof page.props & FileGrievancePageProps;
+    const initialCategory = page.url
         ? new URL(
-              usePage().url,
+              page.url,
               typeof window !== 'undefined'
                   ? window.location.origin
                   : 'http://localhost',
@@ -1187,6 +1272,18 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
     const [districtId, setDistrictId] = useState<string>('');
     const [divisionId, setDivisionId] = useState<string>('');
     const [description, setDescription] = useState('');
+    const speech = useSpeechToText(
+        speechToText?.language ?? 'en-ZA',
+        (transcript) =>
+            setDescription((current) => {
+                const existing = current.trimEnd();
+
+                return `${existing}${existing ? ' ' : ''}${transcript}`;
+            }),
+    );
+    const voiceInputAvailable =
+        speechToText?.enabled !== false &&
+        (speechToText?.provider ?? 'browser') === 'browser';
     const [locationDescription, setLocationDescription] = useState('');
     const [latitude, setLatitude] = useState('');
     const [longitude, setLongitude] = useState('');
@@ -1212,6 +1309,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
     const handleGetCurrentLocation = () => {
         if (!('geolocation' in navigator)) {
             setLocError('Geolocation is not supported by your browser.');
+
             return;
         }
 
@@ -1280,7 +1378,9 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
 
     const canProceed = useMemo(() => {
         if (step === 1) {
-            return Boolean(categoryId && districtId);
+            return Boolean(
+                districtId && (categoryId || aiCategorySuggestionEnabled),
+            );
         }
 
         if (step === 2) {
@@ -1304,6 +1404,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
         step,
         categoryId,
         districtId,
+        aiCategorySuggestionEnabled,
         description,
         photos,
         isAnonymous,
@@ -1318,7 +1419,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
         try {
             const result = await submitGrievance(
                 {
-                    category_id: Number(categoryId),
+                    category_id: categoryId ? Number(categoryId) : null,
                     district_id: districtId ? Number(districtId) : null,
                     division_id: divisionId ? Number(divisionId) : null,
                     description,
@@ -1389,14 +1490,13 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                         style={{ color: 'var(--resolved)' }}
                     />
                     <h2 className="mb-2 font-display text-2xl font-semibold">
-                        Grievance received
+                        {gp.received}
                     </h2>
                     <p
                         className="mb-6 text-sm"
                         style={{ color: 'var(--text-secondary)' }}
                     >
-                        Keep this reference number safe. You'll need it to check
-                        the status of your case.
+                        {gp.keepReference}
                     </p>
                     <div
                         className="mx-auto mb-6 flex max-w-xs items-center justify-between rounded-md border px-4 py-3"
@@ -1426,7 +1526,10 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                         className="mb-6 text-xs"
                         style={{ color: 'var(--text-secondary)' }}
                     >
-                        Target response by {formatDate(confirmation.slaDue)}.
+                        {gp.targetResponseBy.replace(
+                            '{date}',
+                            formatDate(confirmation.slaDue),
+                        )}
                     </p>
                     <div className="flex flex-wrap justify-center gap-3">
                         <Button
@@ -1436,7 +1539,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                 color: '#FFFFFF',
                             }}
                         >
-                            Track this grievance{' '}
+                            {gp.trackThisGrievance}{' '}
                             <ArrowRight className="ml-1 h-4 w-4" />
                         </Button>
                         <Button
@@ -1447,7 +1550,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             }}
                             onClick={resetForm}
                         >
-                            File another
+                            {gp.fileAnother}
                         </Button>
                     </div>
                 </CardContent>
@@ -1465,19 +1568,72 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
         >
             <CardContent className="p-6 md:p-8">
                 <StepIndicator step={step} />
+                <div
+                    className="mb-6 flex flex-wrap items-center gap-2 rounded-md border p-3"
+                    style={{
+                        borderColor: 'var(--border)',
+                        background: 'var(--bg-page)',
+                    }}
+                >
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={!speech.supported || !voiceInputAvailable}
+                        aria-pressed={speech.listening}
+                        onClick={
+                            speech.listening ? speech.stop : speech.start
+                        }
+                        className="gap-1.5"
+                    >
+                        {speech.listening ? (
+                            <MicOff className="h-4 w-4" />
+                        ) : (
+                            <Mic className="h-4 w-4" />
+                        )}
+                        {speech.listening
+                            ? gp.stopDictation
+                            : gp.dictate}
+                    </Button>
+                    <span
+                        className="text-xs"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
+                        {!speech.supported
+                            ? gp.speechUnsupported
+                            : !voiceInputAvailable
+                              ? gp.speechError
+                              : speech.listening
+                                ? gp.speechListening
+                                : gp.speechHint}
+                    </span>
+                    {speech.error && (
+                        <span
+                            role="alert"
+                            className="w-full text-xs"
+                            style={{ color: DANGER }}
+                        >
+                            {gp.speechError}
+                        </span>
+                    )}
+                </div>
 
                 {step === 1 && (
                     <div className="space-y-6">
                         <div>
                             <Label className="mb-2 block text-sm font-semibold">
-                                What is this about?
+                                {gp.category}
                             </Label>
                             <Select
                                 value={categoryId}
                                 onValueChange={setCategoryId}
                             >
                                 <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Select what your grievance is about..." />
+                                    <SelectValue
+                                        placeholder={
+                                            gp.selectAbout
+                                        }
+                                    />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {categories.map((c) => (
@@ -1501,7 +1657,9 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                                             color: DANGER,
                                                         }}
                                                     >
-                                                        Sensitive
+                                                        {
+                                                            gp.sensitive
+                                                        }
                                                     </Badge>
                                                 )}
                                             </div>
@@ -1509,12 +1667,20 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                     ))}
                                 </SelectContent>
                             </Select>
+                            <p
+                                className="mt-1.5 text-xs"
+                                style={{ color: 'var(--text-secondary)' }}
+                            >
+                                {aiCategorySuggestionEnabled
+                                    ? gp.aiCategoryHelp
+                                    : gp.manualCategoryHelp}
+                            </p>
                             {category && (
                                 <p
                                     className="mt-1.5 text-xs"
                                     style={{ color: 'var(--text-secondary)' }}
                                 >
-                                    Selected category:{' '}
+                                    {gp.selectedCategory}{' '}
                                     <span className="font-medium">
                                         {category.name}
                                     </span>
@@ -1535,7 +1701,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                     className="h-4 w-4"
                                     style={{ color: 'var(--accent-dark)' }}
                                 />
-                                Where did this happen?
+                                {gp.where}
                             </Label>
 
                             <div>
@@ -1543,7 +1709,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                     className="mb-2 block text-xs font-medium"
                                     style={{ color: 'var(--text-secondary)' }}
                                 >
-                                    District
+                                    {gp.district}
                                 </Label>
                                 <div className="flex flex-wrap gap-2">
                                     {districts.map((d) => {
@@ -1584,7 +1750,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                     className="mb-2 block text-xs font-medium"
                                     style={{ color: 'var(--text-secondary)' }}
                                 >
-                                    Division (optional)
+                                    {gp.divisionOptional}
                                 </Label>
 
                                 {/* Render divisions as open buttons like districts for clarity */}
@@ -1626,7 +1792,9 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                             })
                                         ) : divisionsLoading ? (
                                             <div className="text-xs text-muted-foreground">
-                                                Loading divisions...
+                                                {
+                                                    gp.loadingDivisions
+                                                }
                                             </div>
                                         ) : (
                                             <p
@@ -1654,8 +1822,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                             color: 'var(--text-secondary)',
                                         }}
                                     >
-                                        Choose a district first to show
-                                        divisions.
+                                        {gp.chooseDistrict}
                                     </p>
                                 )}
                             </div>
@@ -1667,12 +1834,12 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                     <div className="space-y-5">
                         <div>
                             <Label className="mb-2 block text-sm font-semibold">
-                                Tell us what happened
+                                {gp.happened}
                             </Label>
                             <Textarea
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                placeholder="Describe what happened, when, and who or what was involved. The more detail, the faster we can act."
+                                placeholder={gp.describePlaceholder}
                                 className="min-h-35"
                             />
                             <p
@@ -1680,8 +1847,11 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                 style={{ color: 'var(--text-secondary)' }}
                             >
                                 {description.trim().length < 20
-                                    ? `${20 - description.trim().length} more characters needed`
-                                    : 'Looks good'}
+                                    ? gp.moreCharsNeeded.replace(
+                                          '{count}',
+                                          String(20 - description.trim().length),
+                                      )
+                                    : gp.detailsReady}
                             </p>
                         </div>
 
@@ -1695,7 +1865,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                         className="h-4 w-4"
                                         style={{ color: 'var(--accent-dark)' }}
                                     />{' '}
-                                    Location & GIS Coordinates
+                                    {gp.where}
                                 </Label>
                                 <Button
                                     type="button"
@@ -1715,7 +1885,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                             }}
                                         />
                                     )}
-                                    Get Current Location
+                                    {gp.currentLocation}
                                 </Button>
                             </div>
 
@@ -1741,21 +1911,21 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
 
                             <div>
                                 <Label className="mb-1.5 block text-xs font-medium">
-                                    Location / Address Description (Manual)
+                                    {gp.locationManual}
                                 </Label>
                                 <Input
                                     value={locationDescription}
                                     onChange={(e) =>
                                         setLocationDescription(e.target.value)
                                     }
-                                    placeholder="e.g. Main North 1, near Ha Abia junction"
+                                    placeholder={gp.locationExample}
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <Label className="mb-1 block text-xs text-muted-foreground">
-                                        Latitude
+                                        {gp.latitude}
                                     </Label>
                                     <Input
                                         value={latitude}
@@ -1768,7 +1938,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                 </div>
                                 <div>
                                     <Label className="mb-1 block text-xs text-muted-foreground">
-                                        Longitude
+                                        {gp.longitude}
                                     </Label>
                                     <Input
                                         value={longitude}
@@ -1783,8 +1953,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
 
                             <div className="pt-2">
                                 <Label className="mb-2 block text-xs font-medium">
-                                    Interactive GIS Map Picker (Click map to set
-                                    pin)
+                                    {gp.gisPicker}
                                 </Label>
                                 <GisLocationPicker
                                     latitude={latitude}
@@ -1803,7 +1972,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                         >
                             <div className="flex items-center justify-between">
                                 <p className="mb-0 text-sm font-semibold">
-                                    Is this related to an earlier grievance?
+                                    {gp.earlierGrievance}
                                 </p>
                                 <label className="flex items-center gap-2 text-sm">
                                     <input
@@ -1831,7 +2000,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                             }
                                         />
                                         <span>
-                                            It was previously finalized.
+                                            {gp.earlierFinalized}
                                         </span>
                                     </label>
 
@@ -1843,7 +2012,9 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                                 event.target.value,
                                             )
                                         }
-                                        placeholder="Earlier reference number, if known (e.g. GRM-2026-000001)"
+                                        placeholder={
+                                            gp.earlierReferencePlaceholder
+                                        }
                                     />
                                 </div>
                             )}
@@ -1881,7 +2052,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                     <div className="space-y-6">
                         <div>
                             <Label className="mb-3 block text-sm font-semibold">
-                                How should we reach you?
+                                {gp.contactQuestion}
                             </Label>
                             <RadioGroup
                                 value={isAnonymous ? 'anonymous' : 'contact'}
@@ -1904,7 +2075,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                     />
                                     <div>
                                         <p className="text-sm font-semibold">
-                                            Share my contact details
+                                            {gp.shareContact}
                                         </p>
                                         <p
                                             className="text-xs"
@@ -1912,8 +2083,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                                 color: 'var(--text-secondary)',
                                             }}
                                         >
-                                            An officer can follow up and you'll
-                                            get updates as your case moves.
+                                            {gp.followUpContact}
                                         </p>
                                     </div>
                                 </label>
@@ -1938,7 +2108,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                         />
                                         <div>
                                             <p className="text-sm font-semibold">
-                                                File anonymously
+                                                {gp.anonymous}
                                             </p>
                                             <p
                                                 className="text-xs"
@@ -1946,9 +2116,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                                     color: 'var(--text-secondary)',
                                                 }}
                                             >
-                                                No follow-up messages, but your
-                                                reference number still lets you
-                                                check status.
+                                                {gp.noFollowUp}
                                             </p>
                                         </div>
                                     </div>
@@ -1960,7 +2128,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             <div className="grid gap-4">
                                 <div>
                                     <Label className="mb-2 block text-sm font-semibold">
-                                        Full name
+                                        {gp.fullName}
                                     </Label>
                                     <Input
                                         value={contactName}
@@ -1974,7 +2142,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                     <div>
                                         <Label className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
                                             <Phone className="h-3.5 w-3.5" />{' '}
-                                            Phone
+                                            {gp.phone}
                                         </Label>
                                         <Input
                                             value={contactPhone}
@@ -1987,7 +2155,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                     <div>
                                         <Label className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
                                             <Mail className="h-3.5 w-3.5" />{' '}
-                                            Email
+                                            {gp.email}
                                         </Label>
                                         <Input
                                             type="email"
@@ -2003,8 +2171,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                     className="text-xs"
                                     style={{ color: 'var(--text-secondary)' }}
                                 >
-                                    Provide a phone number or an email so an
-                                    officer can reach you.
+                                    {gp.contactInfoHelp}
                                 </p>
                             </div>
                         )}
@@ -2027,7 +2194,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                             color: 'var(--text-secondary)',
                                         }}
                                     >
-                                        Category
+                                        {gp.category}
                                     </dt>
                                     <dd className="text-right font-medium">
                                         {category?.name}
@@ -2039,7 +2206,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                             color: 'var(--text-secondary)',
                                         }}
                                     >
-                                        District
+                                        {gp.district}
                                     </dt>
                                     <dd className="text-right font-medium">
                                         {
@@ -2159,7 +2326,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             style={{ borderColor: 'var(--border)' }}
                         >
                             <Label className="mb-2 block text-sm font-semibold">
-                                Security verification
+                                {gp.security}
                             </Label>
                             <p
                                 className="mb-3 text-xs"
@@ -2181,9 +2348,10 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                         onClick={() => setStep((s) => s - 1)}
                         style={{ color: 'var(--text-secondary)' }}
                     >
-                        <ArrowLeft className="mr-1 h-4 w-4" /> Back
+                        <ArrowLeft className="mr-1 h-4 w-4" />{' '}
+                        {gp.back}
                     </Button>
-                    {step < STEP_LABELS.length ? (
+                    {step < gp.steps.length ? (
                         <Button
                             disabled={!canProceed}
                             onClick={() => setStep((s) => s + 1)}
@@ -2192,7 +2360,8 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                 color: '#FFFFFF',
                             }}
                         >
-                            Continue <ArrowRight className="ml-1 h-4 w-4" />
+                            {gp.continue}{' '}
+                            <ArrowRight className="ml-1 h-4 w-4" />
                         </Button>
                     ) : (
                         <Button
@@ -2206,11 +2375,11 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                             {submitting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
-                                    Submitting...
+                                    {gp.submitting}
                                 </>
                             ) : (
                                 <>
-                                    Submit grievance{' '}
+                                    {gp.submit}{' '}
                                     <ArrowRight className="ml-1 h-4 w-4" />
                                 </>
                             )}
@@ -2890,15 +3059,24 @@ function TrackGrievancePanel({ prefillRef }: { prefillRef: string | null }) {
 
 function GrievanceHubContent() {
     const { loading, error } = useGrievanceMeta();
+    const { t } = useI18n();
     const [tab, setTab] = useState<'file' | 'track'>('file');
     const [prefillRef, setPrefillRef] = useState<string | null>(null);
+
+    // Fallback for missing grievancePage translations (defensive)
+    const gp = t.grievancePage ?? {
+        eyebrow: 'File a grievance',
+        title: 'File a grievance',
+    };
 
     return (
         <section className="mx-auto max-w-4xl px-6 py-16">
             <SectionHeader
-                eyebrow="GRMS - Grievance Redress"
+                eyebrow={gp.eyebrow}
                 title={
-                    tab === 'file' ? 'File a grievance' : 'Track your grievance'
+                    tab === 'file'
+                        ? gp.title
+                        : gp.title
                 }
                 sub={
                     tab === 'file'
@@ -2922,7 +3100,7 @@ function GrievanceHubContent() {
                         style={{ background: 'var(--bg-raised)' }}
                     >
                         <TabsTrigger value="file" className="text-sm">
-                            File a grievance
+                            {gp.title}
                         </TabsTrigger>
                         <TabsTrigger value="track" className="text-sm">
                             Track status

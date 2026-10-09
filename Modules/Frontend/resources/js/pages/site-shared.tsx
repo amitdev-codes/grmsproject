@@ -1,7 +1,7 @@
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Menu, X, Sun, Moon } from 'lucide-react';
 import React, { createContext, useContext, useState } from 'react';
 import { route } from 'ziggy-js';
@@ -162,6 +162,22 @@ const persist = (name: string, value: string): void => {
 
 export type Lang = 'en' | 'st';
 
+function getInitialLanguage(fallback: unknown): Lang {
+    if (fallback === 'en' || fallback === 'st') {
+        return fallback;
+    }
+
+    if (typeof window !== 'undefined') {
+        const saved = window.localStorage.getItem('locale');
+
+        if (saved === 'en' || saved === 'st') {
+            return saved;
+        }
+    }
+
+    return 'en';
+}
+
 export interface Translations {
     funding: string;
     nav: {
@@ -289,6 +305,72 @@ export interface Translations {
             haveAccount: string;
             signIn: string;
         };
+    };
+    grievancePage: {
+        eyebrow: string;
+        title: string;
+        sub: string;
+        steps: string[];
+        category: string;
+        selectAbout: string;
+        aiCategoryHelp: string;
+        manualCategoryHelp: string;
+        sensitive: string;
+        sensitiveCase: string;
+        selectedCategory: string;
+        where: string;
+        district: string;
+        divisionOptional: string;
+        loadingDivisions: string;
+        chooseDistrict: string;
+        happened: string;
+        dictate: string;
+        stopDictation: string;
+        speechListening: string;
+        speechHint: string;
+        speechUnsupported: string;
+        speechError: string;
+        locationLabel: string;
+        gisCoordinates: string;
+        currentLocation: string;
+        attachments: string;
+        contactQuestion: string;
+        shareContact: string;
+        anonymous: string;
+        fullName: string;
+        yourName: string;
+        phone: string;
+        phonePlaceholder: string;
+        email: string;
+        emailPlaceholder: string;
+        reviewTitle: string;
+        security: string;
+        securityReminder: string;
+        securityReminderDetail: string;
+        back: string;
+        continue: string;
+        submit: string;
+        submitting: string;
+        received: string;
+        track: string;
+        describePlaceholder: string;
+        moreCharsNeeded: string;
+        detailsReady: string;
+        locationManual: string;
+        locationExample: string;
+        latitude: string;
+        longitude: string;
+        gisPicker: string;
+        earlierGrievance: string;
+        earlierFinalized: string;
+        earlierReferencePlaceholder: string;
+        followUpContact: string;
+        noFollowUp: string;
+        contactInfoHelp: string;
+        keepReference: string;
+        targetResponseBy: string;
+        trackThisGrievance: string;
+        fileAnother: string;
     };
 }
 
@@ -573,6 +655,73 @@ export const translations: Record<Lang, Translations> = {
                 haveAccount: 'Already have an account?',
                 signIn: 'Log in',
             },
+        },
+        grievancePage: {
+            eyebrow: 'File a grievance',
+            title: 'File a grievance',
+            sub: 'Tell us what happened and we will route it to the right office.',
+            steps: ['Category', 'Details', 'Attachments', 'Contact', 'Review'],
+            category: 'What is this about?',
+            selectAbout: 'Select what your grievance is about...',
+            aiCategoryHelp:
+                'Leave the category blank and AI will suggest one from your description when you submit.',
+            manualCategoryHelp: 'Choose a category for your grievance.',
+            sensitive: 'Sensitive',
+            sensitiveCase: 'Sensitive case',
+            selectedCategory: 'Selected category:',
+            where: 'Where did this happen?',
+            district: 'District',
+            divisionOptional: 'Division (optional)',
+            loadingDivisions: 'Loading divisions...',
+            chooseDistrict: 'Choose a district first to show divisions.',
+            happened: 'Tell us what happened',
+            dictate: 'Dictate',
+            stopDictation: 'Stop dictation',
+            speechListening: 'Listening... Speak clearly; your words will appear here.',
+            speechHint: 'Use your microphone to dictate. Your browser may process the audio; review the text before submitting.',
+            speechUnsupported: 'Speech recognition is not supported in this browser.',
+            speechError: 'Speech input failed. Check microphone permission and your connection.',
+            locationLabel: 'Location / address description',
+            gisCoordinates: 'GIS coordinates',
+            currentLocation: 'Get Current Location',
+            attachments: 'Add supporting files (optional)',
+            contactQuestion: 'How should we reach you?',
+            shareContact: 'Share my contact details',
+            anonymous: 'File anonymously',
+            fullName: 'Full name',
+            yourName: 'Your name',
+            phone: 'Phone',
+            phonePlaceholder: 'e.g. +266 5900 1234',
+            email: 'Email',
+            emailPlaceholder: 'e.g. name@example.com',
+            reviewTitle: 'Review',
+            security: 'Security verification',
+            securityReminder: 'Security reminder',
+            securityReminderDetail: 'Only share what is necessary. We do not ask for sensitive personal details beyond the information needed to review your case.',
+            back: 'Back',
+            continue: 'Continue',
+            submit: 'Submit grievance',
+            submitting: 'Submitting...',
+            received: 'Grievance received',
+            track: 'Track',
+            describePlaceholder: 'Describe what happened, when, and who or what was involved. The more detail, the faster we can act.',
+            moreCharsNeeded: '{count} more characters needed',
+            detailsReady: 'Looks good',
+            locationManual: 'Location / Address Description (Manual)',
+            locationExample: 'e.g. Main North 1, near Ha Abia junction',
+            latitude: 'Latitude',
+            longitude: 'Longitude',
+            gisPicker: 'Interactive GIS Map Picker (Click map to set pin)',
+            earlierGrievance: 'Is this related to an earlier grievance?',
+            earlierFinalized: 'It was previously finalized.',
+            earlierReferencePlaceholder: 'Earlier reference number, if known (e.g. GRM-2026-000001)',
+            followUpContact: "An officer can follow up and you'll get updates as your case moves.",
+            noFollowUp: 'No follow-up messages, but your reference number still lets you check status.',
+            contactInfoHelp: 'Provide a phone number or an email so an officer can reach you.',
+            keepReference: "Keep this reference number safe. You'll need it to check the status of your case.",
+            targetResponseBy: 'Target response by {date}.',
+            trackThisGrievance: 'Track this grievance',
+            fileAnother: 'File another',
         },
     },
     st: {
@@ -863,6 +1012,73 @@ export const translations: Record<Lang, Translations> = {
                 signIn: 'Kena',
             },
         },
+        grievancePage: {
+            eyebrow: 'Ngola tletlebo',
+            title: 'Ngola tletlebo',
+            sub: 'Re bolelle se etsahetseng, re tla e romela ofising e nepahetseng.',
+            steps: ['Sehlopha', 'Lintlha', 'Lifaele', 'Puisano', 'Tlhahlobo'],
+            category: 'Taba ke efe?',
+            selectAbout: 'Khetha hore tletlebo ea hau e mabapi le eng...',
+            aiCategoryHelp:
+                'Tlohela sehlopha se se na letho, AI e tla fana ka tlhahiso ho latela tlhaloso ha u romela.',
+            manualCategoryHelp: 'Khetha sehlopha sa tletlebo ea hau.',
+            sensitive: 'E hlokolosi',
+            sensitiveCase: 'Nyeoe e hlokolosi',
+            selectedCategory: 'Sehlopha se khethiloeng:',
+            where: 'Sena se etsahetse hokae?',
+            district: 'Setereke',
+            divisionOptional: 'Karolo (boikhethelo)',
+            loadingDivisions: 'Ho kenya likarolo...',
+            chooseDistrict: 'Khetha setereke pele ho bontša likarolo.',
+            happened: 'Re bolelle se etsahetseng',
+            dictate: 'Bua',
+            stopDictation: 'Emisa ho ngola ka lentsoe',
+            speechListening: 'Re mametse... Bua ka ho hlaka; mantsoe a tla hlaha mona.',
+            speechHint: 'Sebelisa maekrofono ho bua. Sebatli sa hau se ka sebetsa ka molumo; hlahloba mantsoe pele u romela.',
+            speechUnsupported: 'Ho ngola ka lentsoe ha ho tšehetsoe ho sebatli sena.',
+            speechError: 'Ho bua ha hoa atleha. Hlahloba tumello ea maekrofono le khokahanyo ea hau.',
+            locationLabel: 'Sebaka / tlhaloso ea aterese',
+            gisCoordinates: 'Likhokahanyo tsa GIS',
+            currentLocation: 'Fumana sebaka sa hona joale',
+            attachments: 'Kenya lifaele tse tšehetsang (boikhethelo)',
+            contactQuestion: 'Re ka ikopanya le uena joang?',
+            shareContact: 'Arolelana lintlha tsa ka tsa puisano',
+            anonymous: 'Ngola ntle le ho tsejoa',
+            fullName: 'Lebitso le felletseng',
+            yourName: 'Lebitso la hao',
+            phone: 'Mohala',
+            phonePlaceholder: 'mohl. +266 5900 1234',
+            email: 'Imeile',
+            emailPlaceholder: 'mohl. lebitso@example.com',
+            reviewTitle: 'Tlhahlobo',
+            security: "Netefatso ea ts'ireletso",
+            securityReminder: 'Khopotso ea tsireletso',
+            securityReminderDetail: 'Arolelana feela seo re se hlokang. Ha re kope lintlha tse tebileng tsa botho ho feta tse hlokahalang ho hlahloba nyeoe ea hau.',
+            back: 'Morao',
+            continue: 'Tsoela pele',
+            submit: 'Romela tletlebo',
+            submitting: 'E romeloa...',
+            received: 'Tletlebo e amohetsoe',
+            track: 'Latela',
+            describePlaceholder: 'Hlalosa se etsahetseng, neng, le hore na ke mang kapa eng e amehang. Ha ho na lintlha tse ngata, re ka sebetsa kapele.',
+            moreCharsNeeded: 'Likarolo tse {count} li hlokeha hape',
+            detailsReady: 'Ho looks good',
+            locationManual: 'Sebaka / Tlhaloso ea Aterese (Ka letsoho)',
+            locationExample: 'mohl. Main North 1, haufi le mateano a Ha Abia',
+            latitude: 'Latitude',
+            longitude: 'Longitude',
+            gisPicker: 'Khetha Sebaka ka GIS (Tobetsa mmap ho beha pin)',
+            earlierGrievance: 'Na ena e amana le tletlebo ea pele?',
+            earlierFinalized: 'E ne e se e phethiloe pele.',
+            earlierReferencePlaceholder: 'Nomoro ea tšupiso ea pejana, haeba e tsejoa (mohl. GRM-2026-000001)',
+            followUpContact: 'Ofisiri e ka u lata mme u tla fumana liphatlalatso ha nyeoe ea hau e ntse e tsamaea.',
+            noFollowUp: 'Ha ho melaetsa ea ho latela, empa nomoro ea hau ea tšupiso e ntse e u lumella ho sheba boemo.',
+            contactInfoHelp: 'Fana ka nomoro ea mohala kapa imeile e le hore ofisiri e ka u fihla.',
+            keepReference: 'Boloka nomoro ena ea tšupiso ka bolokolohi. U tla e hloka ho sheba boemo ba nyeoe ea hau.',
+            targetResponseBy: 'Karabo e lebisitsoeng ka {date}.',
+            trackThisGrievance: 'Latela tletlebo ena',
+            fileAnother: 'Ngola e ngoe',
+        },
     },
 };
 
@@ -1038,13 +1254,16 @@ export function RoadDivider() {
 
 export function PageShell({ children }: { children: React.ReactNode }) {
     const settings = useApplicationSettings();
+    const page = usePage();
     // Lazy initializers so the very first render already reflects whatever
     // was picked in the app (or on a previous visit here) — no flash of
     // the wrong theme, and no more always-resetting to 'light'.
     const [theme, setTheme] = useState<Theme>(getInitialTheme);
     const colorTheme: ColorTheme =
         settings.theme === 'roads' ? 'roads' : 'default';
-    const [lang, setLang] = useState<Lang>('en');
+    const [lang, setLang] = useState<Lang>(() =>
+        getInitialLanguage(page.props.locale),
+    );
 
     const themeValue = {
         theme,
@@ -1064,7 +1283,16 @@ export function PageShell({ children }: { children: React.ReactNode }) {
     const langValue = {
         lang,
         t: translations[lang],
-        toggle: () => setLang((v) => (v === 'en' ? 'st' : 'en')),
+        toggle: () => {
+            const next: Lang = lang === 'en' ? 'st' : 'en';
+            setLang(next);
+            persist('locale', next);
+            router.get(
+                route('locale.update', { locale: next }),
+                {},
+                { preserveScroll: true, preserveState: true },
+            );
+        },
     };
 
     return (
