@@ -39,6 +39,7 @@ class Grievance extends Model implements Auditable, HasMedia
         'grievance_sla_policy_id', 'first_response_due_at', 'resolution_due_at',
         'closed_by', 'closed_reason', 'closed_at', 'tracking_access_expires_at', 'tracking_access_revoked_at',
         'ai_suggested_category_id', 'ai_confidence',
+        'public_duplicate_fingerprint',
     ];
 
     protected function casts(): array

@@ -16,6 +16,7 @@ class SettingDatabaseSeeder extends Seeder
             ApplicationSettingSeeder::class,
             EmailSettingSeeder::class,
             SmsSettingSeeder::class,
+            GrievanceIntakeSecuritySettingSeeder::class,
         ]);
     }
 }

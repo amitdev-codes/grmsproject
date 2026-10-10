@@ -13,6 +13,7 @@ import {
     UsersRound,
     FolderKanban,
     TrendingUp,
+    GitBranch,
     MessageSquareText,
     History,
     CheckCircle2,
@@ -75,11 +76,11 @@ export function AppTopMenu() {
     const { t } = useTranslation();
 
     const auth = page.props.auth as
-        | { user?: { permissions?: string[]; role_names?: string } }
-        | undefined;
+        { user?: { permissions?: string[]; role_names?: string } } | undefined;
     const permissions = auth?.user?.permissions ?? [];
     const roleNames =
-        auth?.user?.role_names?.split(',').map((role: string) => role.trim()) ?? [];
+        auth?.user?.role_names?.split(',').map((role: string) => role.trim()) ??
+        [];
     const isPrivileged = roleNames.some((role) =>
         ['Super Admin', 'IT Admin', 'Admin', 'Developer'].includes(role),
     );
@@ -156,6 +157,12 @@ export function AppTopMenu() {
                     permission: 'grievances.escalate',
                 },
                 {
+                    title: 'menu.grievance-workflow-steps',
+                    href: '/grievance-workflow-steps',
+                    icon: GitBranch,
+                    permission: 'grievance_workflow_steps.view',
+                },
+                {
                     title: 'menu.grievance-messages',
                     href: '/grievance-messages',
                     icon: MessageSquareText,
@@ -172,6 +179,12 @@ export function AppTopMenu() {
                     href: '/resolutions',
                     icon: CheckCircle2,
                     permission: 'grievances.resolve',
+                },
+                {
+                    title: 'menu.grievance-guide',
+                    href: '/api/grievance-docs',
+                    icon: FileText,
+                    permission: 'grievances.view',
                 },
             ],
             permission: 'grievances.view',
@@ -296,6 +309,16 @@ export function AppTopMenu() {
                     title: 'menu.sms_settings',
                     href: '/settings/sms',
                     icon: MessageSquareText,
+                },
+                {
+                    title: 'menu.security_settings',
+                    href: '/settings/security',
+                    icon: ShieldCheck,
+                },
+                {
+                    title: 'menu.optimize_app',
+                    href: '/settings/optimize',
+                    icon: Settings,
                 },
             ],
         },

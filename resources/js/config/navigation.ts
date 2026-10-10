@@ -4,6 +4,7 @@ import {
     MessageSquareWarning,
     FolderKanban,
     TrendingUp,
+    GitBranch,
     MessageSquareText,
     Mail,
     History,
@@ -75,6 +76,11 @@ export const modulesNavItems: NavItem[] = [
                 icon: TrendingUp,
             },
             {
+                title: 'menu.grievance-workflow-steps',
+                href: '/grievance-workflow-steps',
+                icon: GitBranch,
+            },
+            {
                 title: 'menu.grievance-messages',
                 href: '/grievance-messages',
                 icon: MessageSquareText,
@@ -88,6 +94,11 @@ export const modulesNavItems: NavItem[] = [
                 title: 'menu.resolutions',
                 href: '/resolutions',
                 icon: CheckCircle2,
+            },
+            {
+                title: 'menu.grievance-guide',
+                href: '/api/grievance-docs',
+                icon: FileText,
             },
         ],
     },
@@ -167,6 +178,16 @@ export const settingsNavItems: NavItem[] = [
                 title: 'menu.sms_settings',
                 href: '/settings/sms',
                 icon: MessageSquareText,
+            },
+            {
+                title: 'menu.security_settings',
+                href: '/settings/security',
+                icon: ShieldCheck,
+            },
+            {
+                title: 'menu.optimize_app',
+                href: '/settings/optimize',
+                icon: Settings,
             },
         ],
     },

@@ -63,6 +63,24 @@ type GrievanceStatus =
     | 'reopened';
 
 type Priority = 'low' | 'normal' | 'high';
+
+declare global {
+    interface Window {
+        turnstile?: {
+            render: (
+                container: HTMLElement,
+                options: {
+                    sitekey: string;
+                    callback: (token: string) => void;
+                    'expired-callback': () => void;
+                    'error-callback': () => void;
+                },
+            ) => string;
+            remove: (widgetId: string) => void;
+        };
+    }
+}
+
 interface ApiCategory {
     id: number;
     name: string;
@@ -617,13 +635,100 @@ async function submitGrievance(
 
 function CaptchaWidget({ onToken }: { onToken: (token: string) => void }) {
     const [question, setQuestion] = useState('Loading verification...');
+    const [provider, setProvider] = useState<'local' | 'cloudflare_turnstile'>(
+        'local',
+    );
+    const [siteKey, setSiteKey] = useState('');
+    const container = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         fetch('/grievances/captcha')
             .then((response) => response.json())
-            .then((data: { question: string }) => setQuestion(data.question))
+            .then(
+                (data: {
+                    provider?: 'local' | 'cloudflare_turnstile';
+                    site_key?: string;
+                    question?: string;
+                }) => {
+                    if (
+                        data.provider === 'cloudflare_turnstile' &&
+                        data.site_key
+                    ) {
+                        setProvider('cloudflare_turnstile');
+                        setSiteKey(data.site_key);
+                    } else {
+                        setQuestion(
+                            data.question ?? 'Unable to load verification',
+                        );
+                    }
+                },
+            )
             .catch(() => setQuestion('Unable to load verification'));
     }, []);
+
+    useEffect(() => {
+        if (
+            provider !== 'cloudflare_turnstile' ||
+            !siteKey ||
+            !container.current
+        ) {
+            return;
+        }
+
+        let widgetId: string | undefined;
+        const render = () => {
+            if (!window.turnstile || !container.current || widgetId) {
+                return;
+            }
+
+            widgetId = window.turnstile.render(container.current, {
+                sitekey: siteKey,
+                callback: onToken,
+                'expired-callback': () => onToken(''),
+                'error-callback': () => onToken(''),
+            });
+        };
+        const removeWidget = () => {
+            if (widgetId) {
+                window.turnstile?.remove(widgetId);
+            }
+        };
+
+        if (window.turnstile) {
+            render();
+        } else {
+            const script =
+                document.querySelector<HTMLScriptElement>(
+                    'script[src^="https://challenges.cloudflare.com/turnstile/v0/api.js"]',
+                ) ?? document.createElement('script');
+
+            if (!script.src) {
+                script.src =
+                    'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+            }
+
+            script.addEventListener('load', render);
+
+            return () => {
+                script.removeEventListener('load', render);
+                removeWidget();
+            };
+        }
+
+        return removeWidget;
+    }, [onToken, provider, siteKey]);
+
+    if (provider === 'cloudflare_turnstile') {
+        return (
+            <div
+                ref={container}
+                aria-label="Cloudflare security verification"
+            />
+        );
+    }
 
     return (
         <div className="flex items-center gap-3">
@@ -1201,9 +1306,12 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
         happened: 'Tell us what happened',
         dictate: 'Dictate',
         stopDictation: 'Stop dictation',
-        speechListening: 'Listening... Speak clearly; your words will appear here.',
-        speechHint: 'Use your microphone to dictate. Review the text before submitting.',
-        speechUnsupported: 'Speech recognition is not supported in this browser.',
+        speechListening:
+            'Listening... Speak clearly; your words will appear here.',
+        speechHint:
+            'Use your microphone to dictate. Review the text before submitting.',
+        speechUnsupported:
+            'Speech recognition is not supported in this browser.',
         speechError: 'Speech recognition could not be used.',
         locationLabel: 'Location / address description',
         gisCoordinates: 'GIS coordinates',
@@ -1221,14 +1329,16 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
         reviewTitle: 'Review',
         security: 'Security verification',
         securityReminder: 'Security reminder',
-        securityReminderDetail: 'Only share what is necessary. We do not ask for sensitive personal details beyond the information needed to review your case.',
+        securityReminderDetail:
+            'Only share what is necessary. We do not ask for sensitive personal details beyond the information needed to review your case.',
         back: 'Back',
         continue: 'Continue',
         submit: 'Submit grievance',
         submitting: 'Submitting...',
         received: 'Grievance received',
         track: 'Track',
-        describePlaceholder: 'Describe what happened, when, and who or what was involved. The more detail, the faster we can act.',
+        describePlaceholder:
+            'Describe what happened, when, and who or what was involved. The more detail, the faster we can act.',
         moreCharsNeeded: '{count} more characters needed',
         detailsReady: 'Looks good',
         locationManual: 'Location / Address Description (Manual)',
@@ -1238,11 +1348,16 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
         gisPicker: 'Interactive GIS Map Picker (Click map to set pin)',
         earlierGrievance: 'Is this related to an earlier grievance?',
         earlierFinalized: 'It was previously finalized.',
-        earlierReferencePlaceholder: 'Earlier reference number, if known (e.g. GRM-2026-000001)',
-        followUpContact: "An officer can follow up and you'll get updates as your case moves.",
-        noFollowUp: 'No follow-up messages, but your reference number still lets you check status.',
-        contactInfoHelp: 'Provide a phone number or an email so an officer can reach you.',
-        keepReference: "Keep this reference number safe. You'll need it to check the status of your case.",
+        earlierReferencePlaceholder:
+            'Earlier reference number, if known (e.g. GRM-2026-000001)',
+        followUpContact:
+            "An officer can follow up and you'll get updates as your case moves.",
+        noFollowUp:
+            'No follow-up messages, but your reference number still lets you check status.',
+        contactInfoHelp:
+            'Provide a phone number or an email so an officer can reach you.',
+        keepReference:
+            "Keep this reference number safe. You'll need it to check the status of your case.",
         targetResponseBy: 'Target response by {date}.',
         trackThisGrievance: 'Track this grievance',
         fileAnother: 'File another',
@@ -1581,9 +1696,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                         size="sm"
                         disabled={!speech.supported || !voiceInputAvailable}
                         aria-pressed={speech.listening}
-                        onClick={
-                            speech.listening ? speech.stop : speech.start
-                        }
+                        onClick={speech.listening ? speech.stop : speech.start}
                         className="gap-1.5"
                     >
                         {speech.listening ? (
@@ -1591,9 +1704,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                         ) : (
                             <Mic className="h-4 w-4" />
                         )}
-                        {speech.listening
-                            ? gp.stopDictation
-                            : gp.dictate}
+                        {speech.listening ? gp.stopDictation : gp.dictate}
                     </Button>
                     <span
                         className="text-xs"
@@ -1629,11 +1740,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                 onValueChange={setCategoryId}
                             >
                                 <SelectTrigger className="w-full">
-                                    <SelectValue
-                                        placeholder={
-                                            gp.selectAbout
-                                        }
-                                    />
+                                    <SelectValue placeholder={gp.selectAbout} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {categories.map((c) => (
@@ -1657,9 +1764,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                                             color: DANGER,
                                                         }}
                                                     >
-                                                        {
-                                                            gp.sensitive
-                                                        }
+                                                        {gp.sensitive}
                                                     </Badge>
                                                 )}
                                             </div>
@@ -1792,9 +1897,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                             })
                                         ) : divisionsLoading ? (
                                             <div className="text-xs text-muted-foreground">
-                                                {
-                                                    gp.loadingDivisions
-                                                }
+                                                {gp.loadingDivisions}
                                             </div>
                                         ) : (
                                             <p
@@ -1849,7 +1952,9 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                 {description.trim().length < 20
                                     ? gp.moreCharsNeeded.replace(
                                           '{count}',
-                                          String(20 - description.trim().length),
+                                          String(
+                                              20 - description.trim().length,
+                                          ),
                                       )
                                     : gp.detailsReady}
                             </p>
@@ -1999,9 +2104,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                                                 )
                                             }
                                         />
-                                        <span>
-                                            {gp.earlierFinalized}
-                                        </span>
+                                        <span>{gp.earlierFinalized}</span>
                                     </label>
 
                                     <Input
@@ -2348,8 +2451,7 @@ function FileGrievanceWizard({ onFiled }: { onFiled: (ref: string) => void }) {
                         onClick={() => setStep((s) => s - 1)}
                         style={{ color: 'var(--text-secondary)' }}
                     >
-                        <ArrowLeft className="mr-1 h-4 w-4" />{' '}
-                        {gp.back}
+                        <ArrowLeft className="mr-1 h-4 w-4" /> {gp.back}
                     </Button>
                     {step < gp.steps.length ? (
                         <Button
@@ -3073,11 +3175,7 @@ function GrievanceHubContent() {
         <section className="mx-auto max-w-4xl px-6 py-16">
             <SectionHeader
                 eyebrow={gp.eyebrow}
-                title={
-                    tab === 'file'
-                        ? gp.title
-                        : gp.title
-                }
+                title={tab === 'file' ? gp.title : gp.title}
                 sub={
                     tab === 'file'
                         ? "Tell us what happened. It takes about three minutes and you'll get a reference number to follow up with."

@@ -45,6 +45,7 @@ final class GrievanceIntakeData
         public readonly ?array $rawPayload = null,
         public readonly array $attachments = [],
         public readonly string $preferredLanguage = 'en',
+        public readonly ?string $intakeIp = null,
     ) {}
 
     /** Who to record as the actor in status history / audit log. */
@@ -54,7 +55,7 @@ final class GrievanceIntakeData
     }
 
     /** Public web app — grievances/add (StorePublicGrievanceRequest::safe()). */
-    public static function fromPublicWebRequest(array $v, array $attachments): self
+    public static function fromPublicWebRequest(array $v, array $attachments, ?string $intakeIp = null): self
     {
         return new self(
             channel: 'web',
@@ -77,24 +78,37 @@ final class GrievanceIntakeData
             metadata: $v['metadata'] ?? null,
             attachments: $attachments,
             preferredLanguage: $v['preferred_language'] ?? 'en',
+            intakeIp: $intakeIp,
         );
     }
 
     /** Mobile app submission. */
-    public static function fromMobileApi(array $v, array $attachments = []): self
+    public static function fromMobileApi(array $v, array $attachments = [], ?string $intakeIp = null): self
     {
+        $isAnonymous = (bool) ($v['is_anonymous'] ?? false);
+
         return new self(
             channel: 'mobile_app',
             description: $v['description'],
             categoryId: $v['category_id'] ?? null,
             districtId: $v['district_id'] ?? null,
-            contactPhone: $v['contact_phone'] ?? null,
-            contactEmail: $v['contact_email'] ?? null,
-            contactName: $v['contact_name'] ?? null,
-            isAnonymous: (bool) ($v['is_anonymous'] ?? false),
-            latitude: $v['latitude'] ?? null,
-            longitude: $v['longitude'] ?? null,
+            divisionId: $v['division_id'] ?? null,
+            contactPhone: $isAnonymous ? null : ($v['contact_phone'] ?? null),
+            contactEmail: $isAnonymous ? null : ($v['contact_email'] ?? null),
+            contactName: $isAnonymous ? null : ($v['contact_name'] ?? null),
+            isAnonymous: $isAnonymous,
+            locationDescription: $v['location_description'] ?? null,
+            latitude: isset($v['latitude']) ? (float) $v['latitude'] : null,
+            longitude: isset($v['longitude']) ? (float) $v['longitude'] : null,
+            locationAccuracyMeters: isset($v['location_accuracy_meters']) ? (float) $v['location_accuracy_meters'] : null,
+            projectId: $v['project_id'] ?? null,
+            sourceGrievanceReference: $v['source_grievance_reference'] ?? null,
+            isPreviouslyLodged: (bool) ($v['is_previously_lodged'] ?? false),
+            isPreviouslyFinalized: (bool) ($v['is_previously_finalized'] ?? false),
+            metadata: $v['metadata'] ?? null,
             attachments: $attachments,
+            preferredLanguage: $v['preferred_language'] ?? 'en',
+            intakeIp: $intakeIp,
         );
     }
 

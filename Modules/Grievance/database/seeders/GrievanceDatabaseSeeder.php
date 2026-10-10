@@ -14,7 +14,7 @@ class GrievanceDatabaseSeeder extends Seeder
          $this->call([
              CategorySeeder::class,
              GrievanceChannelSeeder::class,
-
+             GrievanceWorkflowSeeder::class,
          ]);
     }
 }

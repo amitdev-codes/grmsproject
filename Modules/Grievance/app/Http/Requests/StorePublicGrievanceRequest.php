@@ -37,6 +37,8 @@ class StorePublicGrievanceRequest extends FormRequest
             'attachments' => ['nullable', 'array', 'max:5'],
             'attachments.*' => ['file', 'max:20480', 'mimes:jpg,jpeg,png,webp,heic,pdf,doc,docx,xls,xlsx,mp3,wav,m4a,mp4,mov,avi'],
             'captcha_token' => ['nullable', 'string', 'max:2048'],
+            'captcha_challenge_id' => ['nullable', 'string', 'max:50'],
+            'captcha_answer' => ['nullable', 'string', 'max:20'],
         ];
     }
 

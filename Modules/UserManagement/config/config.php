@@ -82,6 +82,7 @@ return [
         'grievance_categories' => ['view', 'create', 'edit', 'delete', 'export'],
         'grievance_channels' => ['view', 'create', 'edit', 'delete', 'export'],
         'grievance_escalations' => ['view', 'create', 'edit', 'delete', 'export'],
+        'grievance_workflow_steps' => ['view', 'create', 'edit', 'delete'],
         'grievance_messages' => ['view', 'create', 'edit', 'delete', 'export'],
         'grievance_status_histories' => ['view', 'export'],
         'grievance_sla_policies' => ['view', 'create', 'edit', 'delete', 'export'],
@@ -139,6 +140,7 @@ return [
             'grievances.edit',
             'grievance_categories.*', 'grievance_channels.*',
             'grievance_sla_policies.*', 'grievance_escalation_rules.*',
+            'grievance_workflow_steps.*',
             'notifications.*',
         ],
 

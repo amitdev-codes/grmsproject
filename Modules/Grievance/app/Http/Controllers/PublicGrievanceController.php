@@ -14,14 +14,27 @@ use Modules\Grievance\Http\Requests\TrackGrievanceRequest;
 use Modules\Grievance\Http\Resources\GrievanceTrackingResource;
 use Modules\Grievance\Jobs\SubmitGrievanceJob;
 use Modules\Grievance\Models\Grievance;
+use Modules\Grievance\Services\GrievanceIntakeSecurityService;
 use Modules\Grievance\Services\GrievanceRegistrationService;
 
 class PublicGrievanceController extends Controller
 {
-    public function __construct(protected GrievanceRegistrationService $service) {}
+    public function __construct(
+        protected GrievanceRegistrationService $service,
+        protected GrievanceIntakeSecurityService $security,
+    ) {}
 
     public function captcha(): JsonResponse
     {
+        $settings = $this->security->settings();
+
+        if ($settings->captcha_provider === 'cloudflare_turnstile') {
+            return response()->json([
+                'provider' => 'cloudflare_turnstile',
+                'site_key' => $settings->cloudflare_site_key,
+            ]);
+        }
+
         $left = random_int(2, 9);
         $right = random_int(1, 9);
         Session::put('grievance_captcha_answer', (string) ($left + $right));
@@ -35,8 +48,15 @@ class PublicGrievanceController extends Controller
 
         $intakeData = GrievanceIntakeData::fromPublicWebRequest(
             $request->safe()->except(['attachments', 'captcha_token']),
-            $request->file('attachments', [])
+            $request->file('attachments', []),
+            $request->ip(),
         );
+
+        if ($this->service->findRecentPublicDuplicate($intakeData)) {
+            return response()->json([
+                'message' => 'A matching grievance was recently submitted. Please track your existing grievance instead.',
+            ], 409);
+        }
 
         $grievance = $this->service->submitQuick($intakeData);
 

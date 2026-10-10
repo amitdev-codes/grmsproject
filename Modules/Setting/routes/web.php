@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Setting\Http\Controllers\ApplicationSettingController;
 use Modules\Setting\Http\Controllers\EmailSettingController;
+use Modules\Setting\Http\Controllers\GrievanceIntakeSecuritySettingController;
+use Modules\Setting\Http\Controllers\OptimizeAppController;
 use Modules\Setting\Http\Controllers\ProfileUpdateController;
 use Modules\Setting\Http\Controllers\SmsSettingController;
 
@@ -16,6 +18,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('settings/application', [ApplicationSettingController::class, 'update'])
         ->middleware('role:Super Admin')
         ->name('settings.application.update');
+
+    Route::middleware('role:Super Admin')->group(function (): void {
+        Route::get('settings/security', [GrievanceIntakeSecuritySettingController::class, 'edit'])
+            ->name('settings.security.edit');
+        Route::put('settings/security', [GrievanceIntakeSecuritySettingController::class, 'update'])
+            ->name('settings.security.update');
+        Route::get('settings/optimize', [OptimizeAppController::class, 'index'])
+            ->name('settings.optimize.index');
+        Route::post('settings/optimize', [OptimizeAppController::class, 'run'])
+            ->name('settings.optimize.run');
+    });
 
     Route::middleware('role:Super Admin')->group(function (): void {
         Route::resource('settings/email', EmailSettingController::class)

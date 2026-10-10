@@ -21,10 +21,11 @@ use Modules\Grievance\Models\GrievanceMessage;
 use Modules\Grievance\Models\InboundSms;
 use Modules\Grievance\Notifications\GrievanceAllocated;
 use Modules\Grievance\Services\Ai\AiGrievanceClassifier;
+use Modules\Master\Models\District;
 // channel is a plain string code (see GrievanceIntakeData) resolved against
 // the grievance_channels table via findChannelByCode() — no enum import.
-use Modules\Master\Models\District;
 use Modules\Master\Models\Division;
+use Modules\Setting\Models\GrievanceIntakeSecuritySetting;
 
 class GrievanceRegistrationService
 {
@@ -103,6 +104,7 @@ class GrievanceRegistrationService
                 'location_accuracy_meters' => $data->locationAccuracyMeters,
                 'preferred_language' => $data->preferredLanguage,
                 'metadata' => $data->metadata,
+                'public_duplicate_fingerprint' => $this->publicDuplicateFingerprint($data),
                 'ai_suggested_category_id' => null,
                 'ai_confidence' => null,
             ]);
@@ -125,6 +127,37 @@ class GrievanceRegistrationService
 
             return $grievance->refresh();
         });
+    }
+
+    public function findRecentPublicDuplicate(GrievanceIntakeData $data): ?Grievance
+    {
+        $fingerprint = $this->publicDuplicateFingerprint($data);
+        $windowHours = GrievanceIntakeSecuritySetting::current()->duplicate_window_hours;
+
+        if (! $fingerprint || $windowHours === 0) {
+            return null;
+        }
+
+        return Grievance::query()
+            ->where('public_duplicate_fingerprint', $fingerprint)
+            ->where('created_at', '>=', now()->subHours($windowHours))
+            ->first();
+    }
+
+    private function publicDuplicateFingerprint(GrievanceIntakeData $data): ?string
+    {
+        if (! in_array($data->channel, ['web', 'mobile_app'], true) || ! $data->intakeIp) {
+            return null;
+        }
+
+        return app(GrievanceIntakeSecurityService::class)->duplicateFingerprint(
+            $data->description,
+            $data->categoryId,
+            $data->contactPhone,
+            $data->contactEmail,
+            $data->isAnonymous,
+            $data->intakeIp,
+        );
     }
 
     /**

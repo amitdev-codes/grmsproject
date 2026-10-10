@@ -14,6 +14,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Sanctum\HasApiTokens;
 use Modules\Master\Models\District;
 use Modules\Master\Models\Division;
 use Modules\Master\Models\Section;
@@ -43,7 +44,8 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements HasMedia
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
+
     use HasPublicUlid, SoftDeletes;
     use HasRoles;
     use InteractsWithMedia;
@@ -86,6 +88,7 @@ class User extends Authenticatable implements HasMedia
     {
         $this->addMediaCollection('avatar')->singleFile();
     }
+
     public function district(): BelongsTo
     {
         return $this->belongsTo(District::class);

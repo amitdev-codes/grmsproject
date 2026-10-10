@@ -8,8 +8,10 @@ use Modules\Grievance\Http\Controllers\GrievanceEscalationController;
 use Modules\Grievance\Http\Controllers\GrievanceMessageController;
 use Modules\Grievance\Http\Controllers\GrievanceRoutingController;
 use Modules\Grievance\Http\Controllers\GrievanceStatusHistoryController;
+use Modules\Grievance\Http\Controllers\GrievanceWorkflowStepController;
 use Modules\Grievance\Http\Controllers\PublicGrievanceController;
 use Modules\Grievance\Http\Controllers\ResolutionController;
+use Modules\Grievance\Http\Middleware\ProtectPublicGrievanceLodging;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // grievance categories
@@ -37,6 +39,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/grievance-escalations/export', [GrievanceEscalationController::class, 'export'])->name('grievance-escalations.export');
     Route::post('/grievance-escalations/import', [GrievanceEscalationController::class, 'import'])->name('grievance-escalations.import');
     Route::resource('grievance-escalations', GrievanceEscalationController::class)->names('grievance-escalations');
+    Route::get('/grievance-workflow-steps', [GrievanceWorkflowStepController::class, 'index'])
+        ->middleware('permission:grievance_workflow_steps.view')
+        ->name('grievance-workflow-steps.index');
+    Route::get('/grievance-workflow-steps/create', [GrievanceWorkflowStepController::class, 'create'])
+        ->middleware('permission:grievance_workflow_steps.create')
+        ->name('grievance-workflow-steps.create');
+    Route::post('/grievance-workflow-steps', [GrievanceWorkflowStepController::class, 'store'])
+        ->middleware('permission:grievance_workflow_steps.create')
+        ->name('grievance-workflow-steps.store');
+    Route::get('/grievance-workflow-steps/{grievance_workflow_step}/edit', [GrievanceWorkflowStepController::class, 'edit'])
+        ->middleware('permission:grievance_workflow_steps.edit')
+        ->name('grievance-workflow-steps.edit');
+    Route::put('/grievance-workflow-steps/{grievance_workflow_step}', [GrievanceWorkflowStepController::class, 'update'])
+        ->middleware('permission:grievance_workflow_steps.edit')
+        ->name('grievance-workflow-steps.update');
+    Route::delete('/grievance-workflow-steps/{grievance_workflow_step}', [GrievanceWorkflowStepController::class, 'destroy'])
+        ->middleware('permission:grievance_workflow_steps.delete')
+        ->name('grievance-workflow-steps.destroy');
     // grievance resolutions
     Route::post('/resolutions/bulk-destroy', [ResolutionController::class, 'bulkDestroy'])->name('resolutions.bulk-destroy');
     Route::get('/resolutions/export', [ResolutionController::class, 'export'])->name('resolutions.export');
@@ -59,7 +79,7 @@ Route::middleware(['auth', 'verified', 'permission:grievances.view'])
     });
 Route::prefix('grievances')->group(function () {
     Route::get('/captcha', [PublicGrievanceController::class, 'captcha']);
-    Route::post('/add', [PublicGrievanceController::class, 'store']);
+    Route::post('/add', [PublicGrievanceController::class, 'store'])->middleware(ProtectPublicGrievanceLodging::class);
     Route::get('/track', [PublicGrievanceController::class, 'track']);
     Route::post('/{grievance:reference_no}/messages', [PublicGrievanceController::class, 'storeMessage']);
 });
