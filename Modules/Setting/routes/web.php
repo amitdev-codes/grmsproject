@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Setting\Http\Controllers\ApplicationSettingController;
+use Modules\Setting\Http\Controllers\ApplicationTranslationController;
 use Modules\Setting\Http\Controllers\EmailSettingController;
 use Modules\Setting\Http\Controllers\GrievanceIntakeSecuritySettingController;
 use Modules\Setting\Http\Controllers\OptimizeAppController;
@@ -28,6 +29,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('settings.optimize.index');
         Route::post('settings/optimize', [OptimizeAppController::class, 'run'])
             ->name('settings.optimize.run');
+    });
+
+    Route::middleware('role:Super Admin|Admin|IT Admin')->prefix('settings/translations')->name('settings.translations.')->group(function (): void {
+        Route::get('/', [ApplicationTranslationController::class, 'index'])->name('index');
+        Route::get('/create', [ApplicationTranslationController::class, 'create'])->name('create');
+        Route::post('/', [ApplicationTranslationController::class, 'store'])->name('store');
+        Route::get('/{translation}/edit', [ApplicationTranslationController::class, 'edit'])->name('edit');
+        Route::put('/{translation}', [ApplicationTranslationController::class, 'update'])->name('update');
+        Route::delete('/{translation}', [ApplicationTranslationController::class, 'destroy'])->name('destroy');
     });
 
     Route::middleware('role:Super Admin')->group(function (): void {

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 use Modules\Grievance\Models\Grievance;
 use Modules\Setting\Services\ApplicationSettingService;
+use Modules\Setting\Services\ApplicationTranslationService;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -48,6 +49,9 @@ class HandleInertiaRequests extends Middleware
             'locale' => $locale,
             'locales' => config('locales.supported'),
             'translations' => $this->loadTranslations($locale),
+            'dynamicTranslations' => $user
+                ? app(ApplicationTranslationService::class)->all()
+                : [],
             'name' => config('app.name'),
             'app_author' => config('app.author', 'Roads Directorate · Government of Lesotho'),
             'applicationSettings' => $this->applicationSettings(),

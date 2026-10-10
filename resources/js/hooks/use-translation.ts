@@ -4,8 +4,10 @@ import { usePage } from '@inertiajs/react';
 type Translations = Record<string, any>;
 
 export function useTranslation() {
-    const { translations, locale } = usePage().props as unknown as {
+    const { translations, dynamicTranslations, locale } = usePage()
+        .props as unknown as {
         translations: Translations;
+        dynamicTranslations: Record<string, Record<string, string>>;
         locale: string;
     };
 
@@ -21,7 +23,13 @@ export function useTranslation() {
                 translations,
             );
 
-        let result = typeof value === 'string' ? value : key;
+        const dynamicValue = dynamicTranslations?.[key]?.[locale];
+        let result =
+            typeof dynamicValue === 'string' && dynamicValue.length > 0
+                ? dynamicValue
+                : typeof value === 'string'
+                  ? value
+                  : key;
 
         for (const [search, replace] of Object.entries(replacements)) {
             result = result.replace(`:${search}`, String(replace));

@@ -34,6 +34,13 @@ export interface SharedData {
     locale: string;
     locales: Record<string, string>;
     translations: Record<string, string>;
+    dynamicTranslations: Record<
+        string,
+        {
+            en: string;
+            st: string;
+        }
+    >;
     name: string;
     app_author: string;
     flash: {

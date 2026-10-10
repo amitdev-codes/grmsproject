@@ -30,6 +30,7 @@ import {
     ClipboardCheck,
     Server,
     Mail,
+    Languages,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { useRef, useState } from 'react';
@@ -48,6 +49,7 @@ interface MenuItem {
     href: string;
     icon?: ComponentType<{ className?: string }>;
     permission?: string;
+    visible?: boolean;
 }
 
 interface MenuGroup {
@@ -302,32 +304,45 @@ export function AppTopMenu() {
         {
             label: 'menu.settings',
             icon: Settings,
-            visible: isSuperAdmin,
+            visible: isPrivileged,
             items: [
                 {
                     title: 'menu.application_settings',
                     href: '/settings/application',
                     icon: Globe,
+                    visible: isSuperAdmin,
                 },
                 {
                     title: 'menu.email_settings',
                     href: '/settings/email',
                     icon: Mail,
+                    visible: isSuperAdmin,
                 },
                 {
                     title: 'menu.sms_settings',
                     href: '/settings/sms',
                     icon: MessageSquareText,
+                    visible: isSuperAdmin,
                 },
                 {
                     title: 'menu.security_settings',
                     href: '/settings/security',
                     icon: ShieldCheck,
+                    visible: isSuperAdmin,
                 },
                 {
                     title: 'menu.optimize_app',
                     href: '/settings/optimize',
                     icon: Settings,
+                    visible: isSuperAdmin,
+                },
+                {
+                    title: 'menu.language-translations',
+                    href: '/settings/translations',
+                    icon: Languages,
+                    visible: roleNames.some((role) =>
+                        ['Super Admin', 'Admin', 'IT Admin'].includes(role),
+                    ),
                 },
             ],
         },
@@ -340,8 +355,10 @@ export function AppTopMenu() {
         .map((group) => ({
             ...group,
             items:
-                group.items?.filter((item) =>
-                    hasPermission(permissions, item.permission),
+                group.items?.filter(
+                    (item) =>
+                        hasPermission(permissions, item.permission) &&
+                        item.visible !== false,
                 ) ?? [],
         }))
         .filter(

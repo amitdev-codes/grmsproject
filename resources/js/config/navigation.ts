@@ -27,6 +27,7 @@ import {
     List,
     ClipboardCheck,
     Server,
+    Languages,
 } from 'lucide-react';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
@@ -188,6 +189,11 @@ export const settingsNavItems: NavItem[] = [
                 title: 'menu.optimize_app',
                 href: '/settings/optimize',
                 icon: Settings,
+            },
+            {
+                title: 'menu.language-translations',
+                href: '/settings/translations',
+                icon: Languages,
             },
         ],
     },

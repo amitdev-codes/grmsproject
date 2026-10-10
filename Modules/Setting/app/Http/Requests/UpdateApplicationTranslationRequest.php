@@ -1,0 +1,31 @@
+<?php
+
+namespace Modules\Setting\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class UpdateApplicationTranslationRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user()?->hasAnyRole(['Super Admin', 'Admin', 'IT Admin']) ?? false;
+    }
+
+    public function rules(): array
+    {
+        $translation = $this->route('translation');
+
+        return [
+            'translation_key' => [
+                'required',
+                'string',
+                'max:191',
+                'regex:/^[^\r\n]+$/u',
+                Rule::unique('application_translations')->ignore($translation),
+            ],
+            'english_text' => ['required', 'string', 'max:10000'],
+            'sesotho_text' => ['nullable', 'string', 'max:10000'],
+        ];
+    }
+}
