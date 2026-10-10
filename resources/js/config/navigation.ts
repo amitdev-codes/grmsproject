@@ -196,8 +196,13 @@ export const settingsNavItems: NavItem[] = [
 export const reportsNavItems: NavItem[] = [
     {
         title: 'menu.reports',
-        href: '/reports',
+        href: '#',
         icon: FileText,
+        items: [
+            { title: 'Summary', href: '/reports/summary', icon: FileText },
+            { title: 'Annex', href: '/reports/annex', icon: FileText },
+            { title: 'Detailed', href: '/reports/detailed', icon: FileText },
+        ],
     },
 ];
 

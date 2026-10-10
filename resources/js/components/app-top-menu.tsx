@@ -32,6 +32,7 @@ import {
     Mail,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -85,6 +86,8 @@ export function AppTopMenu() {
         ['Super Admin', 'IT Admin', 'Admin', 'Developer'].includes(role),
     );
     const isSuperAdmin = roleNames.includes('Super Admin');
+    const [openMenu, setOpenMenu] = useState<string | null>(null);
+    const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingGrievances = page.props.pendingGrievances as {
         count: number;
         href: string;
@@ -251,14 +254,20 @@ export function AppTopMenu() {
             icon: FileText,
             items: [
                 {
-                    title: 'menu.reports',
-                    href: '/reports',
+                    title: 'Summary',
+                    href: '/reports/summary',
                     icon: FileText,
                     permission: 'reports.view',
                 },
                 {
-                    title: 'Summary report',
-                    href: '/reports/summary',
+                    title: 'Annex',
+                    href: '/reports/annex',
+                    icon: FileText,
+                    permission: 'reports.view',
+                },
+                {
+                    title: 'Detailed',
+                    href: '/reports/detailed',
                     icon: FileText,
                     permission: 'reports.view',
                 },
@@ -339,6 +348,17 @@ export function AppTopMenu() {
             (group) => !group.items || group.items.length > 0 || group.href,
         );
 
+    const cancelClose = () => {
+        if (closeTimer.current) {
+            clearTimeout(closeTimer.current);
+            closeTimer.current = null;
+        }
+    };
+    const scheduleClose = () => {
+        cancelClose();
+        closeTimer.current = setTimeout(() => setOpenMenu(null), 180);
+    };
+
     return (
         <nav
             className="sticky top-16 z-30 flex h-12 shrink-0 items-center justify-center gap-2 overflow-x-auto border-b border-sidebar-border bg-sidebar px-2 text-sidebar-foreground md:px-4"
@@ -371,7 +391,9 @@ export function AppTopMenu() {
                             </span>
                         )}
                         {group.items && group.items.length > 0 && (
-                            <ChevronDown className="size-4" />
+                            <ChevronDown
+                                className={`size-4 transition-transform ${openMenu === group.label ? 'rotate-180' : ''}`}
+                            />
                         )}
                     </Button>
                 );
@@ -385,43 +407,67 @@ export function AppTopMenu() {
                 }
 
                 return (
-                    <DropdownMenu key={group.label}>
-                        <DropdownMenuTrigger asChild>
-                            {trigger}
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                            align="start"
-                            className="min-w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-lg"
-                        >
-                            {(group.items ?? []).map((item) => {
-                                const itemActive = isActiveHref(
-                                    page.url,
-                                    item.href,
-                                );
-                                const ItemIcon = item.icon;
+                    <div
+                        key={group.label}
+                        onMouseEnter={() => {
+                            cancelClose();
+                            setOpenMenu((current) =>
+                                current === group.label ? current : group.label,
+                            );
+                        }}
+                        onMouseLeave={scheduleClose}
+                    >
+                        <DropdownMenu
+                            open={openMenu === group.label}
+                            modal={false}
+                            onOpenChange={(open) => {
+                                cancelClose();
 
-                                return (
-                                    <DropdownMenuItem
-                                        key={item.href}
-                                        asChild
-                                        style={{ cursor: 'pointer' }}
-                                        className={cn(
-                                            'cursor-pointer! rounded-sm px-2 py-1.5 text-sm focus:bg-accent focus:text-accent-foreground',
-                                            itemActive &&
-                                                'bg-accent text-accent-foreground',
-                                        )}
-                                    >
-                                        <Link href={item.href} prefetch>
-                                            {ItemIcon && (
-                                                <ItemIcon className="mr-2 size-4" />
+                                if (open) {
+                                    setOpenMenu(group.label);
+                                } else {
+                                    scheduleClose();
+                                }
+                            }}
+                        >
+                            <DropdownMenuTrigger asChild>
+                                {trigger}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="start"
+                                className="min-w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=closed]:animate-none data-[state=open]:animate-none"
+                                onMouseEnter={cancelClose}
+                                onMouseLeave={scheduleClose}
+                            >
+                                {(group.items ?? []).map((item) => {
+                                    const itemActive = isActiveHref(
+                                        page.url,
+                                        item.href,
+                                    );
+                                    const ItemIcon = item.icon;
+
+                                    return (
+                                        <DropdownMenuItem
+                                            key={item.href}
+                                            asChild
+                                            className={cn(
+                                                'cursor-pointer! rounded-sm px-2 py-1.5 text-sm focus:bg-accent focus:text-accent-foreground',
+                                                itemActive &&
+                                                    'bg-accent text-accent-foreground',
                                             )}
-                                            {t(item.title)}
-                                        </Link>
-                                    </DropdownMenuItem>
-                                );
-                            })}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                                        >
+                                            <Link href={item.href} prefetch>
+                                                {ItemIcon && (
+                                                    <ItemIcon className="mr-2 size-4" />
+                                                )}
+                                                {t(item.title)}
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    );
+                                })}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 );
             })}
         </nav>

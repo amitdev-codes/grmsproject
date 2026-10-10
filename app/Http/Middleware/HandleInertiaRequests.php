@@ -8,9 +8,6 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 use Modules\Grievance\Models\Grievance;
-use Modules\Grievance\Notifications\GrievanceAllocated;
-use Modules\Grievance\Notifications\GrievanceAssigned;
-use Modules\Grievance\Notifications\GrievanceReAllocationRequested;
 use Modules\Setting\Services\ApplicationSettingService;
 
 class HandleInertiaRequests extends Middleware
@@ -72,12 +69,18 @@ class HandleInertiaRequests extends Middleware
             ],
             'notifications' => [
                 'count' => $user
-                    ? $user->unreadNotifications()->whereIn('type', [
-                        GrievanceAllocated::class,
-                        GrievanceAssigned::class,
-                        GrievanceReAllocationRequested::class,
-                    ])->count()
+                    ? $user->unreadNotifications()->count()
                     : 0,
+                'latest' => $user
+                    ? $user->notifications()->latest()->limit(5)->get()->map(fn ($notification) => [
+                        'id' => $notification->id,
+                        'title' => $notification->data['title'] ?? 'Notification',
+                        'message' => $notification->data['message'] ?? '',
+                        'action_url' => $notification->data['action_url'] ?? null,
+                        'read_at' => $notification->read_at?->toIso8601String(),
+                        'created_at' => $notification->created_at?->diffForHumans(),
+                    ])->values()->all()
+                    : [],
             ],
             'pendingGrievances' => $this->pendingGrievances($user),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

@@ -16,6 +16,14 @@ export interface SharedData {
     auth: Auth;
     notifications: {
         count: number;
+        latest: {
+            id: string;
+            title: string;
+            message: string;
+            action_url: string | null;
+            read_at: string | null;
+            created_at: string | null;
+        }[];
     };
     pendingGrievances: {
         count: number;
