@@ -111,7 +111,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
     exportLabel,
     importLabel,
 }: DataTableProps<TData, TValue>) {
-    const { t } = useTranslation();
+    const { t, tLabel } = useTranslation();
     const dt = useDataTable({ routes, meta, defaultSort, defaultOrder });
     const [viewRow, setViewRow] = useState<TData | null>(null);
 
@@ -128,8 +128,15 @@ export function DataTable<TData extends { id: number | string }, TValue>({
 
     const resolvedSearchPlaceholder =
         searchPlaceholder ?? t('menu.search_placeholder');
+    const translatedTitle = tLabel(title);
+    const translatedResourceLabel = resourceLabel
+        ? tLabel(resourceLabel)
+        : null;
     const resolvedResourceLabel =
-        resourceLabel ?? t('menu.new_resource', { resource: title });
+        translatedResourceLabel && translatedResourceLabel !== resourceLabel
+            ? translatedResourceLabel
+            : (resourceLabel ??
+              t('menu.new_resource', { resource: translatedTitle }));
     const resolvedExportLabel = exportLabel ?? t('menu.export');
     const resolvedImportLabel = importLabel ?? t('menu.import');
 
@@ -212,14 +219,14 @@ export function DataTable<TData extends { id: number | string }, TValue>({
                         onCheckedChange={(value) =>
                             table.toggleAllPageRowsSelected(!!value)
                         }
-                        aria-label="Select all"
+                        aria-label={t('menu.select_all')}
                     />
                 ),
                 cell: ({ row }) => (
                     <Checkbox
                         checked={row.getIsSelected()}
                         onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
+                        aria-label={t('menu.select_row')}
                     />
                 ),
                 enableSorting: false,
@@ -232,7 +239,9 @@ export function DataTable<TData extends { id: number | string }, TValue>({
         if (showActions) {
             cols.push({
                 id: 'actions',
-                header: () => <div className="text-right">Actions</div>,
+                header: () => (
+                    <div className="text-right">{t('menu.actions')}</div>
+                ),
                 cell: ({ row }) => (
                     <div className="flex justify-end">
                         <DataTableRowActions
@@ -258,6 +267,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
         showSelection,
         columns,
         showActions,
+        t,
         getRowId,
         routes,
         getRowLabel,
@@ -309,7 +319,9 @@ export function DataTable<TData extends { id: number | string }, TValue>({
             <CardHeader className="flex flex-row flex-nowrap items-center justify-between gap-2 border-b px-3 py-2.5!">
                 <div className="flex min-w-0 flex-col justify-center">
                     <CardTitle className="text-sm leading-tight font-semibold">
-                        {t('menu.list_resource', { resource: title })}
+                        {t('menu.list_resource', {
+                            resource: translatedTitle,
+                        })}
                     </CardTitle>
                     {description && (
                         <CardDescription className="text-[11px] leading-tight">
@@ -458,11 +470,17 @@ export function DataTable<TData extends { id: number | string }, TValue>({
                                         >
                                             {header.isPlaceholder
                                                 ? null
-                                                : flexRender(
-                                                      header.column.columnDef
-                                                          .header,
-                                                      header.getContext(),
-                                                  )}
+                                                : typeof header.column.columnDef
+                                                        .header === 'string'
+                                                  ? tLabel(
+                                                        header.column.columnDef
+                                                            .header,
+                                                    )
+                                                  : flexRender(
+                                                        header.column.columnDef
+                                                            .header,
+                                                        header.getContext(),
+                                                    )}
                                         </TableHead>
                                     ))}
                                 </TableRow>

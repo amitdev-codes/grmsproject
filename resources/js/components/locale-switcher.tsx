@@ -1,4 +1,3 @@
-import { router } from '@inertiajs/react';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
@@ -8,14 +7,7 @@ export function LocaleSwitcher() {
     const toggleLocale = () => {
         const nextLocale = locale === 'en' ? 'st' : 'en';
 
-        router.get(
-            `/lang/${nextLocale}`,
-            {},
-            {
-                preserveScroll: true,
-                preserveState: false,
-            },
-        );
+        window.location.assign(`/lang/${nextLocale}`);
     };
 
     return (
@@ -29,7 +21,7 @@ export function LocaleSwitcher() {
                     : 'Switch language to English'
             }
             onClick={toggleLocale}
-            className="relative flex h-9 w-17 items-center rounded-full border border-white/30 bg-white/15 px-0.75 transition-colors hover:bg-white/25 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:outline-none focus-visible:ring-offset-transparent"
+            className="relative flex h-9 w-17 items-center rounded-full border border-white/30 bg-white/15 px-0.75 transition-colors hover:bg-white/25 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none"
         >
             <span className="pointer-events-none absolute inset-0 flex items-center justify-between px-2 text-[10px] font-semibold tracking-wide text-white">
                 <span

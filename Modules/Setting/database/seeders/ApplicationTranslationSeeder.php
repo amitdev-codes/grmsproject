@@ -49,6 +49,74 @@ class ApplicationTranslationSeeder extends Seeder
             ],
         ]);
 
+        $uiTranslations = [
+            'menu.home' => ['Home', 'Lehae'],
+            'menu.back' => ['Back', 'Morao'],
+            'menu.actions' => ['Actions', 'Liketso'],
+            'menu.select_all' => ['Select all', 'Khetha tsohle'],
+            'menu.select_row' => ['Select row', 'Khetha mola'],
+            'menu.ascending' => ['Ascending', 'Nyolohang'],
+            'menu.descending' => ['Descending', 'Theohang'],
+            'menu.hide_column' => ['Hide column', 'Pata kholomo'],
+            'menu.reset' => ['Reset', 'Seta bocha'],
+            'menu.active' => ['Active', 'E sebetsa'],
+            'menu.inactive' => ['Inactive', 'Ha e sebetse'],
+            'menu.new_user' => ['New User', 'Mosebelisi e mocha'],
+            'menu.new_role' => ['New Role', 'Karolo e ncha'],
+            'menu.new_permission' => ['New Permission', 'Tumello e ncha'],
+            'menu.list_resource' => ['List :resource', 'Lenane la :resource'],
+            'menu.export' => ['Export', 'Romella kantle'],
+            'menu.import' => ['Import', 'Kenya'],
+            'menu.view_all' => ['View all', 'Sheba tsohle'],
+            'menu.rows_per_page' => ['Rows per page', 'Mela ka leqephe'],
+            'menu.showing' => ['Showing', 'E bontša'],
+            'menu.of' => ['of', 'ho'],
+            'menu.show' => ['Show', 'Bontša'],
+            'menu.entries' => ['entries', 'likeno'],
+            'menu.toggle_columns' => ['Toggle columns', 'Fetola likholomo'],
+            'menu.excel' => ['Excel (.xlsx)', 'Excel (.xlsx)'],
+            'menu.csv' => ['CSV', 'CSV'],
+            'menu.pdf' => ['PDF', 'PDF'],
+            'menu.print' => ['Print', 'Hatisa'],
+            'menu.import_records' => ['Import records', 'Kenya lirekoto'],
+            'menu.import_file_description' => [
+                'Upload an .xlsx or .csv file matching the expected columns.',
+                'Kenya faele ea .xlsx kapa .csv e lumellanang le likholomo tse hlokahalang.',
+            ],
+            'menu.importing' => ['Importing…', 'E kenya…'],
+            'menu.username' => ['Username', 'Lebitso la mosebelisi'],
+            'menu.email' => ['Email', 'Imeile'],
+            'menu.phone' => ['Phone', 'Mohala'],
+            'menu.role' => ['Role', 'Karolo'],
+            'menu.status' => ['Status', 'Boemo'],
+            'menu.created' => ['Created', 'E entsoe'],
+            'menu.code' => ['Code', 'Khoutu'],
+            'menu.name' => ['Name', 'Lebitso'],
+            'menu.name_st' => ['Name (ST)', 'Lebitso (Sesotho)'],
+        ];
+
+        foreach ($uiTranslations as $key => [$englishText, $sesothoText]) {
+            if ($key === 'menu.view_all') {
+                DB::table('application_translations')
+                    ->where('translation_key', $key)
+                    ->where('english_text', 'View')
+                    ->update(['english_text' => $englishText, 'updated_at' => now()]);
+            }
+
+            DB::table('application_translations')
+                ->where('translation_key', $key)
+                ->where(fn ($query) => $query->whereNull('sesotho_text')->orWhere('sesotho_text', ''))
+                ->update(['sesotho_text' => $sesothoText, 'updated_at' => now()]);
+
+            DB::table('application_translations')->insertOrIgnore([
+                'translation_key' => $key,
+                'english_text' => $englishText,
+                'sesotho_text' => $sesothoText,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
         Cache::forget('application-translations.all');
     }
 

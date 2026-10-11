@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { ChevronRight, Home, ArrowLeft } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import type { RouteDefinition } from '@/wayfinder';
 
@@ -21,8 +22,9 @@ interface BreadcrumbProps {
 // ─── Component ─────────────────────────────────────────
 
 export default function Breadcrumb({ items = [], className }: BreadcrumbProps) {
+    const { t, tLabel } = useTranslation();
     const all: BreadcrumbItem[] = [
-        { label: 'Home', href: '/admin/dashboard', icon: Home },
+        { label: t('menu.home'), href: '/admin/dashboard', icon: Home },
         ...items,
     ];
 
@@ -40,7 +42,7 @@ export default function Breadcrumb({ items = [], className }: BreadcrumbProps) {
                     )}
                 >
                     <ArrowLeft className="h-3.5 w-3.5" />
-                    Back
+                    {t('menu.back')}
                 </button>
 
                 {/* ─── RIGHT: Breadcrumb Trail ─── */}
@@ -71,7 +73,7 @@ export default function Breadcrumb({ items = [], className }: BreadcrumbProps) {
                                             {Icon && (
                                                 <Icon className="h-3 w-3" />
                                             )}
-                                            {item.label}
+                                            {tLabel(item.label)}
                                         </span>
                                     ) : (
                                         <button
@@ -88,7 +90,7 @@ export default function Breadcrumb({ items = [], className }: BreadcrumbProps) {
                                             {Icon && (
                                                 <Icon className="h-3 w-3" />
                                             )}
-                                            {item.label}
+                                            {tLabel(item.label)}
                                         </button>
                                     )}
                                 </li>

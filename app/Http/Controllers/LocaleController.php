@@ -18,6 +18,6 @@ class LocaleController extends Controller
             $user->update(['locale' => $locale]);
         }
 
-        return back();
+        return back()->withCookie(cookie('locale', $locale, 60 * 24 * 365));
     }
 }

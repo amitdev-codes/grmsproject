@@ -1,14 +1,15 @@
-import { Table } from '@tanstack/react-table';
-import { TableHead, TableRow } from '@/components/ui/table';
+import type { Table } from '@tanstack/react-table';
 import { DataTableFacetedFilter } from '@/components/data-table/data-table-faceted-filter';
 import { DataTableTextFilter } from '@/components/data-table/data-table-text-filter';
+import { TableHead, TableRow } from '@/components/ui/table';
+import { useTranslation } from '@/hooks/use-translation';
 import type { DataTableFilterField } from '@/types/data-table';
 
 interface DataTableFilterRowProps<TData> {
-  table: Table<TData>;
-  filterFields: DataTableFilterField[];
-  activeFilters: Record<string, string[]>;
-  onFilterChange: (columnId: string, values: string[]) => void;
+    table: Table<TData>;
+    filterFields: DataTableFilterField[];
+    activeFilters: Record<string, string[]>;
+    onFilterChange: (columnId: string, values: string[]) => void;
 }
 
 /**
@@ -18,42 +19,61 @@ interface DataTableFilterRowProps<TData> {
  * select, actions, etc.) just get an empty cell so alignment stays intact.
  */
 export function DataTableFilterRow<TData>({
-  table,
-  filterFields,
-  activeFilters,
-  onFilterChange,
+    table,
+    filterFields,
+    activeFilters,
+    onFilterChange,
 }: DataTableFilterRowProps<TData>) {
-  if (filterFields.length === 0) return null;
+    const { tLabel } = useTranslation();
 
-  const fieldMap = new Map(filterFields.map((f) => [f.id, f]));
-  const headerGroup = table.getHeaderGroups()[0];
+    if (filterFields.length === 0) {
+        return null;
+    }
 
-  return (
-    <TableRow className="hover:bg-transparent">
-      {headerGroup.headers.map((header) => {
-        const field = fieldMap.get(header.column.id);
+    const fieldMap = new Map(filterFields.map((f) => [f.id, f]));
+    const headerGroup = table.getHeaderGroups()[0];
 
-        return (
-          <TableHead key={`filter-${header.id}`} className="border-t bg-muted/30 py-2 align-top">
-            {field ? (
-              field.type === 'text' ? (
-                <DataTableTextFilter
-                  title={field.title}
-                  value={activeFilters[field.id]?.[0] ?? ''}
-                  onChange={(value) => onFilterChange(field.id, value ? [value] : [])}
-                />
-              ) : (
-                <DataTableFacetedFilter
-                  title={field.title}
-                  options={field.options ?? []}
-                  selected={activeFilters[field.id] ?? []}
-                  onChange={(values) => onFilterChange(field.id, values)}
-                />
-              )
-            ) : null}
-          </TableHead>
-        );
-      })}
-    </TableRow>
-  );
+    return (
+        <TableRow className="hover:bg-transparent">
+            {headerGroup.headers.map((header) => {
+                const field = fieldMap.get(header.column.id);
+
+                return (
+                    <TableHead
+                        key={`filter-${header.id}`}
+                        className="border-t bg-muted/30 py-2 align-top"
+                    >
+                        {field ? (
+                            field.type === 'text' ? (
+                                <DataTableTextFilter
+                                    title={tLabel(field.title)}
+                                    value={activeFilters[field.id]?.[0] ?? ''}
+                                    onChange={(value) =>
+                                        onFilterChange(
+                                            field.id,
+                                            value ? [value] : [],
+                                        )
+                                    }
+                                />
+                            ) : (
+                                <DataTableFacetedFilter
+                                    title={tLabel(field.title)}
+                                    options={(field.options ?? []).map(
+                                        (option) => ({
+                                            ...option,
+                                            label: tLabel(option.label),
+                                        }),
+                                    )}
+                                    selected={activeFilters[field.id] ?? []}
+                                    onChange={(values) =>
+                                        onFilterChange(field.id, values)
+                                    }
+                                />
+                            )
+                        ) : null}
+                    </TableHead>
+                );
+            })}
+        </TableRow>
+    );
 }

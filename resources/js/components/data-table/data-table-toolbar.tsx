@@ -5,6 +5,7 @@ import { DataTableExportImport } from '@/components/data-table/data-table-export
 import { DataTableViewOptions } from '@/components/data-table/data-table-view-options';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useTranslation } from '@/hooks/use-translation';
 import type { DataTableRoutes, DataTableQueryState } from '@/types/data-table';
 
 interface DataTableToolbarProps<TData> {
@@ -37,6 +38,8 @@ export function DataTableToolbar<TData>({
     resourceLabel = 'New',
     onCreate,
 }: DataTableToolbarProps<TData>) {
+    const { t } = useTranslation();
+
     return (
         <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-1 flex-wrap items-center gap-2">
@@ -54,7 +57,7 @@ export function DataTableToolbar<TData>({
                         onClick={onReset}
                         className="h-8 px-2 lg:px-3"
                     >
-                        Reset
+                        {t('menu.reset')}
                         <X className="ml-2 h-4 w-4" />
                     </Button>
                 )}

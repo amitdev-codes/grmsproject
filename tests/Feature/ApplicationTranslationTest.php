@@ -3,6 +3,7 @@
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Setting\Database\Seeders\ApplicationTranslationSeeder;
 use Modules\Setting\Models\ApplicationTranslation;
 use Modules\Setting\Services\ApplicationTranslationService;
 use Spatie\Permission\Models\Role;
@@ -62,4 +63,27 @@ it('filters the translation list by untranslated strings', function () {
         ->assertOk()
         ->assertJsonPath('props.meta.total', 1)
         ->assertJsonPath('props.data.0.translation_key', 'menu.translated');
+});
+
+it('seeds shared interface labels without overwriting client translations', function () {
+    ApplicationTranslation::query()->create([
+        'translation_key' => 'menu.export',
+        'english_text' => 'Export',
+        'sesotho_text' => 'Custom client wording',
+    ]);
+
+    app(ApplicationTranslationSeeder::class)->run();
+
+    expect(ApplicationTranslation::query()
+        ->where('translation_key', 'menu.export')
+        ->value('sesotho_text'))->toBe('Custom client wording');
+    expect(ApplicationTranslation::query()
+        ->where('translation_key', 'menu.rows_per_page')
+        ->value('sesotho_text'))->toBe('Mela ka leqephe');
+    expect(ApplicationTranslation::query()
+        ->where('translation_key', 'menu.view_all')
+        ->value('english_text'))->toBe('View all');
+    expect(ApplicationTranslation::query()
+        ->where('translation_key', 'menu.permissions')
+        ->value('sesotho_text'))->toBe('Litumello');
 });

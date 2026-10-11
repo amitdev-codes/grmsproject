@@ -8,6 +8,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
 interface DataTableColumnHeaderProps<
@@ -29,10 +30,13 @@ export function DataTableColumnHeader<TData, TValue>({
     title,
     className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
+    const { t, tLabel } = useTranslation();
+    const translatedTitle = tLabel(title);
+
     if (!column.getCanSort()) {
         return (
             <div className={cn('text-[11px] font-semibold', className)}>
-                {title}
+                {translatedTitle}
             </div>
         );
     }
@@ -48,7 +52,7 @@ export function DataTableColumnHeader<TData, TValue>({
                         size="sm"
                         className="-ml-2 h-6.5 px-2 text-[11px] font-semibold tracking-wide uppercase data-[state=open]:bg-accent"
                     >
-                        <span>{title}</span>
+                        <span>{translatedTitle}</span>
                         {sorted === 'desc' ? (
                             <ArrowDown className="ml-1.5 h-3 w-3" />
                         ) : sorted === 'asc' ? (
@@ -63,20 +67,20 @@ export function DataTableColumnHeader<TData, TValue>({
                         onClick={() => column.toggleSorting(false)}
                     >
                         <ArrowUp className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-                        Asc
+                        {t('menu.ascending')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                         onClick={() => column.toggleSorting(true)}
                     >
                         <ArrowDown className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-                        Desc
+                        {t('menu.descending')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                         onClick={() => column.toggleVisibility(false)}
                     >
                         <EyeOff className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-                        Hide column
+                        {t('menu.hide_column')}
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

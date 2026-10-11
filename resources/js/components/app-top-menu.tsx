@@ -31,6 +31,7 @@ import {
     Server,
     Mail,
     Languages,
+    Mic,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { useRef, useState } from 'react';
@@ -132,6 +133,12 @@ export function AppTopMenu() {
             permission: 'grievances.view',
             badge: pendingGrievances.count,
             visible: pendingGrievances.visible,
+        },
+        {
+            label: 'Voice grievance inbox',
+            href: '/voice-grievances',
+            icon: Mic,
+            permission: 'grievances.view',
         },
         {
             label: 'menu.grievances',

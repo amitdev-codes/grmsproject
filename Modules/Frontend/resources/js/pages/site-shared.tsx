@@ -91,6 +91,7 @@ export function useLandingStats(): LandingStats | undefined {
 // Routes — point these at your real Laravel routes.
 export const LOGIN_URL = route('login');
 export const FILE_GRIEVANCE_URL = route('file-grievance');
+export const VOICE_GRIEVANCE_URL = route('voice-grievance.create');
 export const HOME_URL = route('home');
 export const FAQ_URL = route('faq');
 export const CONTACT_URL = route('contact');
@@ -371,6 +372,35 @@ export interface Translations {
         targetResponseBy: string;
         trackThisGrievance: string;
         fileAnother: string;
+    };
+    voicePage: {
+        title: string;
+        description: string;
+        instructions: string;
+        language: string;
+        startRecording: string;
+        stopRecording: string;
+        recordAgain: string;
+        chooseAudio: string;
+        selectedAudio: string;
+        phone: string;
+        phoneHelp: string;
+        submit: string;
+        submitting: string;
+        recording: string;
+        microphoneError: string;
+        fileError: string;
+        languageEnglish: string;
+        languageSesotho: string;
+        languageZulu: string;
+        languageXhosa: string;
+        languageOther: string;
+        receivedTitle: string;
+        receivedDescription: string;
+        reference: string;
+        keepReference: string;
+        backHome: string;
+        privacy: string;
     };
 }
 
@@ -722,6 +752,35 @@ export const translations: Record<Lang, Translations> = {
             targetResponseBy: 'Target response by {date}.',
             trackThisGrievance: 'Track this grievance',
             fileAnother: 'File another',
+        },
+        voicePage: {
+            title: 'Lodge a grievance by voice',
+            description: 'Record your concern in the language you are most comfortable speaking. A helpdesk officer will listen and help record it as a grievance.',
+            instructions: 'Press Start recording, speak clearly, then press Stop recording. You can listen to your recording before sending it.',
+            language: 'Language spoken',
+            startRecording: 'Start recording',
+            stopRecording: 'Stop recording',
+            recordAgain: 'Record again',
+            chooseAudio: 'Or choose an audio recording',
+            selectedAudio: 'Recording selected',
+            phone: 'Phone number (optional)',
+            phoneHelp: 'Share a number only if you would like an officer to call you.',
+            submit: 'Send my recording',
+            submitting: 'Sending recording...',
+            recording: 'Recording in progress',
+            microphoneError: 'The microphone could not be started. Allow microphone access or choose an audio recording.',
+            fileError: 'Choose a supported audio file no larger than 20 MB.',
+            languageEnglish: 'English',
+            languageSesotho: 'Sesotho',
+            languageZulu: 'isiZulu',
+            languageXhosa: 'isiXhosa',
+            languageOther: 'Another language',
+            receivedTitle: 'Your voice grievance has been received',
+            receivedDescription: 'A helpdesk officer will listen to your recording and prepare an English version before filing the grievance.',
+            reference: 'Your reference number',
+            keepReference: 'Keep this number so you can refer to this recording if you contact the helpdesk.',
+            backHome: 'Return to home',
+            privacy: 'Your audio is stored privately and is only available to authorized helpdesk staff.',
         },
     },
     st: {
@@ -1078,6 +1137,35 @@ export const translations: Record<Lang, Translations> = {
             targetResponseBy: 'Karabo e lebisitsoeng ka {date}.',
             trackThisGrievance: 'Latela tletlebo ena',
             fileAnother: 'Ngola e ngoe',
+        },
+        voicePage: {
+            title: 'Kenya tletlebo ka lentsoe',
+            description: 'Rekota tletlebo ea hau ka puo eo u phutholohileng ho e bua. Ofisiri ea helpdesk e tla mamela le ho u thusa ho e ngolisa.',
+            instructions: 'Tobetsa Qala ho rekota, bua ka ho hlaka, ebe u tobetsa Emisa ho rekota. U ka mamela rekoto ea hau pele u e romela.',
+            language: 'Puo eo u tla e bua',
+            startRecording: 'Qala ho rekota',
+            stopRecording: 'Emisa ho rekota',
+            recordAgain: 'Rekota hape',
+            chooseAudio: 'Kapa khetha rekoto ea molumo',
+            selectedAudio: 'Rekoto e khethiloe',
+            phone: 'Nomoro ea mohala (ha e tlamehe)',
+            phoneHelp: 'Fana ka nomoro feela haeba u batla hore ofisiri e u letsetse.',
+            submit: 'Romela rekoto ea ka',
+            submitting: 'Re romela rekoto...',
+            recording: 'Re ntse re rekota',
+            microphoneError: 'Microphone ha ea qala. Lumella phihlello ea microphone kapa khetha rekoto ea molumo.',
+            fileError: 'Khetha faele ea molumo e tšehetsoeng e sa feteng 20 MB.',
+            languageEnglish: 'Senyesemane',
+            languageSesotho: 'Sesotho',
+            languageZulu: 'isiZulu',
+            languageXhosa: 'isiXhosa',
+            languageOther: 'Puo e \'ngoe',
+            receivedTitle: 'Tletlebo ea hau ea lentsoe e amohetsoe',
+            receivedDescription: 'Ofisiri ea helpdesk e tla mamela rekoto ea hau le ho lokisa phetolelo ea Senyesemane pele e ngolisa tletlebo.',
+            reference: 'Nomoro ea hau ea referense',
+            keepReference: 'Boloka nomoro ena hore u tle u e sebelise ha u ikopanya le helpdesk.',
+            backHome: 'Khutlela leqepheng la qalo',
+            privacy: 'Rekoto ea hau e bolokoa ka lekunutu, ’me e fumaneha feela ho basebetsi ba helpdesk ba lumelletsoeng.',
         },
     },
 };

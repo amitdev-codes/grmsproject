@@ -11,6 +11,7 @@ use Modules\Grievance\Http\Controllers\GrievanceStatusHistoryController;
 use Modules\Grievance\Http\Controllers\GrievanceWorkflowStepController;
 use Modules\Grievance\Http\Controllers\PublicGrievanceController;
 use Modules\Grievance\Http\Controllers\ResolutionController;
+use Modules\Grievance\Http\Controllers\VoiceGrievanceController;
 use Modules\Grievance\Http\Middleware\ProtectPublicGrievanceLodging;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -76,6 +77,16 @@ Route::middleware(['auth', 'verified', 'permission:grievances.view'])
         Route::put('/{grievance}', [GrievanceController::class, 'update'])->middleware('permission:grievances.edit')->name('update');
         Route::delete('/bulk', [GrievanceController::class, 'bulkDestroy'])->middleware('permission:grievances.delete')->name('bulk-destroy');
         Route::delete('/{grievance}', [GrievanceController::class, 'destroy'])->middleware('permission:grievances.delete')->name('destroy');
+    });
+Route::middleware(['auth', 'verified', 'permission:grievances.view'])
+    ->prefix('voice-grievances')->name('voice-grievances.')->group(function () {
+        Route::get('/', [VoiceGrievanceController::class, 'index'])->name('index');
+        Route::get('/{voiceGrievance}/audio', [VoiceGrievanceController::class, 'audio'])->name('audio');
+        Route::get('/{voiceGrievance}', [VoiceGrievanceController::class, 'show'])->name('show');
+        Route::post('/{voiceGrievance}/review', [VoiceGrievanceController::class, 'review'])
+            ->middleware('permission:grievances.create')->name('review');
+        Route::post('/{voiceGrievance}/file', [VoiceGrievanceController::class, 'file'])
+            ->middleware('permission:grievances.create')->name('file');
     });
 Route::prefix('grievances')->group(function () {
     Route::get('/captcha', [PublicGrievanceController::class, 'captcha']);

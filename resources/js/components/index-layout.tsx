@@ -3,6 +3,7 @@
 import { Head } from '@inertiajs/react';
 import Breadcrumb from '@/components/Breadcrumb';
 import type { BreadcrumbItem } from '@/components/Breadcrumb';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface IndexLayoutProps {
     title: string;
@@ -17,9 +18,12 @@ export default function IndexLayout({
     breadcrumbs = [],
     children,
 }: IndexLayoutProps) {
+    const { tLabel } = useTranslation();
+    const translatedTitle = tLabel(title);
+
     return (
         <>
-            <Head title={headTitle ?? title} />
+            <Head title={headTitle ?? translatedTitle} />
 
             <div className="flex flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:p-6">
                 <Breadcrumb items={breadcrumbs} />

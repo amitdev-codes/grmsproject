@@ -28,6 +28,7 @@ import {
     ClipboardCheck,
     Server,
     Languages,
+    Mic,
 } from 'lucide-react';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
@@ -71,6 +72,11 @@ export const modulesNavItems: NavItem[] = [
                 icon: FolderKanban,
             },
             { title: 'menu.grievances', href: '/grievances', icon: FileText },
+            {
+                title: 'Voice grievance inbox',
+                href: '/voice-grievances',
+                icon: Mic,
+            },
             {
                 title: 'menu.grievance-escalations',
                 href: '/grievance-escalations',

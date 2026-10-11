@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Frontend\Services\PublicAnalyticsService;
+use Modules\Grievance\Models\VoiceGrievance;
 use Modules\Setting\Models\Faq;
 
 class FrontendController extends Controller
@@ -67,6 +68,25 @@ class FrontendController extends Controller
                 'language' => config('grievance.speech_to_text.language'),
             ],
             'aiCategorySuggestionEnabled' => (bool) config('grievance.ai.enabled'),
+        ]);
+    }
+
+    public function voiceGrievance(): Response
+    {
+        $this->incrementSiteVisits();
+
+        return Inertia::render('Frontend::voice-grievance');
+    }
+
+    public function voiceGrievanceReceived(string $reference): Response
+    {
+        $voiceGrievance = VoiceGrievance::query()
+            ->where('reference_no', $reference)
+            ->firstOrFail();
+
+        return Inertia::render('Frontend::voice-grievance', [
+            'received' => true,
+            'referenceNo' => $voiceGrievance->reference_no,
         ]);
     }
 

@@ -23,6 +23,7 @@ import {
     UserCheck,
     Send,
     Search,
+    Mic,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import {
@@ -50,6 +51,7 @@ import {
     RoadDivider,
     useI18n,
     FILE_GRIEVANCE_URL,
+    VOICE_GRIEVANCE_URL,
     useApplicationSettings,
     useLandingStats,
 } from './site-shared';
@@ -358,6 +360,12 @@ setLoading(false);
                             }
                         >
                             {t.hero.ctaSecondary}
+                        </Button>
+                        <Button asChild size="lg" variant="outline">
+                            <Link href={VOICE_GRIEVANCE_URL}>
+                                <Mic className="mr-1.5 h-4 w-4" />
+                                {t.voicePage.title}
+                            </Link>
                         </Button>
                     </div>
                     <p
@@ -1000,17 +1008,27 @@ function CTA() {
                 >
                     {t.cta.sub}
                 </p>
-                <Link href={FILE_GRIEVANCE_URL}>
+                <div className="flex flex-wrap justify-center gap-3">
                     <Button
+                        asChild
                         size="lg"
                         style={{
                             background: 'var(--accent)',
                             color: '#FFFFFF',
                         }}
                     >
-                        {t.cta.button} <ArrowRight className="ml-1 h-4 w-4" />
+                        <Link href={FILE_GRIEVANCE_URL}>
+                            {t.cta.button}{' '}
+                            <ArrowRight className="ml-1 h-4 w-4" />
+                        </Link>
                     </Button>
-                </Link>
+                    <Button asChild size="lg" variant="outline">
+                        <Link href={VOICE_GRIEVANCE_URL}>
+                            <Mic className="mr-1 h-4 w-4" />
+                            {t.voicePage.title}
+                        </Link>
+                    </Button>
+                </div>
             </div>
         </section>
     );

@@ -1,6 +1,7 @@
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/user-avatar';
+import { useTranslation } from '@/hooks/use-translation';
 import type { ColumnDef } from '@tanstack/react-table';
 
 export interface Role {
@@ -32,6 +33,17 @@ const roleVariant = (role: string): 'default' | 'secondary' | 'outline' =>
 // server-side, raw DB values often arrive as strings — and "0" is truthy in JS).
 export const isActiveStatus = (status: unknown): boolean =>
     status === true || status === 1 || status === '1';
+
+function UserStatusCell({ status }: { status: User['status'] }) {
+    const { t } = useTranslation();
+    const active = isActiveStatus(status);
+
+    return (
+        <Badge variant={active ? 'default' : 'secondary'}>
+            {active ? t('menu.active') : t('menu.inactive')}
+        </Badge>
+    );
+}
 
 export const columns: ColumnDef<User>[] = [
     {
@@ -95,15 +107,7 @@ export const columns: ColumnDef<User>[] = [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title="Status" />
         ),
-        cell: ({ row }) => {
-            const active = isActiveStatus(row.original.status);
-
-            return (
-                <Badge variant={active ? 'default' : 'secondary'}>
-                    {active ? 'Active' : 'Inactive'}
-                </Badge>
-            );
-        },
+        cell: ({ row }) => <UserStatusCell status={row.original.status} />,
     },
     {
         accessorKey: 'created_at',

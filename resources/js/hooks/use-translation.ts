@@ -38,5 +38,31 @@ export function useTranslation() {
         return result;
     }
 
-    return { t, locale };
+    function tLabel(label: string): string {
+        if (label.startsWith('menu.')) {
+            const translated = t(label);
+
+            return translated === label ? label : translated;
+        }
+
+        const normalized = label
+            .trim()
+            .toLowerCase()
+            .replace(/&/g, ' and ')
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '');
+        const kebab = normalized.replace(/_/g, '-');
+
+        for (const key of new Set([`menu.${normalized}`, `menu.${kebab}`])) {
+            const translated = t(key);
+
+            if (translated !== key) {
+                return translated;
+            }
+        }
+
+        return label;
+    }
+
+    return { t, tLabel, locale };
 }
