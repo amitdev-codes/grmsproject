@@ -3,6 +3,7 @@
 namespace Modules\Notification\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
@@ -27,21 +28,50 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function markRead(Request $request, string $notification): \Illuminate\Http\RedirectResponse
+    public function markRead(Request $request, string $notification): RedirectResponse
     {
         $request->user()->notifications()->whereKey($notification)->firstOrFail()->markAsRead();
 
         return back()->with('success', 'Notification marked as read.');
     }
 
-    public function markUnread(Request $request, string $notification): \Illuminate\Http\RedirectResponse
+    public function open(Request $request, string $notification): RedirectResponse
+    {
+        $notification = $request->user()->notifications()->whereKey($notification)->firstOrFail();
+        $notification->markAsRead();
+
+        $actionUrl = $notification->data['action_url'] ?? null;
+        if (is_string($actionUrl)) {
+            $parts = parse_url($actionUrl);
+            $allowedHosts = array_filter([
+                $request->getHost(),
+                parse_url((string) config('app.url'), PHP_URL_HOST),
+            ]);
+            $path = $parts['path'] ?? null;
+
+            if (
+                $path
+                && str_starts_with($path, '/')
+                && ! str_starts_with($path, '//')
+                && (! isset($parts['host']) || in_array($parts['host'], $allowedHosts, true))
+            ) {
+                $target = $path.(! empty($parts['query']) ? '?'.$parts['query'] : '');
+
+                return redirect()->to($target);
+            }
+        }
+
+        return redirect()->route('notification.index');
+    }
+
+    public function markUnread(Request $request, string $notification): RedirectResponse
     {
         $request->user()->notifications()->whereKey($notification)->firstOrFail()->markAsUnread();
 
         return back()->with('success', 'Notification marked as unread.');
     }
 
-    public function markAllRead(Request $request): \Illuminate\Http\RedirectResponse
+    public function markAllRead(Request $request): RedirectResponse
     {
         $request->user()->unreadNotifications()->update(['read_at' => now()]);
 

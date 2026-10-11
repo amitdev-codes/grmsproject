@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32">
-    <link rel="apple-touch-icon" href="/favicon.png">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" data-default-href="/favicon.svg" data-default-type="image/svg+xml">
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" data-default-href="/favicon.png" data-default-type="image/png">
+    <link rel="apple-touch-icon" href="/favicon.png" data-default-href="/favicon.png">
 
     @fonts
     @routes

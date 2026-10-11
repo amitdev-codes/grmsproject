@@ -76,6 +76,12 @@ class GrievanceRepository implements GrievanceRepositoryInterface
             ->when($filters['channel'] ?? null, fn ($q, $v) => $q->whereHas('channel', fn ($q2) => $q2->where('code', $v)))
             ->when($filters['status'] ?? null, fn ($q, $v) => is_array($v) ? $q->whereIn('status', $v) : $q->where('status', $v))
             ->when($filters['exclude_statuses'] ?? null, fn ($q, $statuses) => $q->whereNotIn('status', $statuses))
+            ->when($filters['resolution_approved_by'] ?? null, fn ($q, $userId) => $q->whereHas(
+                'resolutions',
+                fn ($resolutions) => $resolutions
+                    ->where('approved_by', $userId)
+                    ->whereNotNull('approved_at'),
+            ))
             ->when($filters['category_id'] ?? null, fn ($q, $v) => $q->where('grievance_category_id', $v))
             ->when($filters['district_id'] ?? null, fn ($q, $v) => $q->where('district_id', $v))
             ->when($filters['division_id'] ?? null, fn ($q, $v) => $q->where('division_id', $v))

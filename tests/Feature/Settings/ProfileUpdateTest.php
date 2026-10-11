@@ -1,8 +1,13 @@
 <?php
 
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
@@ -33,6 +38,41 @@ test('profile information can be updated', function () {
     expect($user->name)->toBe('Test User');
     expect($user->email)->toBe('test@example.com');
     expect($user->email_verified_at)->toBeNull();
+});
+
+test('profile update route accepts the multipart PATCH method override', function () {
+    $matchedRoute = app('router')->getRoutes()->match(
+        Request::create(route('profile.update'), 'PATCH'),
+    );
+
+    expect($matchedRoute->getName())->toBe('profile.update');
+});
+
+test('user can upload a profile avatar', function () {
+    Storage::fake('public');
+    $user = User::factory()->create();
+
+    $response = $this
+        ->withoutMiddleware(HandleInertiaRequests::class)
+        ->actingAs($user)
+        ->post(route('profile.update'), [
+            '_method' => 'patch',
+            'username' => 'profile-avatar-test',
+            'email' => $user->email,
+            'avatar' => UploadedFile::fake()->image('avatar.jpg'),
+        ]);
+
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('profile.edit'));
+
+    $user = $user->fresh();
+    $media = $user->getFirstMedia('avatar');
+
+    expect($media)->not->toBeNull()
+        ->and($user->avatar_url)->not->toBeNull();
+
+    Storage::disk('public')->assertExists($media->getPathRelativeToRoot());
 });
 
 test('email verification status is unchanged when the email address is unchanged', function () {

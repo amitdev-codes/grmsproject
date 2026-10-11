@@ -352,6 +352,54 @@ it('shows admins complete lifecycle lists and restricts those lists to admins', 
     $this->actingAs($officer)->get('/grievances?list=pending')->assertForbidden();
 });
 
+it('shows directors only grievances they approved in the resolved list', function () {
+    $this->withoutMiddleware(HandleInertiaRequests::class);
+    $director = workflowTestUser('Director', ['grievances.view']);
+    $otherDirector = workflowTestUser('Other Director', ['grievances.view']);
+    workflowTestUser('Helpdesk Officer', ['grievances.view']);
+    $approvedByDirector = Grievance::query()->create([
+        'reference_no' => 'GRM-DIRECTOR-RESOLVED-1',
+        'grievance_category_id' => workflowTestCategory(),
+        'channel_id' => workflowTestChannel(),
+        'description' => 'Resolved by the current director.',
+        'status' => 'resolved',
+        'registered_by' => $director->id,
+    ]);
+    $approvedByOtherDirector = Grievance::query()->create([
+        'reference_no' => 'GRM-DIRECTOR-RESOLVED-2',
+        'grievance_category_id' => workflowTestCategory(),
+        'channel_id' => workflowTestChannel(),
+        'description' => 'Resolved by another director.',
+        'status' => 'resolved',
+        'registered_by' => $otherDirector->id,
+    ]);
+
+    $approvedByDirector->resolutions()->create([
+        'proposed_by' => $director->id,
+        'approved_by' => $director->id,
+        'resolution_text' => 'Approved by current director.',
+        'approved_at' => now(),
+    ]);
+    $approvedByOtherDirector->resolutions()->create([
+        'proposed_by' => $otherDirector->id,
+        'approved_by' => $otherDirector->id,
+        'resolution_text' => 'Approved by another director.',
+        'approved_at' => now(),
+    ]);
+
+    $this->actingAs($director)
+        ->get('/grievances?list=resolved')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('listType', 'resolved')
+            ->where('meta.total', 1)
+            ->where('data.0.reference_no', 'GRM-DIRECTOR-RESOLVED-1'));
+
+    $this->actingAs($otherDirector)
+        ->get('/grievances?list=rejected')
+        ->assertForbidden();
+});
+
 it('includes address and coordinates in grievance details', function () {
     $grievance = Grievance::query()->create([
         'reference_no' => 'GRM-LOCATION-0001',
@@ -521,6 +569,68 @@ it('offers unassigned helpdesk officers for a section and accepts the section ma
         ->assertSessionHasNoErrors();
 
     expect($grievance->fresh()->assigned_officer_id)->toBe($unassignedOfficer->id);
+});
+
+it('allows only grievance registrants and admins with delete permission to soft delete cases', function () {
+    $this->withoutMiddleware(HandleInertiaRequests::class);
+    $registrant = workflowTestUser('Helpdesk Officer', ['grievances.view', 'grievances.delete']);
+    $assignedOfficer = workflowTestUser('Content Editor', ['grievances.view', 'grievances.delete']);
+    $admin = workflowTestUser('Admin', ['grievances.view', 'grievances.delete']);
+    $attributes = [
+        'grievance_category_id' => workflowTestCategory(),
+        'channel_id' => workflowTestChannel(),
+        'description' => 'A case with restricted deletion.',
+        'status' => 'submitted',
+    ];
+    $owned = Grievance::query()->create([
+        ...$attributes,
+        'reference_no' => 'GRM-DELETE-OWNER',
+        'registered_by' => $registrant->id,
+    ]);
+    $notOwned = Grievance::query()->create([
+        ...$attributes,
+        'reference_no' => 'GRM-DELETE-OTHER',
+        'registered_by' => $registrant->id,
+    ]);
+    $adminCase = Grievance::query()->create([
+        ...$attributes,
+        'reference_no' => 'GRM-DELETE-ADMIN',
+        'registered_by' => $registrant->id,
+    ]);
+
+    $this->actingAs($assignedOfficer)
+        ->delete(route('grievances.destroy', $notOwned))
+        ->assertForbidden();
+
+    $this->actingAs($registrant)
+        ->delete(route('grievances.destroy', $owned))
+        ->assertRedirect();
+    expect(Grievance::withTrashed()->find($owned->id)?->trashed())->toBeTrue();
+
+    $this->actingAs($admin)
+        ->delete(route('grievances.destroy', $adminCase))
+        ->assertRedirect();
+    expect(Grievance::withTrashed()->find($adminCase->id)?->trashed())->toBeTrue();
+});
+
+it('rejects bulk deletion when a selected grievance was not registered by the user', function () {
+    $this->withoutMiddleware(HandleInertiaRequests::class);
+    $registrant = workflowTestUser('Helpdesk Officer', ['grievances.view', 'grievances.delete']);
+    $otherOfficer = workflowTestUser('Content Editor', ['grievances.view', 'grievances.delete']);
+    $grievance = Grievance::query()->create([
+        'reference_no' => 'GRM-BULK-DELETE',
+        'grievance_category_id' => workflowTestCategory(),
+        'channel_id' => workflowTestChannel(),
+        'description' => 'A case not registered by this user.',
+        'status' => 'submitted',
+        'registered_by' => $registrant->id,
+    ]);
+
+    $this->actingAs($otherOfficer)
+        ->delete(route('grievances.bulk-destroy'), ['ids' => [$grievance->id]])
+        ->assertForbidden();
+
+    expect($grievance->fresh())->not->toBeNull();
 });
 
 it('denies admin edit access and reports missing workflow migrations gracefully', function () {

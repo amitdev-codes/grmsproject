@@ -9,7 +9,7 @@ import '@/../css/grms-site.css';
 
 export { AppLogoIcon };
 export const PRODUCT_NAME = 'GRMS';
-export const SYSTEM_FULL_NAME_EN = 'Grievance Redress Management System';
+export const SYSTEM_FULL_NAME_EN = 'Grievance Redressal Management System';
 export const SYSTEM_FULL_NAME_ST = 'Tsamaiso ea ho Rarolla Litletlebo';
 export const AUTHORITY = 'Roads Directorate · Government of Lesotho';
 
@@ -1505,8 +1505,8 @@ export function NavBar() {
                     />
                     <div className="hidden leading-tight sm:block">
                         <div className="font-display text-lg font-semibold tracking-tight whitespace-nowrap">
-                            {settings.short_name ??
-                                settings.project_name ??
+                            {settings.project_name ??
+                                settings.short_name ??
                                 PRODUCT_NAME}
                         </div>
                         <div
@@ -1617,7 +1617,7 @@ export function Footer() {
         }));
     const logoUrl = settings.logo_url ?? settings.logo_path ?? '/logo.png';
     const projectName =
-        settings.short_name ?? settings.project_name ?? PRODUCT_NAME;
+        settings.project_name ?? settings.short_name ?? PRODUCT_NAME;
 
     return (
         <footer className="border-t" style={{ borderColor: 'var(--border)' }}>

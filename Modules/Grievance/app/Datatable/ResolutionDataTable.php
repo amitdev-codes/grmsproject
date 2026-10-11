@@ -15,7 +15,7 @@ class ResolutionDataTable extends BaseDataTable
     ];
 
     protected array $filterableColumns = [
-        'grievance_id', 'proposed_by', 'approved_by',
+        'grievance_id', 'proposed_by', 'approved_by', 'state',
     ];
 
     protected array $textFilterColumns = [];
@@ -25,9 +25,9 @@ class ResolutionDataTable extends BaseDataTable
     ];
 
     protected array $exportColumns = [
-        'grievance.reference_number' => 'Grievance',
+        'grievance.reference_no' => 'Grievance',
         'resolution_text' => 'Resolution',
-        'proposedBy.name' => 'Proposed By',
+        'proposedByUser.name' => 'Proposed By',
         'approvedByUser.name' => 'Approved By',
         'approved_at' => 'Approved At',
         'complainant_confirmed_at' => 'Confirmed At',
@@ -36,9 +36,10 @@ class ResolutionDataTable extends BaseDataTable
     ];
 
     protected string $defaultSort = 'created_at';
+
     protected string $defaultSortDirection = 'desc';
 
-    protected array $with = ['grievance', 'proposedBy', 'approvedByUser'];
+    protected array $with = ['grievance', 'proposedByUser', 'approvedByUser'];
 
     protected function applyFilter(Builder $query, string $column, mixed $value): void
     {
@@ -47,6 +48,7 @@ class ResolutionDataTable extends BaseDataTable
         if (in_array($column, $intColumns, true)) {
             $values = is_array($value) ? $value : [$value];
             $query->whereIn($column, array_map('intval', $values));
+
             return;
         }
 
@@ -67,6 +69,7 @@ class ResolutionDataTable extends BaseDataTable
                     });
                 }
             });
+
             return;
         }
 

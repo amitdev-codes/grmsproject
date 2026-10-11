@@ -77,10 +77,13 @@ export function ResolutionViewContent({
                 <Field
                     label="Grievance"
                     value={
-                        r.grievance?.reference_number ?? `#${r.grievance_id}`
+                        r.grievance?.reference_no ?? `#${r.grievance_id}`
                     }
                 />
-                <Field label="Proposed By" value={r.proposedBy?.name ?? '—'} />
+                <Field
+                    label="Proposed By"
+                    value={r.proposed_by_user?.name ?? '—'}
+                />
             </div>
 
             <Separator />
@@ -110,7 +113,7 @@ export function ResolutionViewContent({
             <div className="grid grid-cols-2 gap-4">
                 <Field
                     label="Approved By"
-                    value={r.approvedByUser?.name ?? '—'}
+                    value={r.approved_by_user?.name ?? '—'}
                 />
                 <Field
                     label="Approved At"

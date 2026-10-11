@@ -74,7 +74,7 @@ class ResolutionController extends Controller
     {
         $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'integer|exists:resolution_categories,id',
+            'ids.*' => 'integer|exists:resolutions,id',
         ]);
 
         $this->resolutionService->bulkDestroy($request->input('ids'));

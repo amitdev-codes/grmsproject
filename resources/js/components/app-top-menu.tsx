@@ -92,6 +92,7 @@ export function AppTopMenu() {
     const isAdminListUser = roleNames.some((role) =>
         ['Admin', 'Super Admin'].includes(role),
     );
+    const isDirector = roleNames.includes('Director');
     const [openMenu, setOpenMenu] = useState<string | null>(null);
     const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingGrievances = page.props.pendingGrievances as {
@@ -163,7 +164,29 @@ export function AppTopMenu() {
                       permission: 'grievances.view',
                   },
               ]
-            : [
+            : isDirector
+              ? [
+                    {
+                        label: 'List grievances',
+                        icon: ClipboardList,
+                        items: [
+                            {
+                                title: 'Resolved grievances',
+                                href: '/grievances?list=resolved',
+                                icon: CheckCircle2,
+                                permission: 'grievances.view',
+                            },
+                            {
+                                title: 'Voice grievance',
+                                href: '/voice-grievances',
+                                icon: Mic,
+                                permission: 'grievances.view',
+                            },
+                        ],
+                        permission: 'grievances.view',
+                    },
+                ]
+              : [
                   {
                       label: 'List grievances',
                       icon: ClipboardList,

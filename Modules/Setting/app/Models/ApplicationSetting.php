@@ -3,6 +3,7 @@
 namespace Modules\Setting\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class ApplicationSetting extends Model
 {
@@ -28,6 +29,8 @@ class ApplicationSetting extends Model
 
     protected $guarded = ['id'];
 
+    protected $appends = ['logo_url', 'favicon_url', 'og_image_url'];
+
     protected $casts = [
         'social_links' => 'array',
         'seo_meta' => 'array',
@@ -46,5 +49,25 @@ class ApplicationSetting extends Model
             ['id' => 1],
             ['project_name' => config('app.name'), 'project_slug' => str(config('app.name'))->slug()],
         );
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        return $this->assetUrl($this->logo_path);
+    }
+
+    public function getFaviconUrlAttribute(): ?string
+    {
+        return $this->assetUrl($this->favicon_path);
+    }
+
+    public function getOgImageUrlAttribute(): ?string
+    {
+        return $this->assetUrl($this->og_image_path);
+    }
+
+    private function assetUrl(?string $path): ?string
+    {
+        return $path ? Storage::disk('public')->url($path) : null;
     }
 }

@@ -277,13 +277,16 @@ class ReportController extends Controller
      */
     private function dateParts(): array
     {
-        if (DB::connection()->getDriverName() === 'sqlite') {
-            return [
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => [
                 'year' => "CAST(strftime('%Y', created_at) AS INTEGER)",
                 'month' => "CAST(strftime('%m', created_at) AS INTEGER)",
-            ];
-        }
-
-        return ['year' => 'YEAR(created_at)', 'month' => 'MONTH(created_at)'];
+            ],
+            'pgsql' => [
+                'year' => 'EXTRACT(YEAR FROM created_at)::integer',
+                'month' => 'EXTRACT(MONTH FROM created_at)::integer',
+            ],
+            default => ['year' => 'YEAR(created_at)', 'month' => 'MONTH(created_at)'],
+        };
     }
 }

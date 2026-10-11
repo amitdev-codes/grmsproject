@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 
 export interface Grievance {
     id: number;
-    reference_number: string;
+    reference_no: string;
 }
 export interface User {
     id: number;
@@ -23,8 +23,8 @@ export interface Resolution {
     complainant_confirmed_at: string | null;
     rejected_reason: string | null;
     grievance?: Grievance | null;
-    proposedBy?: User | null;
-    approvedByUser?: User | null; // avoid colliding with the approved_by FK name
+    proposed_by_user?: User | null;
+    approved_by_user?: User | null;
     created_at: string;
     updated_at: string;
 }
@@ -84,7 +84,7 @@ export const columns: ColumnDef<Resolution>[] = [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title="Grievance" />
         ),
-        cell: ({ row }) => row.original.grievance?.reference_number ?? '—',
+        cell: ({ row }) => row.original.grievance?.reference_no ?? '—',
         enableSorting: false,
     },
     {
@@ -118,7 +118,7 @@ export const columns: ColumnDef<Resolution>[] = [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title="Proposed By" />
         ),
-        cell: ({ row }) => row.original.proposedBy?.name ?? '—',
+        cell: ({ row }) => row.original.proposed_by_user?.name ?? '—',
         enableSorting: false,
     },
     {
@@ -126,7 +126,7 @@ export const columns: ColumnDef<Resolution>[] = [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title="Approved By" />
         ),
-        cell: ({ row }) => row.original.approvedByUser?.name ?? '—',
+        cell: ({ row }) => row.original.approved_by_user?.name ?? '—',
         enableSorting: false,
     },
     {

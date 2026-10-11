@@ -73,7 +73,7 @@ class HandleInertiaRequests extends Middleware
                         'id' => $user->id,
                         'name' => $user->name,
                         'email' => $user->email,
-                        'avatar' => $user->avatar,
+                        'avatar_url' => $user->avatar_url,
                         'locale' => $user->locale,
                         'role_names' => $user->getRoleNames()->implode(', '),
                         'division_id' => $user->division_id,
@@ -83,14 +83,13 @@ class HandleInertiaRequests extends Middleware
                     : null,
             ],
             'notifications' => [
-                'count' => $user
-                    ? $user->unreadNotifications()->count()
-                    : 0,
+                'count' => $user ? $user->unreadNotifications()->count() : 0,
                 'latest' => $notificationItems->map(fn ($notification) => [
                     'id' => $notification->id,
                     'title' => $notification->data['title'] ?? 'Notification',
                     'message' => $notification->data['message'] ?? '',
                     'action_url' => $notification->data['action_url'] ?? null,
+                    'open_url' => route('notification.open', $notification->id),
                     'read_at' => $notification->read_at?->toIso8601String(),
                     'created_at' => $notification->created_at?->diffForHumans(),
                 ])->values()->all(),
@@ -125,7 +124,7 @@ class HandleInertiaRequests extends Middleware
         $href = '/grievances?pending=1';
 
         if ($user->hasRole('Director')) {
-            $query->whereIn('status', ['submitted', 'reallocation_required'])->whereNull('division_id');
+            $query->whereIn('status', ['submitted', 'reallocation_required', 'pending_approval']);
             $href = '/grievances?pending=1';
         } elseif ($user->hasRole('Division Director') && $user->division_id) {
             $query->where('status', 'allocated_division')->where('division_id', $user->division_id);

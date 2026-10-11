@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'display_name' => env('APP_DISPLAY_NAME', 'Grievance Redressal Management System'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Author

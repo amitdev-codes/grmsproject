@@ -1,5 +1,6 @@
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import React from 'react';
+import { createRoot } from 'react-dom/client';
 import { AccessibilityControls } from '@/components/accessibility-controls';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -8,7 +9,52 @@ import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import { route } from 'ziggy-js';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+let appName =
+    import.meta.env.VITE_APP_NAME ||
+    'Grievance Redressal Management System';
+
+function updateApplicationFavicon(pageProps: Record<string, unknown>) {
+    const applicationSettings = pageProps.applicationSettings as
+        | {
+              favicon_url?: string | null;
+              project_name?: string | null;
+          }
+        | undefined;
+    const faviconUrl = applicationSettings?.favicon_url;
+    const projectName = applicationSettings?.project_name;
+
+    if (projectName && projectName !== appName) {
+        const previousAppName = appName;
+        const pageTitle = document.title.endsWith(` - ${previousAppName}`)
+            ? document.title.slice(0, -(previousAppName.length + 3))
+            : document.title;
+
+        appName = projectName;
+        document.title = pageTitle
+            ? `${pageTitle} - ${appName}`
+            : appName;
+    }
+
+    document
+        .querySelectorAll<HTMLLinkElement>(
+            'link[rel="icon"], link[rel="apple-touch-icon"]',
+        )
+        .forEach((link) => {
+            const href = faviconUrl || link.dataset.defaultHref;
+
+            if (href) {
+                link.href = href;
+
+                if (faviconUrl) {
+                    link.type = /\.ico(?:$|[?#])/i.test(href)
+                        ? 'image/x-icon'
+                        : 'image/png';
+                } else if (link.dataset.defaultType) {
+                    link.type = link.dataset.defaultType;
+                }
+            }
+        });
+}
 // Glob patterns for page discovery
 const mainPages = import.meta.glob('./pages/**/*.tsx');
 
@@ -93,13 +139,18 @@ createInertiaApp({
         }
     },
     strictMode: true,
-    withApp(app) {
-        return (
+    setup({ el, App, props }) {
+        updateApplicationFavicon(props.initialPage.props);
+        router.on('navigate', (event) => {
+            updateApplicationFavicon(event.detail.page.props);
+        });
+
+        createRoot(el).render(
             <TooltipProvider delayDuration={0}>
-                {app}
+                <App {...props} />
                 <AccessibilityControls />
                 <Toaster />
-            </TooltipProvider>
+            </TooltipProvider>,
         );
     },
     progress: {

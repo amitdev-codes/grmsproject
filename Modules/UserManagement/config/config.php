@@ -172,7 +172,7 @@ return [
         ],
 
         'Helpdesk Officer' => [
-            'grievances.view', 'grievances.create', 'grievances.resolve',
+            'grievances.view', 'grievances.create', 'grievances.delete', 'grievances.resolve',
             'grievance_categories.view', 'grievance_channels.view',
             'grievance_messages.create', 'grievance_messages.view',
             'districts.view', 'divisions.view', 'sections.view',

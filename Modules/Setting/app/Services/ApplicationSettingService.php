@@ -3,10 +3,9 @@
 namespace Modules\Setting\Services;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Modules\Grievance\Models\GrievanceEscalation;
 use Modules\Setting\Models\ApplicationSetting;
 use Modules\Setting\Repository\ApplicationSettingRepository;
 
@@ -20,10 +19,12 @@ class ApplicationSettingService
             'applicationSetting' => null,
         ];
     }
+
     public function current(): Model
     {
         return $this->repository->current();
     }
+
     public function store(array $data): ApplicationSetting
     {
         return $this->repository->create($data);
@@ -54,6 +55,7 @@ class ApplicationSettingService
 
         return $file->store('application-settings', 'public');
     }
+
     public function publicData(): array
     {
         $settings = $this->current();
@@ -68,10 +70,11 @@ class ApplicationSettingService
             'tagline' => $settings->tagline,
             'description' => $settings->description,
             'theme' => $settings->theme ?: 'default',
-            'logo_url' => $settings->logo_path ? asset('storage/'.$settings->logo_path) : null,
+            'logo_url' => $settings->logo_url,
             'logo_path' => $settings->logo_path,
-            'favicon_url' => $settings->favicon_path ? asset('storage/'.$settings->favicon_path) : null,
+            'favicon_url' => $settings->favicon_url,
             'favicon_path' => $settings->favicon_path,
+            'og_image_url' => $settings->og_image_url,
             'email' => $settings->email,
             'phone' => $settings->phone,
             'whatsapp' => $settings->whatsapp,

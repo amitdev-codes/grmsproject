@@ -80,10 +80,7 @@ export function AppTopNavigation() {
                                             <Circle className="mt-1 size-3 shrink-0 fill-primary text-primary" />
                                         )}
                                         <Link
-                                            href={
-                                                notification.action_url ??
-                                                '/notifications'
-                                            }
+                                            href={notification.open_url}
                                             className="min-w-0 flex-1"
                                         >
                                             <span className="block truncate text-sm font-medium">
@@ -144,7 +141,7 @@ export function AppTopNavigation() {
                         >
                             <Avatar className="size-9 border border-white/30">
                                 <AvatarImage
-                                    src={auth.user?.avatar}
+                                    src={auth.user?.avatar_url}
                                     alt={auth.user?.name}
                                 />
                                 <AvatarFallback className="bg-white/20 text-white">

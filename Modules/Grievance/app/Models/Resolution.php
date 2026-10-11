@@ -36,7 +36,17 @@ class Resolution extends Model
         return $this->belongsTo(User::class, 'proposed_by');
     }
 
+    public function proposedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'proposed_by');
+    }
+
     public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function approvedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }

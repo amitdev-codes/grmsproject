@@ -97,10 +97,15 @@ export default function GrievanceIndex({
     const canCreateGrievance =
         !isWorkflowOfficer &&
         (auth?.user?.permissions?.includes('grievances.create') ?? false);
+    const canDeleteGrievance =
+        auth?.user?.permissions?.includes('grievances.delete') ?? false;
+    const canDeleteAllGrievances =
+        canDeleteGrievance && roles.some((role) => ['Admin', 'Super Admin'].includes(role));
     const tableRoutes: DataTableRoutes = {
         ...routes,
         edit: isAdminReadOnly ? undefined : routes.edit,
         create: canCreateGrievance ? routes.create : undefined,
+        bulkDestroy: canDeleteAllGrievances ? routes.bulkDestroy : undefined,
     };
     const [forwarding, setForwarding] = useState<Grievance | null>(null);
     const [destination, setDestination] = useState('');
@@ -275,6 +280,11 @@ export default function GrievanceIndex({
                     viewContent={(row) => (
                         <GrievanceViewContent grievance={row} />
                     )}
+                    canDelete={(row) =>
+                        canDeleteGrievance &&
+                        (canDeleteAllGrievances ||
+                            row.registered_by === user?.id)
+                    }
                     rowActions={workflowActions}
                 />
             </div>

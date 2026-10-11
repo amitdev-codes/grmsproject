@@ -33,6 +33,8 @@ interface ApplicationSettingsModel {
     description: string | null;
     logo_path: string | null;
     favicon_path: string | null;
+    logo_url: string | null;
+    favicon_url: string | null;
     primary_color: string | null;
     secondary_color: string | null;
     theme: 'default' | 'roads';
@@ -48,6 +50,7 @@ interface ApplicationSettingsModel {
     seo_description: string | null;
     seo_keywords: string | null;
     og_image_path: string | null;
+    og_image_url: string | null;
     seo_meta: Record<string, string> | null;
     sla_level1_hours: number;
     sla_level2_days: number;
@@ -346,7 +349,7 @@ export default function Form({ settings, districts }: Props) {
                         <FileDropzone
                             value={data.logo}
                             onChange={(files) => setData('logo', files)}
-                            existingPreviewUrl={settings.logo_path}
+                            existingPreviewUrl={settings.logo_url ?? '/logo.png'}
                             accept={{
                                 'image/*': ['.png', '.jpg', '.jpeg', '.svg'],
                             }}
@@ -364,7 +367,9 @@ export default function Form({ settings, districts }: Props) {
                         <FileDropzone
                             value={data.favicon}
                             onChange={(files) => setData('favicon', files)}
-                            existingPreviewUrl={settings.favicon_path}
+                            existingPreviewUrl={
+                                settings.favicon_url ?? '/favicon.png'
+                            }
                             accept={{ 'image/*': ['.png', '.ico'] }}
                             maxSizeMB={0.5}
                             helperText={t('PNG or ICO, up to 512KB')}
@@ -539,7 +544,7 @@ export default function Form({ settings, districts }: Props) {
                         <FileDropzone
                             value={data.og_image}
                             onChange={(files) => setData('og_image', files)}
-                            existingPreviewUrl={settings.og_image_path}
+                            existingPreviewUrl={settings.og_image_url}
                             accept={{ 'image/*': ['.png', '.jpg', '.jpeg'] }}
                             maxSizeMB={2}
                             helperText={t(

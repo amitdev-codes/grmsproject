@@ -11,7 +11,7 @@ use Modules\Setting\Http\Controllers\SmsSettingController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('edit-profile', [ProfileUpdateController::class, 'edit'])->name('profile.edit');
-    Route::post('update-profile', [ProfileUpdateController::class, 'update'])->name('profile.update');
+    Route::patch('update-profile', [ProfileUpdateController::class, 'update'])->name('profile.update');
 
     Route::get('settings/application', [ApplicationSettingController::class, 'edit'])
         ->middleware('role:Super Admin')

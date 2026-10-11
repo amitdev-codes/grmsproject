@@ -28,6 +28,7 @@ interface DataTableRowActionsProps<TData> {
     label?: string;
     onView?: (row: TData) => void;
     onEdit?: (row: TData) => void;
+    canDelete?: (row: TData) => boolean;
     extraActions?: (row: TData) => React.ReactNode;
 }
 
@@ -50,12 +51,13 @@ export function DataTableRowActions<TData>({
     label,
     onView,
     onEdit,
+    canDelete,
     extraActions,
 }: DataTableRowActionsProps<TData>) {
     const { t } = useTranslation();
     const showView = Boolean(onView || routes.view);
     const showEdit = Boolean(onEdit || routes.edit);
-    const showDelete = Boolean(routes.destroy);
+    const showDelete = Boolean(routes.destroy) && (canDelete?.(row) ?? true);
 
     const handleView = () => {
         if (onView) {

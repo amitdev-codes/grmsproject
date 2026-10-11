@@ -23,7 +23,8 @@
         .indicator { flex: 0 0 9px; width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: #2563eb; }
         .indicator.read { background: #cbd5e1; }
         .content { min-width: 0; }
-        .title { font-weight: 600; }
+        .title { font-weight: 600; color: inherit; text-decoration: none; }
+        a.title:hover { text-decoration: underline; }
         .message { margin-top: 5px; line-height: 1.5; white-space: pre-wrap; }
         .reference { margin-top: 7px; color: #475569; font-size: 13px; }
         .time { display: block; margin-top: 8px; color: #64748b; font-size: 12px; }
@@ -75,7 +76,11 @@
                     <div class="notification-main">
                         <span class="indicator {{ $notification->read_at ? 'read' : '' }}" aria-hidden="true"></span>
                         <div class="content">
-                            <div class="title">{{ $data['title'] ?? 'Grievance notification' }}</div>
+                            @if (!empty($data['action_url']))
+                                <a class="title" href="{{ route('notification.open', $notification->id) }}">{{ $data['title'] ?? 'Grievance notification' }}</a>
+                            @else
+                                <div class="title">{{ $data['title'] ?? 'Grievance notification' }}</div>
+                            @endif
                             @if (!empty($data['message']))
                                 <div class="message">{{ $data['message'] }}</div>
                             @endif
@@ -93,7 +98,7 @@
                     </div>
                     <div class="actions">
                         @if (!empty($data['action_url']))
-                            <a href="{{ $data['action_url'] }}">Open</a>
+                            <a href="{{ route('notification.open', $notification->id) }}">Open</a>
                         @endif
                         <form method="POST" action="{{ route($notification->read_at ? 'notification.unread' : 'notification.read', $notification->id) }}">
                             @csrf

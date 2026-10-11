@@ -32,7 +32,7 @@ export function UserInfo({
     return (
         <>
             <Avatar className="h-8 w-8 overflow-hidden rounded-full">
-                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarImage src={user.avatar_url} alt={user.name} />
                 <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
                     {getInitials(user.name)}
                 </AvatarFallback>

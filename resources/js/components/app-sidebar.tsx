@@ -37,6 +37,7 @@ export function AppSidebar() {
     const isAdminListUser = roleNames.some((role) =>
         ['Admin', 'Super Admin'].includes(role),
     );
+    const isDirector = roleNames.includes('Director');
     const canViewGrievances =
         auth?.user?.permissions?.includes('grievances.view') ?? false;
     const grievanceListItems: NavItem[] = isAdminListUser
@@ -69,7 +70,27 @@ export function AppSidebar() {
                   ],
               },
           ]
-        : [
+        : isDirector
+          ? [
+              {
+                  title: 'List grievances',
+                  href: '#',
+                  icon: ClipboardList,
+                  items: [
+                      {
+                          title: 'Resolved grievances',
+                          href: '/grievances?list=resolved',
+                          icon: CheckCircle2,
+                      },
+                      {
+                          title: 'Voice grievance',
+                          href: '/voice-grievances',
+                          icon: Mic,
+                      },
+                  ],
+              },
+          ]
+          : [
               {
                   title: 'List grievances',
                   href: '#',

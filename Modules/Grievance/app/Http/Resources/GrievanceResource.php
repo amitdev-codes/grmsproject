@@ -42,6 +42,7 @@ class GrievanceResource extends JsonResource
                 'id' => $this->section->id, 'name' => $this->section->name,
             ] : null),
             'assigned_officer_id' => $this->assigned_officer_id,
+            'registered_by' => $this->registered_by,
             'assigned_officer' => $this->whenLoaded('assignedOfficer', fn () => $this->assignedOfficer ? [
                 'id' => $this->assignedOfficer->id,
                 'name' => $this->assignedOfficer->name,

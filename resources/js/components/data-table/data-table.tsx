@@ -75,6 +75,8 @@ interface DataTableProps<TData, TValue> {
     getRowLabel?: (row: TData) => string | undefined;
     /** If provided, "View" (row action) opens a Dialog rendering this instead of navigating to routes.view */
     viewContent?: (row: TData, close: () => void) => React.ReactNode;
+    /** Allows callers to hide destructive actions for rows the current user cannot delete. */
+    canDelete?: (row: TData) => boolean;
     onCreate?: () => void;
     onEdit?: (row: TData) => void;
     rowActions?: (row: TData) => React.ReactNode;
@@ -103,6 +105,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
     getRowId = (row) => String(row.id),
     getRowLabel,
     viewContent,
+    canDelete,
     onCreate,
     onEdit,
     rowActions,
@@ -253,6 +256,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
                                 viewContent ? (r) => setViewRow(r) : undefined
                             }
                             onEdit={onEdit}
+                            canDelete={canDelete}
                             extraActions={rowActions}
                         />
                     </div>
@@ -273,6 +277,7 @@ export function DataTable<TData extends { id: number | string }, TValue>({
         getRowLabel,
         viewContent,
         onEdit,
+        canDelete,
         rowActions,
     ]);
 

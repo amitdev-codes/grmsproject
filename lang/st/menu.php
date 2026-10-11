@@ -7,7 +7,7 @@ return
         'permissions' => 'Litumello',
         'roles' => 'Mesebetsi / Roles',
         'users' => 'Basebedisi',
-        'grievances' => 'Linyenyefatso',
+        'grievances' => 'Litletlebo',
         'grievance-categories' => 'Mikhahlelo ea Litletlebo',
         'grievance-channels' => 'Liteishene',
         'grievance-escalations' => 'Keketso ea Litletlebo',

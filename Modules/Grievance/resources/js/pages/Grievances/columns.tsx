@@ -78,6 +78,7 @@ export interface Grievance {
     division?: Division | null;
     section?: Section | null;
     assigned_officer_id?: number | null;
+    registered_by?: number | null;
     assigned_officer?: { id: number; name: string } | null;
     current_workflow_step?: {
         id: number;

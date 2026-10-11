@@ -34,10 +34,11 @@ class GrievanceController extends Controller
     {
         $listType = $request->query('list');
         $user = $request->user();
-        $isAdminList = in_array($listType, ['pending', 'resolved', 'rejected'], true);
         $isAdmin = $user->hasAnyRole(['Admin', 'Super Admin']);
+        $isDirectorResolvedList = $listType === 'resolved' && $user->hasRole('Director');
+        $isAdminList = in_array($listType, ['pending', 'resolved', 'rejected'], true);
 
-        if ($isAdminList && ! $isAdmin) {
+        if ($isAdminList && ! $isAdmin && ! $isDirectorResolvedList) {
             abort(403);
         }
 
@@ -53,6 +54,10 @@ class GrievanceController extends Controller
                 $filters['exclude_statuses'] = ['resolved', 'closed', 'rejected'];
             } else {
                 $filters['status'] = $listType === 'resolved' ? ['resolved', 'closed'] : 'rejected';
+
+                if ($isDirectorResolvedList) {
+                    $filters['resolution_approved_by'] = $user->id;
+                }
             }
             $listTitle = ucfirst($listType).' Grievances';
         } elseif ($listType === 'forwarded') {
@@ -288,8 +293,10 @@ class GrievanceController extends Controller
         return redirect()->route('grievances.index')->with('success', 'Grievance updated.');
     }
 
-    public function destroy(Grievance $grievance): RedirectResponse
+    public function destroy(Request $request, Grievance $grievance): RedirectResponse
     {
+        abort_unless($this->canDelete($request, $grievance), 403);
+
         $grievance->delete();
 
         return back()->with('success', 'Grievance deleted.');
@@ -300,6 +307,15 @@ class GrievanceController extends Controller
         $count = $this->service->bulkDelete($request->validated('ids'));
 
         return back()->with('success', "{$count} grievance(s) deleted.");
+    }
+
+    private function canDelete(Request $request, Grievance $grievance): bool
+    {
+        $user = $request->user();
+
+        return $user !== null
+            && $user->can('grievances.delete')
+            && ($user->hasAnyRole(['Admin', 'Super Admin']) || $grievance->registered_by === $user->id);
     }
 
     public function export(Request $request): BinaryFileResponse

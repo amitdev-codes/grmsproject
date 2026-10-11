@@ -13,7 +13,7 @@ export function SidebarUserProfile() {
             <div className="flex items-center gap-3">
                 <div className="relative shrink-0">
                     <Avatar className="h-9 w-9 rounded-full ring-2 ring-sidebar ring-offset-0">
-                        <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
+                        <AvatarImage src={auth.user.avatar_url} alt={auth.user.name} />
                         <AvatarFallback className="rounded-full bg-primary text-primary-foreground">
                             {getInitials(auth.user.name)}
                         </AvatarFallback>

@@ -2,7 +2,7 @@ export interface User {
     id: number;
     name: string;
     email: string;
-    avatar?: string;
+    avatar_url?: string | null;
     email_verified_at?: string | null;
     locale?: string;
     role_names?: string;
@@ -14,6 +14,14 @@ export interface Auth {
 
 export interface SharedData {
     auth: Auth;
+    applicationSettings?: {
+        project_name?: string | null;
+        short_name?: string | null;
+        tagline?: string | null;
+        logo_url?: string | null;
+        favicon_url?: string | null;
+        [key: string]: unknown;
+    };
     notifications: {
         count: number;
         latest: {
@@ -21,6 +29,7 @@ export interface SharedData {
             title: string;
             message: string;
             action_url: string | null;
+            open_url: string;
             read_at: string | null;
             created_at: string | null;
         }[];
