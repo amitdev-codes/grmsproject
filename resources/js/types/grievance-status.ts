@@ -11,6 +11,7 @@ export type GrievanceStatusValue =
     | 'acknowledged'
     | 'assigned'
     | 'in_progress'
+    | 'pending_approval'
     | 'escalated'
     | 'resolved'
     | 'closed'
@@ -50,6 +51,12 @@ export const GRIEVANCE_STATUSES: StatusMeta[] = [
     {
         value: 'in_progress',
         label: 'In Progress',
+        variant: 'default',
+        terminal: false,
+    },
+    {
+        value: 'pending_approval',
+        label: 'Pending final approval',
         variant: 'default',
         terminal: false,
     },

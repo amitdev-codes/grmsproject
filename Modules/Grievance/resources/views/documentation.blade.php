@@ -97,6 +97,16 @@
                     <h3>Level {{ $step->step_number }} · {{ $step->name }}</h3>
                     <p>{{ $step->description ?: 'No additional instructions configured.' }}</p>
                     <div class="tags">
+                        <span class="tag">
+                            {{ [
+                                'review' => 'Review and forward',
+                                'allocate_division' => 'Allocate to division',
+                                'allocate_section' => 'Allocate to section',
+                                'assign_officer' => 'Assign investigating officer',
+                                'prepare_resolution' => 'Prepare resolution draft',
+                                'final_approval' => 'Final approval',
+                            ][$step->action_type] ?? $step->action_type }}
+                        </span>
                         <span class="tag">{{ $step->role_name ?: ($step->approver_user_id ? 'Specific user assigned' : 'No approver configured') }}</span>
                         <span class="tag">{{ $step->approval_action === 'resolve' ? 'Approval resolves grievance' : 'Approval advances to next level' }}</span>
                         @if($step->rejection_action === 'return_to_step')
@@ -110,7 +120,8 @@
             @empty
                 <div class="callout">No active default workflow steps are configured.</div>
             @endforelse
-            <div class="callout" style="margin-top:16px">Workflow configuration is maintained from <strong>Grievances → Workflow</strong>. Application routing currently uses the existing Director → Division Director → Section Manager → Helpdesk Officer flow; editing these workflow rows does not yet change case routing or approval behavior.</div>
+            <div class="callout" style="margin-top:16px">New grievances begin at the first active configured level (the default configuration starts with the Director). Decisions advance or return cases according to each step's settings. Staff can attach private workflow documents, and investigating officers prepare a formatted resolution draft for final approval. Digital signatures are not yet integrated; approved resolutions are not digitally signed.</div>
+            <div class="callout" style="margin-top:12px">Workflow configuration is maintained from <strong>Grievances → Workflow</strong> and drives case routing and approval behavior.</div>
         </section>
         <section id="roles">
             <h2>Roles and access</h2>

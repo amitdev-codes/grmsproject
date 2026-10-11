@@ -1,4 +1,11 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
+import {
+    ArrowUpRight,
+    CheckCircle2,
+    ClipboardList,
+    FileText,
+    Mic,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { SidebarUserProfile } from '@/components/sidebar-user-profile';
@@ -19,7 +26,69 @@ import {
     settingsNavItems,
 } from '@/config/navigation';
 import { dashboard } from '@/routes';
+import type { NavItem } from '@/types';
 export function AppSidebar() {
+    const page = usePage();
+    const auth = page.props.auth as
+        | { user?: { role_names?: string; permissions?: string[] } }
+        | undefined;
+    const roleNames =
+        auth?.user?.role_names?.split(',').map((role) => role.trim()) ?? [];
+    const isAdminListUser = roleNames.some((role) =>
+        ['Admin', 'Super Admin'].includes(role),
+    );
+    const canViewGrievances =
+        auth?.user?.permissions?.includes('grievances.view') ?? false;
+    const grievanceListItems: NavItem[] = isAdminListUser
+        ? [
+              {
+                  title: 'List grievances',
+                  href: '#',
+                  icon: ClipboardList,
+                  items: [
+                      {
+                          title: 'Pending grievances',
+                          href: '/grievances?list=pending',
+                          icon: ClipboardList,
+                      },
+                      {
+                          title: 'Resolved grievances',
+                          href: '/grievances?list=resolved',
+                          icon: CheckCircle2,
+                      },
+                      {
+                          title: 'Rejected grievance',
+                          href: '/grievances?list=rejected',
+                          icon: FileText,
+                      },
+                      {
+                          title: 'Voice grievance',
+                          href: '/voice-grievances',
+                          icon: Mic,
+                      },
+                  ],
+              },
+          ]
+        : [
+              {
+                  title: 'List grievances',
+                  href: '#',
+                  icon: ClipboardList,
+                  items: [
+                      {
+                          title: 'Forwarded grievance',
+                          href: '/grievances?list=forwarded',
+                          icon: ArrowUpRight,
+                      },
+                      {
+                          title: 'Voice grievance',
+                          href: '/voice-grievances',
+                          icon: Mic,
+                      },
+                  ],
+              },
+          ];
+
     return (
         <Sidebar
             collapsible="icon"
@@ -41,6 +110,7 @@ export function AppSidebar() {
             <SidebarContent className="py-3">
                 <NavMain items={primaryNavItems} />
                 <NavMain items={modulesNavItems} label="Modules" />
+                {canViewGrievances && <NavMain items={grievanceListItems} />}
                 <NavMain items={masterNavItems} label="Master" />
                 <NavMain items={settingsNavItems} label="Settings" />
                 <NavMain items={reportsNavItems} label="Reports" />

@@ -27,6 +27,7 @@ interface FormValues {
     step_number: string;
     name: string;
     description: string;
+    action_type: string;
     role_name: string;
     approver_user_id: string;
     approval_action: string;
@@ -58,6 +59,7 @@ export default function Form({
             step_number: String(workflowStep?.step_number ?? ''),
             name: workflowStep?.name ?? '',
             description: workflowStep?.description ?? '',
+            action_type: workflowStep?.action_type ?? 'review',
             role_name: workflowStep?.role_name ?? '',
             approver_user_id: workflowStep?.approver_user_id
                 ? String(workflowStep.approver_user_id)
@@ -147,6 +149,26 @@ export default function Form({
                 value={data.description}
                 onChange={(value) => setData('description', value)}
                 error={errors.description}
+            />
+            <Select2Field
+                id="action_type"
+                required
+                label={t('Action at this level')}
+                value={data.action_type}
+                onChange={(value) => {
+                    setData('action_type', value);
+                    setData('is_final_approval', value === 'final_approval' ? '1' : '0');
+                    setData('approval_action', value === 'final_approval' ? 'resolve' : 'advance');
+                }}
+                options={[
+                    { value: 'review', label: t('Review and forward') },
+                    { value: 'allocate_division', label: t('Allocate to division') },
+                    { value: 'allocate_section', label: t('Allocate to section') },
+                    { value: 'assign_officer', label: t('Assign investigating officer') },
+                    { value: 'prepare_resolution', label: t('Prepare resolution draft') },
+                    { value: 'final_approval', label: t('Final approval') },
+                ]}
+                error={errors.action_type}
             />
             <Select2Field
                 id="role_name"

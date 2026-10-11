@@ -2,12 +2,15 @@
 
 namespace Modules\Grievance\Models;
 
+use App\Models\Concerns\HasPublicUlid;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Resolution extends Model
 {
+    use HasPublicUlid;
+
     protected $guarded = ['id'];
 
     protected $fillable = [

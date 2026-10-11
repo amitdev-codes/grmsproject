@@ -18,6 +18,7 @@ use Modules\Grievance\Jobs\SubmitGrievanceJob;
 use Modules\Grievance\Models\Grievance;
 use Modules\Grievance\Models\GrievanceCategory;
 use Modules\Grievance\Models\GrievanceMessage;
+use Modules\Grievance\Models\GrievanceWorkflowStep;
 use Modules\Grievance\Models\InboundSms;
 use Modules\Grievance\Notifications\GrievanceAllocated;
 use Modules\Grievance\Services\Ai\AiGrievanceClassifier;
@@ -332,41 +333,32 @@ class GrievanceRegistrationService
 
         $divisionId = $data->divisionId ?? $this->resolveRoutingDivisionId($category, $data->districtId);
         $sectionId = $data->sectionId ?? $category->default_section_id ?? null;
-        $status = $divisionId ? 'allocated_division' : Grievance::STATUS_SUBMITTED;
+        $firstStep = GrievanceWorkflowStep::query()
+            ->where('workflow_key', 'default')
+            ->where('is_active', true)
+            ->orderBy('step_number')
+            ->first();
+
+        if (! $firstStep) {
+            throw new \RuntimeException('Cannot register a grievance because no active workflow step is configured.');
+        }
 
         $this->grievances->update($grievance, [
             'division_id' => $divisionId,
             'section_id' => $sectionId,
-            'status' => $status,
+            'status' => Grievance::STATUS_SUBMITTED,
+            'current_workflow_step_id' => $firstStep->id,
             'grievance_sla_policy_id' => $policy?->id,
             'first_response_due_at' => $now->copy()->addHours($policy?->acknowledgement_hours ?? 48),
             'resolution_due_at' => $now->copy()->addHours($policy?->resolution_hours ?? 168),
             'sla_due_at' => $now->copy()->addHours($policy?->acknowledgement_hours ?? 48),
         ]);
 
-        if ($divisionId) {
-            $this->grievances->recordStatus($grievance, Grievance::STATUS_SUBMITTED, $status, null, 'system', 'Automatically routed from grievance category.');
+        $approvers = $firstStep->approver_user_id
+            ? User::query()->whereKey($firstStep->approver_user_id)->get()
+            : User::role($firstStep->role_name)->get();
 
-            DB::table('grievance_assignments')->insert([
-                'grievance_id' => $grievance->id,
-                'action' => 'allocated',
-                'to_division_id' => $divisionId,
-                'to_section_id' => $sectionId,
-                'reason' => 'Automatic category routing.',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-
-            Notification::send(
-                User::role('Division Director')->where('division_id', $divisionId)->get(),
-                new GrievanceAllocated($grievance)
-            );
-        } else {
-            Notification::send(
-                User::role('Director')->get(),
-                new GrievanceAllocated($grievance)
-            );
-        }
+        Notification::send($approvers, new GrievanceAllocated($grievance));
     }
 
     private function resolveRoutingDivisionId(GrievanceCategory $category, ?int $districtId): ?int

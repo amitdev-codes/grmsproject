@@ -89,6 +89,9 @@ export function AppTopMenu() {
         ['Super Admin', 'IT Admin', 'Admin', 'Developer'].includes(role),
     );
     const isSuperAdmin = roleNames.includes('Super Admin');
+    const isAdminListUser = roleNames.some((role) =>
+        ['Admin', 'Super Admin'].includes(role),
+    );
     const [openMenu, setOpenMenu] = useState<string | null>(null);
     const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingGrievances = page.props.pendingGrievances as {
@@ -126,19 +129,68 @@ export function AppTopMenu() {
             permission: 'users.view',
             visible: isPrivileged,
         },
+        ...(isAdminListUser
+            ? [
+                  {
+                      label: 'List grievances',
+                      icon: ClipboardList,
+                      items: [
+                          {
+                              title: 'Pending grievances',
+                              href: '/grievances?list=pending',
+                              icon: ClipboardList,
+                              permission: 'grievances.view',
+                          },
+                          {
+                              title: 'Resolved grievances',
+                              href: '/grievances?list=resolved',
+                              icon: CheckCircle2,
+                              permission: 'grievances.view',
+                          },
+                          {
+                              title: 'Rejected grievance',
+                              href: '/grievances?list=rejected',
+                              icon: FileText,
+                              permission: 'grievances.view',
+                          },
+                          {
+                              title: 'Voice grievance',
+                              href: '/voice-grievances',
+                              icon: Mic,
+                              permission: 'grievances.view',
+                          },
+                      ],
+                      permission: 'grievances.view',
+                  },
+              ]
+            : [
+                  {
+                      label: 'List grievances',
+                      icon: ClipboardList,
+                      items: [
+                          {
+                              title: 'Forwarded grievance',
+                              href: '/grievances?list=forwarded',
+                              icon: ArrowUpRight,
+                              permission: 'grievances.view',
+                          },
+                          {
+                              title: 'Voice grievance',
+                              href: '/voice-grievances',
+                              icon: Mic,
+                              permission: 'grievances.view',
+                          },
+                      ],
+                      permission: 'grievances.view',
+                  },
+              ]),
         {
             label: pendingGrievances.label,
             href: pendingGrievances.href,
             icon: ClipboardList,
             permission: 'grievances.view',
             badge: pendingGrievances.count,
-            visible: pendingGrievances.visible,
-        },
-        {
-            label: 'Voice grievance inbox',
-            href: '/voice-grievances',
-            icon: Mic,
-            permission: 'grievances.view',
+            visible: pendingGrievances.visible && !isAdminListUser,
         },
         {
             label: 'menu.grievances',
@@ -154,12 +206,6 @@ export function AppTopMenu() {
                     title: 'menu.grievance-channels',
                     href: '/grievance-channels',
                     icon: FolderKanban,
-                    permission: 'grievances.view',
-                },
-                {
-                    title: 'menu.grievances',
-                    href: '/grievances',
-                    icon: FileText,
                     permission: 'grievances.view',
                 },
                 {

@@ -75,11 +75,19 @@ class GrievanceRepository implements GrievanceRepositoryInterface
             ->with(['category', 'channel', 'district'])
             ->when($filters['channel'] ?? null, fn ($q, $v) => $q->whereHas('channel', fn ($q2) => $q2->where('code', $v)))
             ->when($filters['status'] ?? null, fn ($q, $v) => is_array($v) ? $q->whereIn('status', $v) : $q->where('status', $v))
+            ->when($filters['exclude_statuses'] ?? null, fn ($q, $statuses) => $q->whereNotIn('status', $statuses))
             ->when($filters['category_id'] ?? null, fn ($q, $v) => $q->where('grievance_category_id', $v))
             ->when($filters['district_id'] ?? null, fn ($q, $v) => $q->where('district_id', $v))
             ->when($filters['division_id'] ?? null, fn ($q, $v) => $q->where('division_id', $v))
             ->when($filters['section_id'] ?? null, fn ($q, $v) => $q->where('section_id', $v))
             ->when($filters['assigned_officer_id'] ?? null, fn ($q, $v) => $q->where('assigned_officer_id', $v))
+            ->when($filters['workflow_forwarded_by_user_id'] ?? null, fn ($q, $userId) => $q->whereHas(
+                'workflowActions',
+                fn ($actions) => $actions
+                    ->where('actor_id', $userId)
+                    ->where('decision', 'approve')
+                    ->whereNotNull('to_step_id'),
+            ))
             ->when($filters['terminal_assigned_to'] ?? null, fn ($q, $v) => $q->where(function ($query) use ($v) {
                 $query->whereNotIn('status', ['resolved', 'closed'])
                     ->orWhere('assigned_officer_id', $v);

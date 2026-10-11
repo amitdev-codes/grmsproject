@@ -24,6 +24,8 @@ class GrievanceResource extends JsonResource
             'complainant_phone' => $this->complainant_phone,
             'complainant_email' => $this->complainant_email,
             'location_description' => $this->location_description,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => $this->category->id, 'code' => $this->category->code, 'name_en' => $this->category->name_en,
             ]),
@@ -43,6 +45,26 @@ class GrievanceResource extends JsonResource
             'assigned_officer' => $this->whenLoaded('assignedOfficer', fn () => $this->assignedOfficer ? [
                 'id' => $this->assignedOfficer->id,
                 'name' => $this->assignedOfficer->name,
+            ] : null),
+            'current_workflow_step' => $this->whenLoaded('currentWorkflowStep', fn () => $this->currentWorkflowStep ? [
+                'id' => $this->currentWorkflowStep->id,
+                'name' => $this->currentWorkflowStep->name,
+                'role_name' => $this->currentWorkflowStep->role_name,
+                'action_type' => $this->currentWorkflowStep->action_type,
+                'approver' => $this->currentWorkflowStep->approverUser ? [
+                    'id' => $this->currentWorkflowStep->approverUser->id,
+                    'name' => $this->currentWorkflowStep->approverUser->name,
+                ] : null,
+                'pending_with' => $this->currentWorkflowStep->approverUser?->name
+                    ?? match ($this->currentWorkflowStep->action_type) {
+                        'allocate_division' => $this->currentWorkflowStep->role_name,
+                        'allocate_section' => $this->division?->name ?? $this->currentWorkflowStep->role_name,
+                        'assign_officer', 'prepare_resolution' => $this->assignedOfficer?->name
+                            ?? $this->section?->name
+                            ?? $this->currentWorkflowStep->role_name,
+                        default => $this->currentWorkflowStep->role_name ?? 'Unassigned',
+                    },
+                'pending_users' => $this->workflow_pending_users ?? [],
             ] : null),
             'attachments' => $this->getMedia(Grievance::MEDIA_COLLECTION)->map(fn ($m) => [
                 'id' => $m->id,

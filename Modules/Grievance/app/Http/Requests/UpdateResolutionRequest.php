@@ -22,18 +22,9 @@ class UpdateResolutionRequest extends FormRequest
 
     public function rules(): array
     {
-        $resolution = $this->route('resolution');
-        $alreadyApproved = $resolution?->approved_at !== null;
-
         return [
             'document_type' => ['sometimes', 'required', 'in:note,memo,report'],
             'resolution_text' => ['sometimes', 'required', 'string'],
-
-            // Approval fields — only meaningful once, guarded by authorize()
-            // above; kept nullable/sometimes so a plain text edit doesn't
-            // need to resend them.
-            'approved_by' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
-            'approved_at' => ['sometimes', 'nullable', 'date'],
 
             'complainant_confirmed_at' => ['sometimes', 'nullable', 'date'],
 

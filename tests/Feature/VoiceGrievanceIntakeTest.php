@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Modules\Grievance\Models\Grievance;
 use Modules\Grievance\Models\VoiceGrievance;
+use Modules\Grievance\Database\Seeders\GrievanceWorkflowSeeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -79,6 +80,7 @@ it('serves voice audio only through an authenticated private response', function
 
 it('files a reviewed voice recording through the regular grievance registration service', function () {
     Queue::fake();
+    $this->seed(GrievanceWorkflowSeeder::class);
     $user = User::factory()->create();
     Role::query()->create([
         'name' => 'Director',
@@ -135,7 +137,9 @@ it('files a reviewed voice recording through the regular grievance registration 
     expect($voiceGrievance->status)->toBe('filed')
         ->and($voiceGrievance->language_detected)->toBe('st')
         ->and($grievance->description)->toBe('I am reporting a problem on the road near my home.')
-        ->and($grievance->metadata['voice_grievance_reference'])->toBe($voiceGrievance->reference_no);
+        ->and($grievance->metadata['voice_grievance_reference'])->toBe($voiceGrievance->reference_no)
+        ->and($grievance->status)->toBe('submitted')
+        ->and($grievance->currentWorkflowStep?->action_type)->toBe('allocate_division');
 });
 
 function fakeWaveRecording(): UploadedFile

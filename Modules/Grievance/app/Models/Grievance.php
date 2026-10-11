@@ -30,6 +30,7 @@ class Grievance extends Model implements Auditable, HasMedia
     protected $fillable = [
         'reference_no', 'grievance_category_id', 'channel_id', 'district_id',
         'division_id', 'section_id', 'assigned_officer_id',
+        'current_workflow_step_id',
         'complainant_id', 'complainant_name', 'complainant_phone', 'complainant_email',
         'is_anonymous', 'description', 'location_description', 'metadata',
         'raw_payload', 'ussd_session_id', 'status', 'priority',
@@ -127,6 +128,16 @@ class Grievance extends Model implements Auditable, HasMedia
     public function statusHistories(): HasMany
     {
         return $this->hasMany(GrievanceStatusHistory::class);
+    }
+
+    public function currentWorkflowStep(): BelongsTo
+    {
+        return $this->belongsTo(GrievanceWorkflowStep::class, 'current_workflow_step_id');
+    }
+
+    public function workflowActions(): HasMany
+    {
+        return $this->hasMany(GrievanceWorkflowAction::class);
     }
 
     public function resolutions(): HasMany

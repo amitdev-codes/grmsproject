@@ -8,6 +8,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useTranslation } from '@/hooks/use-translation';
 import type {
     DataTableFilterField,
     DataTableRoutes,
@@ -17,7 +18,6 @@ import { GRIEVANCE_STATUS_OPTIONS } from '@/types/grievance-status';
 import { router, usePage } from '@inertiajs/react';
 import { FileWarning } from 'lucide-react';
 import { useState } from 'react';
-import { useTranslation } from '@/hooks/use-translation';
 import { route } from 'ziggy-js';
 import IndexLayout from '../../../../../../resources/js/components/index-layout';
 import { useGrievanceColumns } from './columns';
@@ -33,6 +33,8 @@ import { GrievanceViewContent } from './GrievanceViewContent';
 interface GrievanceIndexProps {
     data: Grievance[];
     meta: PaginationMeta;
+    listType?: 'pending' | 'resolved' | 'rejected' | 'forwarded' | null;
+    listTitle?: string;
     categories: Category[];
     districts: District[];
     divisions: Division[];
@@ -58,6 +60,8 @@ const PRIORITY_OPTIONS = [
 export default function GrievanceIndex({
     data,
     meta,
+    listType = null,
+    listTitle = 'Grievances',
     categories,
     districts,
     divisions,
@@ -65,21 +69,39 @@ export default function GrievanceIndex({
     officers,
 }: GrievanceIndexProps) {
     const { t } = useTranslation();
-    const columns = useGrievanceColumns();
-    const page = usePage<{
-        auth: {
-            user?: {
-                role_names?: string;
-                division_id?: number | null;
-                section_id?: number | null;
-            };
-        };
-    }>();
-    const user = page.props.auth.user;
+    const columns = useGrievanceColumns(
+        listType === 'pending' || listType === 'forwarded',
+    );
+    const page = usePage();
+    const auth = page.props.auth as
+        | {
+              user?: {
+                  role_names?: string;
+                  division_id?: number | null;
+                  section_id?: number | null;
+                  permissions?: string[];
+              };
+          }
+        | undefined;
+    const user = auth?.user;
     const roles =
-        page.props.auth.user?.role_names
+        auth?.user?.role_names
             ?.split(',')
             .map((role) => role.trim()) ?? [];
+    const isAdminReadOnly = roles.some((role) =>
+        ['Admin', 'Super Admin'].includes(role),
+    );
+    const isWorkflowOfficer = roles.some((role) =>
+        ['Director', 'Division Director', 'Section Manager', 'Helpdesk Officer'].includes(role),
+    );
+    const canCreateGrievance =
+        !isWorkflowOfficer &&
+        (auth?.user?.permissions?.includes('grievances.create') ?? false);
+    const tableRoutes: DataTableRoutes = {
+        ...routes,
+        edit: isAdminReadOnly ? undefined : routes.edit,
+        create: canCreateGrievance ? routes.create : undefined,
+    };
     const [forwarding, setForwarding] = useState<Grievance | null>(null);
     const [destination, setDestination] = useState('');
     const [remarks, setRemarks] = useState('');
@@ -232,17 +254,17 @@ export default function GrievanceIndex({
 
     return (
         <IndexLayout
-            title={t('Grievances')}
-            breadcrumbs={[{ label: t('Grievances'), icon: FileWarning }]}
+            title={t(listTitle)}
+            breadcrumbs={[{ label: t(listTitle), icon: FileWarning }]}
         >
             <div>
                 <DataTable<Grievance, unknown>
                     columns={columns}
                     data={data}
                     meta={meta}
-                    routes={routes}
+                    routes={tableRoutes}
                     filterFields={filterFields}
-                    title={t('Grievances')}
+                    title={t(listTitle)}
                     searchPlaceholder={t(
                         'Search by reference number, complainant…',
                     )}

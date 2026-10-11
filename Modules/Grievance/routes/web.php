@@ -8,6 +8,7 @@ use Modules\Grievance\Http\Controllers\GrievanceEscalationController;
 use Modules\Grievance\Http\Controllers\GrievanceMessageController;
 use Modules\Grievance\Http\Controllers\GrievanceRoutingController;
 use Modules\Grievance\Http\Controllers\GrievanceStatusHistoryController;
+use Modules\Grievance\Http\Controllers\GrievanceWorkflowController;
 use Modules\Grievance\Http\Controllers\GrievanceWorkflowStepController;
 use Modules\Grievance\Http\Controllers\PublicGrievanceController;
 use Modules\Grievance\Http\Controllers\ResolutionController;
@@ -71,6 +72,8 @@ Route::middleware(['auth', 'verified', 'permission:grievances.view'])
         Route::get('/', [GrievanceController::class, 'index'])->name('index');
         Route::get('/export', [GrievanceController::class, 'export'])->middleware('permission:grievances.export')->name('export');
         Route::get('/pending', [GrievanceController::class, 'index'])->name('pending');
+        Route::post('/{grievance}/workflow-action', [GrievanceWorkflowController::class, 'act'])->name('workflow-action');
+        Route::get('/workflow-documents/{document}', [GrievanceWorkflowController::class, 'download'])->name('workflow-documents.download');
         Route::get('/create', [GrievanceController::class, 'create'])->middleware('permission:grievances.create')->name('create');
         Route::post('/', [GrievanceController::class, 'store'])->middleware('permission:grievances.create')->name('store');
         Route::get('/{grievance}/edit', [GrievanceController::class, 'edit'])->name('edit');
@@ -117,6 +120,6 @@ Route::middleware(['auth', 'verified'])->prefix('grievances')->name('grievances.
         ->middleware(['role:Helpdesk Officer|Section Manager|Director|Super Admin', 'permission:grievances.resolve'])
         ->name('resolve');
     Route::post('/{grievance}/start-investigation', [GrievanceRoutingController::class, 'startInvestigation'])
-        ->middleware(['role:Helpdesk Officer|Content Editor', 'permission:grievances.edit'])
+        ->middleware(['role:Helpdesk Officer|Content Editor', 'permission:grievances.resolve'])
         ->name('start-investigation');
 });

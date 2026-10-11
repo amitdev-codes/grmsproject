@@ -13,6 +13,7 @@ class GrievanceWorkflowStep extends Model
         'step_number',
         'name',
         'description',
+        'action_type',
         'role_name',
         'approver_user_id',
         'approval_action',

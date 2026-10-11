@@ -10,7 +10,9 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Grievance\Http\Requests\StoreResolutionRequest;
 use Modules\Grievance\Http\Requests\UpdateResolutionRequest;
+use Modules\Grievance\Models\Grievance;
 use Modules\Grievance\Models\Resolution;
+use Modules\Grievance\Services\GrievanceWorkflowService;
 use Modules\Grievance\Services\ResolutionService;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -38,11 +40,17 @@ class ResolutionController extends Controller
         return Inertia::render('Grievance::Resolutions/ResolutionForm', $this->resolutionService->forEdit($resolution));
     }
 
-    public function store(StoreResolutionRequest $request): RedirectResponse
+    public function store(StoreResolutionRequest $request, GrievanceWorkflowService $workflow): RedirectResponse
     {
-        $this->resolutionService->store($request->validated(), $request->file('avatar'));
+        $data = $request->validated();
+        $grievance = Grievance::query()->findOrFail($data['grievance_id']);
+        $workflow->act($grievance, $request->user(), [
+            'decision' => 'approve',
+            'resolution_html' => $data['resolution_text'],
+            'document_type' => $data['document_type'],
+        ]);
 
-        return redirect()->route('resolutions.index')->with('success', 'Resolution created successfully.');
+        return redirect()->route('grievances.edit', $grievance)->with('success', 'Resolution draft submitted for final approval.');
     }
 
     public function update(UpdateResolutionRequest $request, Resolution $resolution): RedirectResponse

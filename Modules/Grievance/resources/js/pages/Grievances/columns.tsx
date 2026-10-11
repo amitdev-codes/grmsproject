@@ -1,8 +1,8 @@
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { DateCell } from '@/components/data-table/date-cell';
 import { Badge } from '@/components/ui/badge';
-import { GRIEVANCE_STATUS_OPTIONS } from '@/types/grievance-status';
 import { useTranslation } from '@/hooks/use-translation';
+import { GRIEVANCE_STATUS_OPTIONS } from '@/types/grievance-status';
 import type { ColumnDef } from '@tanstack/react-table';
 
 export interface Category {
@@ -33,6 +33,7 @@ export interface Section {
     id: number;
     code?: string;
     name: string;
+    division_id?: number;
 }
 
 export interface Attachment {
@@ -67,6 +68,9 @@ export interface Grievance {
     complainant_name: string | null;
     complainant_phone: string | null;
     complainant_email: string | null;
+    location_description?: string | null;
+    latitude?: number | string | null;
+    longitude?: number | string | null;
     category?: Category | null;
     channel?: Channel | null;
     district?: District | null;
@@ -75,6 +79,15 @@ export interface Grievance {
     section?: Section | null;
     assigned_officer_id?: number | null;
     assigned_officer?: { id: number; name: string } | null;
+    current_workflow_step?: {
+        id: number;
+        name: string;
+        role_name: string | null;
+        action_type: string;
+        approver: { id: number; name: string } | null;
+        pending_with: string;
+        pending_users: { id: number; name: string }[];
+    } | null;
     sla_due_at?: string | null;
     attachments: Attachment[];
     status_histories?: StatusHistory[];
@@ -98,10 +111,10 @@ const priorityVariant = (
     }
 };
 
-export function useGrievanceColumns(): ColumnDef<Grievance>[] {
+export function useGrievanceColumns(showWorkflowRouting = false): ColumnDef<Grievance>[] {
     const { t } = useTranslation();
 
-    return [
+    const columns: ColumnDef<Grievance>[] = [
         {
             accessorKey: 'reference_no',
             header: ({ column }) => (
@@ -184,6 +197,41 @@ export function useGrievanceColumns(): ColumnDef<Grievance>[] {
                 </Badge>
             ),
         },
+        ...(showWorkflowRouting
+            ? [
+                  {
+                      id: 'workflow_routing',
+                      header: ({ column }) => (
+                          <DataTableColumnHeader
+                              column={column}
+                              title={t('Current step / Pending with')}
+                          />
+                      ),
+                      cell: ({ row }) => {
+                          const step = row.original.current_workflow_step;
+
+                          return step ? (
+                              <div className="flex flex-col">
+                                  <span className="font-medium">{step.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                      {step.pending_users.length
+                                          ? step.pending_users
+                                                .map((user) => user.name)
+                                                .join(', ')
+                                          : step.pending_with}
+                                      {step.role_name ? ` · ${step.role_name}` : ''}
+                                  </span>
+                              </div>
+                          ) : (
+                              <span className="text-xs text-muted-foreground">
+                                  —
+                              </span>
+                          );
+                      },
+                      enableSorting: false,
+                  } satisfies ColumnDef<Grievance>,
+              ]
+            : []),
         {
             accessorKey: 'sla_due_at',
             header: ({ column }) => (
@@ -204,4 +252,6 @@ export function useGrievanceColumns(): ColumnDef<Grievance>[] {
             cell: ({ row }) => <DateCell value={row.original.created_at} />,
         },
     ];
+
+    return columns;
 }

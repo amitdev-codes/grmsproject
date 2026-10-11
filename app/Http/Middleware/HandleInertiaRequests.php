@@ -43,6 +43,17 @@ class HandleInertiaRequests extends Middleware
     {
         $locale = App::getLocale();
         $user = $request->user();
+        $notificationItems = collect();
+
+        if ($user) {
+            $notificationItems = $user->unreadNotifications()->latest()->limit(10)->get();
+
+            if ($notificationItems->count() < 10) {
+                $notificationItems = $notificationItems->concat(
+                    $user->readNotifications()->latest()->limit(10 - $notificationItems->count())->get(),
+                );
+            }
+        }
 
         return [
             ...parent::share($request),
@@ -75,16 +86,14 @@ class HandleInertiaRequests extends Middleware
                 'count' => $user
                     ? $user->unreadNotifications()->count()
                     : 0,
-                'latest' => $user
-                    ? $user->notifications()->latest()->limit(5)->get()->map(fn ($notification) => [
-                        'id' => $notification->id,
-                        'title' => $notification->data['title'] ?? 'Notification',
-                        'message' => $notification->data['message'] ?? '',
-                        'action_url' => $notification->data['action_url'] ?? null,
-                        'read_at' => $notification->read_at?->toIso8601String(),
-                        'created_at' => $notification->created_at?->diffForHumans(),
-                    ])->values()->all()
-                    : [],
+                'latest' => $notificationItems->map(fn ($notification) => [
+                    'id' => $notification->id,
+                    'title' => $notification->data['title'] ?? 'Notification',
+                    'message' => $notification->data['message'] ?? '',
+                    'action_url' => $notification->data['action_url'] ?? null,
+                    'read_at' => $notification->read_at?->toIso8601String(),
+                    'created_at' => $notification->created_at?->diffForHumans(),
+                ])->values()->all(),
             ],
             'pendingGrievances' => $this->pendingGrievances($user),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

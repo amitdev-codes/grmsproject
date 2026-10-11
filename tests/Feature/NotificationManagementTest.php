@@ -1,9 +1,13 @@
 <?php
 
-use App\Models\User;
+use App\Http\Controllers\DashboardController;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Modules\Setting\Services\ApplicationSettingService;
+use Modules\Setting\Services\ApplicationTranslationService;
 
 uses(RefreshDatabase::class);
 
@@ -50,4 +54,41 @@ it('does not let a user change another users notification state', function () {
         ->assertNotFound();
 
     expect($notification->fresh()->read_at)->toBeNull();
+});
+
+it('shows unread notifications before newer read notifications in the bell menu', function () {
+    $user = User::factory()->create();
+    $unreadAssignment = $user->notifications()->create([
+        'id' => (string) Str::uuid(),
+        'type' => 'grievance.assigned',
+        'data' => ['title' => 'Investigation assigned'],
+        'created_at' => now()->subDays(2),
+    ]);
+
+    foreach (range(1, 7) as $index) {
+        $user->notifications()->create([
+            'id' => (string) Str::uuid(),
+            'type' => 'test.notification',
+            'data' => ['title' => "Read notification {$index}"],
+            'read_at' => now()->subMinutes($index),
+            'created_at' => now()->subMinutes($index),
+        ]);
+    }
+
+    $this->mock(DashboardController::class, fn ($mock) => $mock
+        ->shouldReceive('data')
+        ->andReturn([]));
+    $this->mock(ApplicationSettingService::class, fn ($mock) => $mock
+        ->shouldReceive('publicData')
+        ->andReturn([]));
+    $this->mock(ApplicationTranslationService::class, fn ($mock) => $mock
+        ->shouldReceive('all')
+        ->andReturn([]));
+
+    $request = Request::create('/');
+    $request->setUserResolver(fn () => $user);
+    $notifications = app(HandleInertiaRequests::class)->share($request)['notifications'];
+
+    expect($notifications['count'])->toBe(1)
+        ->and($notifications['latest'][0]['id'])->toBe($unreadAssignment->id);
 });

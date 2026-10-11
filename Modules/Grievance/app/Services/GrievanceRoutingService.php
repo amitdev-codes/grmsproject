@@ -5,6 +5,7 @@ namespace Modules\Grievance\Services;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 use Modules\Grievance\Interface\GrievanceRepositoryInterface;
 use Modules\Grievance\Models\Grievance;
 use Modules\Grievance\Notifications\GrievanceAllocated;
@@ -146,6 +147,10 @@ class GrievanceRoutingService
 
     public function close(Grievance $grievance, User $actor, string $reason): Grievance
     {
+        if ($grievance->status !== 'resolved') {
+            throw ValidationException::withMessages(['status' => 'Only a resolved grievance can be closed.']);
+        }
+
         $from = $grievance->status;
         $grievance = $this->grievances->update($grievance, ['status' => 'closed', 'closed_by' => $actor->id, 'closed_reason' => $reason, 'closed_at' => now()]);
         $this->grievances->recordStatus($grievance, $from, 'closed', $actor->id, $actor->getRoleNames()->first(), $reason);

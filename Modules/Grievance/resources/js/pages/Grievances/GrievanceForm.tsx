@@ -2,13 +2,14 @@ import { FileDropzone } from '@/components/file-dropzone'; // adjust path if it 
 import { Select2Field, StatusField, TextField } from '@/components/form-fields';
 import { PhoneField } from '@/components/form-fields/phone-field';
 import { FormLayout } from '@/components/form-layout';
+import { RichTextEditor } from '@/components/rich-text-editor';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { rules, validateForm } from '@/lib/validation';
 import { statusLabel, statusVariant } from '@/types/grievance-status';
 import { router, useForm, usePage } from '@inertiajs/react';
-import { FileWarning, LocateFixed, Loader2 } from 'lucide-react';
+import { Download, FileWarning, LocateFixed, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { route } from 'ziggy-js';
 import type { Grievance } from './columns';
@@ -51,6 +52,32 @@ interface GrievanceFormProps {
     divisions: LookupOption[];
     sections: SectionOption[];
     officers?: OfficerOption[];
+    workflowStep?: {
+        id: number;
+        name: string;
+        description: string | null;
+        action_type: string;
+        role_name: string | null;
+        approver_user_id: number | null;
+        rejection_action: string;
+        rejection_target_step: number | null;
+    } | null;
+    workflowActions?: {
+        id: number;
+        decision: string;
+        reason: string | null;
+        from_step: string | null;
+        to_step: string | null;
+        actor: string | null;
+        created_at: string;
+        documents: {
+            id: number;
+            original_name: string;
+            mime_type: string;
+            download_url: string;
+        }[];
+    }[];
+    resolutionDraft?: { resolution_text: string } | null;
 }
 
 interface FormValues {
@@ -70,8 +97,11 @@ interface FormValues {
     latitude: string;
     longitude: string;
     attachments: File[];
+    documents: File[];
+    resolution_html: string;
     remove_attachment_ids: number[];
     officer_id: string;
+    workflow_decision: 'approve' | 'reject' | 'acknowledge';
 }
 
 export default function Form({
@@ -82,18 +112,13 @@ export default function Form({
     divisions,
     sections,
     officers = [],
+    workflowStep = null,
+    workflowActions = [],
+    resolutionDraft = null,
 }: GrievanceFormProps) {
-    const isEdit = !!grievance;
+    const isEdit = Boolean(grievance);
     const { t } = useTranslation();
-    const page = usePage<{
-        auth: {
-            user?: {
-                role_names?: string;
-                division_id?: number | null;
-                section_id?: number | null;
-            };
-        };
-    }>();
+    const page = usePage();
     const user = page.props.auth.user;
     const roles =
         page.props.auth.user?.role_names
@@ -104,19 +129,20 @@ export default function Form({
         roles.some((role) =>
             ['Super Admin', 'IT Admin', 'Admin', 'Developer'].includes(role),
         );
-    const canOperateWorkflow =
-        !!grievance &&
-        ((roles.includes('Director') &&
-            ['submitted', 'reallocation_required'].includes(grievance.status) &&
-            !grievance.division) ||
-            (roles.includes('Division Director') &&
-                grievance.status === 'allocated_division' &&
-                grievance.division?.id === user?.division_id) ||
-            (roles.includes('Section Manager') &&
-                grievance.status === 'allocated_section' &&
-                grievance.section?.id === user?.section_id));
+    const isWorkflowApprover = !!workflowStep && (
+        (workflowStep.approver_user_id !== null &&
+            workflowStep.approver_user_id === user?.id) ||
+        (workflowStep.approver_user_id === null &&
+            !!workflowStep.role_name &&
+            roles.includes(workflowStep.role_name))
+    );
+    const canOperateWorkflow = !!grievance && isWorkflowApprover &&
+        !['rejected', 'resolved', 'closed'].includes(grievance.status) &&
+        (workflowStep?.action_type !== 'prepare_resolution' ||
+            grievance.assigned_officer_id === user?.id);
     const [locating, setLocating] = useState(false);
     const [locError, setLocError] = useState<string | null>(null);
+    const [workflowSubmitting, setWorkflowSubmitting] = useState(false);
 
     const {
         data,
@@ -150,74 +176,91 @@ export default function Form({
         latitude: '',
         longitude: '',
         attachments: [],
+        documents: [],
+        resolution_html: resolutionDraft?.resolution_text ?? '',
         remove_attachment_ids: [],
         officer_id: '',
+        workflow_decision:
+            grievance?.status === 'assigned_officer' ? 'acknowledge' : 'approve',
     });
 
     const isAnonymous = data.is_anonymous === '1';
 
-    const workflowAction = (action: 'forward' | 'reject') => {
-        if (action === 'reject') {
+    const workflowAction = () => {
+        clearErrors();
+
+        const requestOptions = {
+            preserveScroll: true,
+            forceFormData: true,
+            onStart: () => setWorkflowSubmitting(true),
+            onFinish: () => setWorkflowSubmitting(false),
+            onError: (validationErrors: Record<string, string>) =>
+                setError(validationErrors as Record<keyof FormValues, string>),
+        };
+
+        if (data.workflow_decision === 'reject') {
             if (!data.remarks.trim()) {
                 setError('remarks', 'Rejection remarks are required.');
 
                 return;
             }
 
-            const endpoint =
-                roles.includes('Section Manager') &&
-                grievance?.status === 'allocated_section'
-                    ? 'grievances.reject-allocation'
-                    : 'grievances.reject';
             router.post(
-                route(endpoint, grievance!.id),
-                { reason: data.remarks },
-                { preserveScroll: true },
+                route('grievances.workflow-action', grievance!.id),
+                {
+                    decision: data.workflow_decision,
+                    reason: data.remarks,
+                    documents: data.documents,
+                },
+                requestOptions,
             );
 
             return;
         }
 
-        let endpoint: string | null = null;
-        let payload: Record<string, string> = {};
-
-        if (roles.includes('Director') || roles.includes('Super Admin')) {
-            endpoint = 'grievances.allocate-division';
-            payload = { division_id: data.division_id };
-        } else if (roles.includes('Division Director')) {
-            endpoint = 'grievances.allocate-section';
-            payload = { section_id: data.section_id };
-        } else if (roles.includes('Section Manager')) {
-            endpoint = 'grievances.assign-officer';
-            payload = { officer_id: data.officer_id };
-        }
-
-        if (!endpoint || Object.values(payload).some((value) => !value)) {
-            setError(
-                'remarks',
-                'Select the next workflow destination before forwarding.',
+        if (data.workflow_decision === 'acknowledge') {
+            router.post(
+                route('grievances.workflow-action', grievance!.id),
+                {
+                    decision: data.workflow_decision,
+                    reason: data.remarks,
+                    documents: data.documents,
+                },
+                requestOptions,
             );
 
             return;
         }
 
-        router.post(route(endpoint, grievance!.id), payload, {
-            preserveScroll: true,
-        });
-    };
-
-    const resolve = () => {
-        if (!data.remarks.trim()) {
-            setError('remarks', 'Resolution remarks are required.');
+        if (!workflowStep) {
+            setError('remarks', 'There is no active configured workflow step.');
 
             return;
         }
 
         router.post(
-            route('grievances.resolve', grievance!.id),
-            { reason: data.remarks },
-            { preserveScroll: true },
+            route('grievances.workflow-action', grievance!.id),
+            {
+                decision: data.workflow_decision,
+                division_id: data.division_id,
+                section_id: data.section_id,
+                officer_id: data.officer_id,
+                resolution_html: data.resolution_html,
+                reason: data.remarks,
+                documents: data.documents,
+            },
+            requestOptions,
         );
+    };
+
+    const resolve = () => {
+        if (!data.resolution_html.trim()) {
+            setError('resolution_html', 'Resolution draft is required.');
+
+            return;
+        }
+
+        workflowAction();
     };
 
     const startInvestigation = () => {
@@ -351,6 +394,391 @@ export default function Form({
         );
     };
 
+    if (isEdit && grievance) {
+        const canSubmitWorkflow = canOperateWorkflow && !!workflowStep;
+        const isInitialAcknowledgement =
+            grievance.status === 'assigned_officer' &&
+            workflowStep?.action_type === 'prepare_resolution';
+        const decisionLabel =
+            workflowStep?.action_type === 'final_approval'
+                ? t('Approve and resolve')
+                : t('Forward to next workflow step');
+
+        return (
+            <FormLayout
+                title={t('Review grievance')}
+                description={t('Case :ref · original intake details are read-only.', {
+                    ref: grievance.reference_no,
+                })}
+                breadcrumbs={[
+                    {
+                        label: t('Grievances'),
+                        icon: FileWarning,
+                        href: route('grievances.index'),
+                    },
+                    { label: t('Review grievance') },
+                ]}
+                onSubmit={(event) => event.preventDefault()}
+                hideFooter
+                contentClassName="grid-cols-1 lg:grid-cols-2"
+            >
+                <section className="col-span-full space-y-5 rounded-lg border bg-muted/20 p-4 sm:p-6">
+                    <div className="flex flex-wrap items-center gap-3 border-b pb-4">
+                        <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                                {t('Grievance reference')}
+                            </p>
+                            <h2 className="font-mono text-lg font-semibold">
+                                {grievance.reference_no}
+                            </h2>
+                        </div>
+                        <Badge variant={statusVariant(grievance.status)}>
+                            {statusLabel(grievance.status)}
+                        </Badge>
+                        <Badge variant="outline">
+                            {t(workflowStep?.name ?? 'Workflow step unavailable')}
+                        </Badge>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                        {grievance.category?.name_en && (
+                            <Badge variant="secondary">{t('Category')}: {grievance.category.name_en}</Badge>
+                        )}
+                        {grievance.division?.name && (
+                            <Badge variant="outline">{t('Division')}: {grievance.division.name}</Badge>
+                        )}
+                        {grievance.section?.name && (
+                            <Badge variant="outline">{t('Section')}: {grievance.section.name}</Badge>
+                        )}
+                        <Badge variant={grievance.priority === 'high' ? 'destructive' : 'secondary'}>
+                            {t('Priority')}: {t(grievance.priority || 'normal')}
+                        </Badge>
+                    </div>
+
+                    <div className="grid gap-5 md:grid-cols-2">
+                        <section className="space-y-3 rounded-md border bg-background p-4">
+                            <h3 className="font-semibold">{t('Original grievance')}</h3>
+                            <dl className="grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
+                                <div>
+                                    <dt className="text-muted-foreground">{t('Complainant')}</dt>
+                                    <dd>{grievance.is_anonymous ? t('Anonymous') : grievance.complainant_name || '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-muted-foreground">{t('Phone')}</dt>
+                                    <dd>{grievance.complainant_phone || '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-muted-foreground">{t('Email')}</dt>
+                                    <dd className="break-words">{grievance.complainant_email || '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-muted-foreground">{t('Channel')}</dt>
+                                    <dd>{grievance.channel?.name || '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-muted-foreground">{t('District')}</dt>
+                                    <dd>{grievance.district?.name || '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-muted-foreground">{t('Address')}</dt>
+                                    <dd>{grievance.location_description || '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-muted-foreground">{t('Latitude')}</dt>
+                                    <dd>{grievance.latitude ?? '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-muted-foreground">{t('Longitude')}</dt>
+                                    <dd>{grievance.longitude ?? '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-muted-foreground">{t('Received')}</dt>
+                                    <dd>{new Date(grievance.created_at).toLocaleString()}</dd>
+                                </div>
+                            </dl>
+                        </section>
+                        <section className="space-y-3 rounded-md border bg-background p-4">
+                            <h3 className="font-semibold">{t('Original description')}</h3>
+                            <p className="max-h-72 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed">
+                                {grievance.description}
+                            </p>
+                        </section>
+                    </div>
+
+                    <div className="space-y-3">
+                        <h3 className="font-semibold">{t('Original documents and evidence')}</h3>
+                        {(grievance.attachments ?? []).length === 0 ? (
+                            <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                                {t('No original documents were attached.')}
+                            </p>
+                        ) : (
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                {grievance.attachments.map((attachment) => (
+                                    <article key={attachment.id} className="overflow-hidden rounded-md border bg-background">
+                                        <div className="flex items-center justify-between gap-3 p-3">
+                                            <div className="min-w-0">
+                                                <p className="truncate text-sm font-medium">{attachment.file_name}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {attachment.mime_type} · {(attachment.size / 1024 / 1024).toFixed(2)} MB
+                                                </p>
+                                            </div>
+                                            <a
+                                                href={attachment.url}
+                                                download={attachment.file_name}
+                                                className="inline-flex shrink-0 items-center gap-1 text-sm text-primary hover:underline"
+                                            >
+                                                <Download className="size-4" />
+                                                {t('Download')}
+                                            </a>
+                                        </div>
+                                        {attachment.mime_type.startsWith('image/') && (
+                                            <a href={attachment.url} target="_blank" rel="noreferrer">
+                                                <img src={attachment.url} alt={attachment.file_name} className="h-40 w-full bg-muted object-contain" />
+                                            </a>
+                                        )}
+                                        {attachment.mime_type === 'application/pdf' && (
+                                            <iframe title={attachment.file_name} src={attachment.url} className="h-44 w-full border-t" />
+                                        )}
+                                        {attachment.mime_type.startsWith('audio/') && (
+                                            <audio controls preload="metadata" src={attachment.url} className="w-full px-3 pb-3" />
+                                        )}
+                                        {attachment.mime_type.startsWith('video/') && (
+                                            <video controls preload="metadata" src={attachment.url} className="h-40 w-full bg-black object-contain" />
+                                        )}
+                                    </article>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </section>
+
+                {workflowActions.length > 0 && (
+                    <section className="col-span-full space-y-3 rounded-lg border p-4 sm:p-6">
+                        <div>
+                            <h3 className="font-semibold">{t('Workflow history and staff documents')}</h3>
+                            <p className="text-sm text-muted-foreground">
+                                {t('Documents uploaded at previous workflow levels remain available to authorized officers.')}
+                            </p>
+                        </div>
+                        {workflowActions.map((action) => (
+                            <article key={action.id} className="space-y-3 border-t pt-3 text-sm">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-medium">{action.actor ?? t('Staff')}</span>
+                                    <Badge variant="outline">{t(action.decision)}</Badge>
+                                    <span className="text-muted-foreground">
+                                        {action.from_step}
+                                        {action.to_step && action.to_step !== action.from_step ? ` → ${action.to_step}` : ''}
+                                    </span>
+                                    <time className="ml-auto text-xs text-muted-foreground">
+                                        {new Date(action.created_at).toLocaleString()}
+                                    </time>
+                                </div>
+                                {action.reason && (
+                                    <p className="whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-muted-foreground">
+                                        {action.reason}
+                                    </p>
+                                )}
+                                {action.documents.length > 0 && (
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        {action.documents.map((document) => (
+                                            <article key={document.id} className="overflow-hidden rounded-md border">
+                                                <div className="flex items-center justify-between gap-3 p-3">
+                                                    <span className="truncate font-medium">{document.original_name}</span>
+                                                    <a href={document.download_url} className="inline-flex shrink-0 items-center gap-1 text-primary hover:underline">
+                                                        <Download className="size-4" />
+                                                        {t('Download')}
+                                                    </a>
+                                                </div>
+                                                {document.mime_type.startsWith('image/') && (
+                                                    <a href={document.download_url} target="_blank" rel="noreferrer">
+                                                        <img src={document.download_url} alt={document.original_name} className="max-h-64 w-full bg-muted object-contain" />
+                                                    </a>
+                                                )}
+                                                {document.mime_type === 'application/pdf' && (
+                                                    <iframe title={document.original_name} src={document.download_url} className="h-64 w-full border-t" />
+                                                )}
+                                            </article>
+                                        ))}
+                                    </div>
+                                )}
+                            </article>
+                        ))}
+                    </section>
+                )}
+
+                <section className="col-span-full space-y-4 rounded-lg border p-4 sm:p-6">
+                    <div>
+                        <h3 className="font-semibold">{t('Your workflow response')}</h3>
+                        <p className="text-sm text-muted-foreground">
+                            {workflowStep?.description ?? t('Choose what should happen next and add any supporting remarks or documents.')}
+                        </p>
+                    </div>
+                    {canSubmitWorkflow ? (
+                        <>
+                            <div className="space-y-1.5">
+                                <label htmlFor="workflow_decision" className="text-sm font-medium">
+                                    {t('Next action')}
+                                </label>
+                                <select
+                                    id="workflow_decision"
+                                    value={data.workflow_decision}
+                                    onChange={(event) =>
+                                        setData('workflow_decision', event.target.value as FormValues['workflow_decision'])
+                                    }
+                                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                >
+                                    {isInitialAcknowledgement && (
+                                        <option value="acknowledge">{t('Acknowledge receipt and start investigation')}</option>
+                                    )}
+                                    {!isInitialAcknowledgement && (
+                                        <option value="approve">{decisionLabel}</option>
+                                    )}
+                                    <option value="reject">{t('Reject or return for changes')}</option>
+                                </select>
+                            </div>
+                            <div className="col-span-full space-y-2">
+                                <label className="text-sm font-medium" htmlFor="remarks">
+                                    {t('Remarks')}
+                                    {data.workflow_decision === 'reject' && (
+                                        <span className="ml-1 text-destructive">*</span>
+                                    )}
+                                </label>
+                                <textarea
+                                    id="remarks"
+                                    rows={5}
+                                    maxLength={5000}
+                                    required={data.workflow_decision === 'reject'}
+                                    value={data.remarks}
+                                    onChange={(event) => setData('remarks', event.target.value)}
+                                    placeholder={data.workflow_decision === 'reject'
+                                        ? t('Explain why this grievance is being rejected or returned.')
+                                        : t('Add your review, handover, or investigation remarks.')}
+                                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                />
+                                {errors.remarks && <p role="alert" className="text-sm text-destructive">{errors.remarks}</p>}
+                            </div>
+                            {workflowStep?.action_type === 'allocate_division' && (
+                                <Select2Field
+                                    id="division_id"
+                                    required
+                                    label={t('Forward to division')}
+                                    value={data.division_id}
+                                    onChange={(value) => setData('division_id', value)}
+                                    options={divisionOptions}
+                                    placeholder={t('Select a division')}
+                                    error={errors.division_id}
+                                />
+                            )}
+                            {workflowStep?.action_type === 'allocate_section' && (
+                                <Select2Field
+                                    id="section_id"
+                                    required
+                                    label={t('Forward to section')}
+                                    value={data.section_id}
+                                    onChange={(value) => setData('section_id', value)}
+                                    options={sectionOptions}
+                                    placeholder={t('Select a section')}
+                                    error={errors.section_id}
+                                />
+                            )}
+                            {workflowStep?.action_type === 'assign_officer' && (
+                                <div className="col-span-full space-y-2">
+                                    <Select2Field
+                                        id="officer_id"
+                                        required
+                                        label={t('Assign investigating officer')}
+                                        value={data.officer_id}
+                                        onChange={(value) => setData('officer_id', value)}
+                                        options={officers.map((officer) => ({
+                                            value: String(officer.id),
+                                            label: officer.name,
+                                        }))}
+                                        placeholder={t('Select an officer')}
+                                        error={errors.officer_id}
+                                    />
+                                    {officers.length === 0 && (
+                                        <p role="alert" className="text-sm text-destructive">
+                                            {t('No active Helpdesk Officers are assigned to this section or available for assignment. Ask an administrator to assign an officer to this section first.')}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                            {workflowStep?.action_type === 'prepare_resolution' &&
+                                data.workflow_decision === 'approve' && (
+                                    <>
+                                        <div className="col-span-full space-y-2">
+                                            <label className="text-sm font-medium" htmlFor="resolution_html">
+                                                {t('Proposed resolution draft')}
+                                            </label>
+                                            <RichTextEditor
+                                                id="resolution_html"
+                                                label={t('Proposed resolution draft')}
+                                                value={data.resolution_html}
+                                                onChange={(value) => setData('resolution_html', value)}
+                                            />
+                                            {errors.resolution_html && <p role="alert" className="text-sm text-destructive">{errors.resolution_html}</p>}
+                                        </div>
+                                    </>
+                                )}
+                            {workflowStep?.action_type === 'final_approval' && (
+                                <div className="col-span-full space-y-2">
+                                    <label className="text-sm font-medium">{t('Resolution draft submitted for approval')}</label>
+                                    {resolutionDraft ? (
+                                        <RichTextEditor
+                                            id="resolution_draft_preview"
+                                            label={t('Resolution draft submitted for approval')}
+                                            value={resolutionDraft.resolution_text}
+                                            onChange={() => undefined}
+                                            disabled
+                                        />
+                                    ) : (
+                                        <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                                            {t('No resolution draft has been submitted yet.')}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                            <div className="col-span-full space-y-2">
+                                <FileDropzone
+                                    multiple
+                                    maxFiles={5}
+                                    maxSizeMB={20}
+                                    accept={{
+                                        'application/pdf': ['.pdf'],
+                                        'application/msword': ['.doc'],
+                                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+                                        'application/vnd.ms-excel': ['.xls'],
+                                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+                                        'text/csv': ['.csv'],
+                                        'image/jpeg': ['.jpg', '.jpeg'],
+                                        'image/png': ['.png'],
+                                    }}
+                                    value={data.documents}
+                                    onChange={(files) => setData('documents', files)}
+                                    label={t('Supporting documents')}
+                                    helperText={t('Up to five private files, 20 MB each. Files are added to this workflow step and remain visible to authorized officers.')}
+                                />
+                                {errors.documents && <p role="alert" className="text-sm text-destructive">{errors.documents}</p>}
+                            </div>
+                            <div className="col-span-full flex flex-wrap justify-end gap-2 border-t pt-4">
+                                <Button type="button" variant="outline" onClick={() => window.history.back()}>
+                                    {t('Cancel')}
+                                </Button>
+                                <Button type="button" disabled={processing || workflowSubmitting} onClick={workflowAction}>
+                                    {processing || workflowSubmitting ? t('Submitting…') : t('Submit workflow action')}
+                                </Button>
+                            </div>
+                        </>
+                    ) : (
+                        <p className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">
+                            {t('This grievance is waiting for the authorized workflow officer. You can review the case details and documents above.')}
+                        </p>
+                    )}
+                </section>
+            </FormLayout>
+        );
+    }
+
     return (
         <FormLayout
             title={isEdit ? t('Edit Grievance') : t('Register Grievance')}
@@ -398,6 +826,24 @@ export default function Form({
                         )}
                     </span>
                 </div>
+            )}
+
+            {isEdit && workflowStep && (
+                <section className="col-span-full space-y-1 rounded-md border border-primary/30 bg-primary/5 p-4">
+                    <h2 className="font-semibold">
+                        Current workflow: {workflowStep.name}
+                    </h2>
+                    {workflowStep.description && (
+                        <p className="text-sm text-muted-foreground">
+                            {workflowStep.description}
+                        </p>
+                    )}
+                    {workflowStep.rejection_action === 'return_to_step' && (
+                        <p className="text-xs text-muted-foreground">
+                            Rejection returns this case to level {workflowStep.rejection_target_step}.
+                        </p>
+                    )}
+                </section>
             )}
 
             <StatusField
@@ -470,34 +916,38 @@ export default function Form({
                 error={errors.district_id}
             />
 
-            <Select2Field
-                id="division_id"
-                label={t('Division')}
-                value={data.division_id}
-                onChange={(v) => {
-                    setData('division_id', v);
-                    setData('section_id', ''); // clear section when division changes, since options just shifted
-                }}
-                options={divisionOptions}
-                placeholder={t('Select a division')}
-                error={errors.division_id}
-            />
+            {(!isEdit || workflowStep?.action_type === 'allocate_division') && (
+                <Select2Field
+                    id="division_id"
+                    label={t('Division')}
+                    value={data.division_id}
+                    onChange={(v) => {
+                        setData('division_id', v);
+                        setData('section_id', '');
+                    }}
+                    options={divisionOptions}
+                    placeholder={t('Select a division')}
+                    error={errors.division_id}
+                />
+            )}
 
-            <Select2Field
-                id="section_id"
-                label={t('Section')}
-                value={data.section_id}
-                onChange={(v) => setData('section_id', v)}
-                options={sectionOptions}
-                placeholder={
-                    data.division_id
-                        ? t('Select a section')
-                        : t('Select a division first')
-                }
-                error={errors.section_id}
-            />
+            {(!isEdit || workflowStep?.action_type === 'allocate_section') && (
+                <Select2Field
+                    id="section_id"
+                    label={t('Section')}
+                    value={data.section_id}
+                    onChange={(v) => setData('section_id', v)}
+                    options={sectionOptions}
+                    placeholder={
+                        data.division_id
+                            ? t('Select a section')
+                            : t('Select a division first')
+                    }
+                    error={errors.section_id}
+                />
+            )}
 
-            {isEdit && roles.some((role) => role === 'Section Manager') && (
+            {isEdit && workflowStep?.action_type === 'assign_officer' && (
                 <Select2Field
                     id="officer_id"
                     label={t('Investigating Officer')}
@@ -550,7 +1000,7 @@ export default function Form({
 
             <div className="space-y-1.5">
                 <label htmlFor="remarks" className="text-sm font-medium">
-                    {t('Officer Remarks')}
+                    {t('Workflow notes or rejection reason')}
                 </label>
                 <textarea
                     id="remarks"
@@ -566,6 +1016,80 @@ export default function Form({
                     <p className="text-sm text-destructive">{errors.remarks}</p>
                 )}
             </div>
+
+            {isEdit && workflowStep?.action_type === 'prepare_resolution' && (
+                <div className="col-span-full space-y-2">
+                    <label className="text-sm font-medium" htmlFor="resolution_html">
+                        {t('Proposed resolution draft')}
+                    </label>
+                    <RichTextEditor
+                        id="resolution_html"
+                        label={t('Proposed resolution draft')}
+                        value={data.resolution_html}
+                        onChange={(value) => setData('resolution_html', value)}
+                        disabled={!canOperateWorkflow || !['in_progress', 'escalated'].includes(grievance?.status ?? '')}
+                    />
+                    {errors.resolution_html && (
+                        <p role="alert" className="text-sm text-destructive">
+                            {errors.resolution_html}
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {isEdit && workflowStep?.action_type === 'final_approval' && (
+                <div className="col-span-full space-y-2">
+                    <label className="text-sm font-medium" htmlFor="resolution_draft_preview">
+                        {t('Resolution draft submitted for approval')}
+                    </label>
+                    {resolutionDraft ? (
+                        <RichTextEditor
+                            id="resolution_draft_preview"
+                            label={t('Resolution draft submitted for approval')}
+                            value={resolutionDraft.resolution_text}
+                            onChange={() => undefined}
+                            disabled
+                        />
+                    ) : (
+                        <p role="alert" className="text-sm text-destructive">
+                            {t('No resolution draft has been submitted yet.')}
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {isEdit && workflowStep && canOperateWorkflow && (
+                <div className="col-span-full space-y-2">
+                    <label className="text-sm font-medium" htmlFor="workflow_documents">
+                        {t('Workflow documents')}
+                    </label>
+                    <input
+                        id="workflow_documents"
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png"
+                        onChange={(event) =>
+                            setData('documents', Array.from(event.target.files ?? []))
+                        }
+                        className="block w-full rounded-md border bg-background p-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-muted file:px-3 file:py-1"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        {t('Up to five private files, 20 MB each. They are only available to authorized staff.')}
+                    </p>
+                    {data.documents.length > 0 && (
+                        <ul className="list-inside list-disc text-sm">
+                            {data.documents.map((file) => (
+                                <li key={`${file.name}-${file.size}`}>{file.name}</li>
+                            ))}
+                        </ul>
+                    )}
+                    {errors.documents && (
+                        <p role="alert" className="text-sm text-destructive">
+                            {errors.documents}
+                        </p>
+                    )}
+                </div>
+            )}
 
             <TextField
                 id="location_description"
@@ -692,6 +1216,43 @@ export default function Form({
                 )}
             </div>
 
+            {isEdit && workflowActions.length > 0 && (
+                <section className="col-span-full space-y-3 rounded-md border p-4">
+                    <h2 className="font-semibold">{t('Workflow history and documents')}</h2>
+                    {workflowActions.map((action) => (
+                        <div key={action.id} className="border-t pt-3 text-sm">
+                            <p className="font-medium">
+                                {action.actor ?? t('Staff')} — {action.decision}
+                                {action.from_step && ` · ${action.from_step}`}
+                                {action.to_step && ` → ${action.to_step}`}
+                            </p>
+                            {action.reason && (
+                                <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
+                                    {action.reason}
+                                </p>
+                            )}
+                            <time className="text-xs text-muted-foreground">
+                                {new Date(action.created_at).toLocaleString()}
+                            </time>
+                            {action.documents.length > 0 && (
+                                <ul className="mt-2 list-inside list-disc">
+                                    {action.documents.map((document) => (
+                                        <li key={document.id}>
+                                            <a
+                                                href={document.download_url}
+                                                className="text-primary underline"
+                                            >
+                                                {document.original_name}
+                                            </a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    ))}
+                </section>
+            )}
+
             {isEdit && (
                 <div className="col-span-full flex flex-wrap justify-end gap-2 border-t pt-4">
                     <Button
@@ -701,21 +1262,24 @@ export default function Form({
                     >
                         {t('Back')}
                     </Button>
-                    {canOperateWorkflow && (
+                    {canOperateWorkflow && workflowStep && [
+                        'allocate_division',
+                        'allocate_section',
+                        'assign_officer',
+                        'review',
+                    ].includes(workflowStep.action_type) && (
                         <Button
                             type="button"
-                            onClick={() => workflowAction('forward')}
+                            onClick={workflowAction}
                         >
                             {t('Forward')}
                         </Button>
                     )}
-                    {canOperateWorkflow &&
-                        (roles.includes('Director') ||
-                            roles.includes('Section Manager')) && (
+                    {canOperateWorkflow && workflowStep?.rejection_action && (
                             <Button
                                 type="button"
                                 variant="destructive"
-                                onClick={() => workflowAction('reject')}
+                                onClick={workflowAction}
                             >
                                 {t('Reject')}
                             </Button>
@@ -729,14 +1293,24 @@ export default function Form({
                                 {t('Start investigation')}
                             </Button>
                         )}
-                    {roles.includes('Helpdesk Officer') &&
-                        [
-                            'assigned_officer',
-                            'in_progress',
-                            'escalated',
-                        ].includes(grievance!.status) && (
-                            <Button type="button" onClick={resolve}>
-                                {t('Resolve with remarks')}
+                    {canOperateWorkflow &&
+                        workflowStep?.action_type === 'prepare_resolution' && (
+                            <Button
+                                type="button"
+                                disabled={processing}
+                                onClick={resolve}
+                            >
+                                {t('Submit resolution for approval')}
+                            </Button>
+                        )}
+                    {canOperateWorkflow &&
+                        workflowStep?.action_type === 'final_approval' && (
+                            <Button
+                                type="button"
+                                disabled={processing || !resolutionDraft}
+                                onClick={workflowAction}
+                            >
+                                {t('Approve final resolution')}
                             </Button>
                         )}
                 </div>

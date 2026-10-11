@@ -15,10 +15,14 @@ use Modules\Grievance\Http\Requests\ResolveGrievanceRequest;
 use Modules\Grievance\Http\Requests\StartInvestigationRequest;
 use Modules\Grievance\Models\Grievance;
 use Modules\Grievance\Services\GrievanceRoutingService;
+use Modules\Grievance\Services\GrievanceWorkflowService;
 
 class GrievanceRoutingController extends Controller
 {
-    public function __construct(protected GrievanceRoutingService $routing) {}
+    public function __construct(
+        protected GrievanceRoutingService $routing,
+        protected GrievanceWorkflowService $workflow,
+    ) {}
 
     public function triageQueue(Request $request): RedirectResponse
     {
@@ -37,49 +41,76 @@ class GrievanceRoutingController extends Controller
 
     public function allocateDivision(AllocateDivisionRequest $request, Grievance $grievance): RedirectResponse
     {
-        $this->routing->allocateToDivision($grievance, $request->validated('division_id'), $request->user(), $request->validated('remarks'));
+        $this->workflow->act($grievance, $request->user(), [
+            'decision' => 'approve',
+            'division_id' => $request->validated('division_id'),
+            'reason' => $request->validated('remarks'),
+        ]);
 
         return redirect()->route('grievances.pending')->with('success', 'Grievance allocated to division.');
     }
 
     public function allocateSection(AllocateSectionRequest $request, Grievance $grievance): RedirectResponse
     {
-        $this->routing->allocateToSection($grievance, $request->validated('section_id'), $request->user(), $request->validated('remarks'));
+        $this->workflow->act($grievance, $request->user(), [
+            'decision' => 'approve',
+            'section_id' => $request->validated('section_id'),
+            'reason' => $request->validated('remarks'),
+        ]);
 
         return redirect()->route('grievances.pending')->with('success', 'Grievance allocated to section.');
     }
 
     public function rejectAllocation(RejectAllocationRequest $request, Grievance $grievance): RedirectResponse
     {
-        $this->routing->rejectAllocation($grievance, $request->user(), $request->validated('reason'));
+        $this->workflow->act($grievance, $request->user(), [
+            'decision' => 'reject',
+            'reason' => $request->validated('reason'),
+        ]);
 
         return back()->with('success', 'Allocation rejected and sent back for reallocation.');
     }
 
     public function assignOfficer(AssignOfficerRequest $request, Grievance $grievance): RedirectResponse
     {
-        $this->routing->assignOfficer($grievance, $request->validated('officer_id'), $request->user());
+        $this->workflow->act($grievance, $request->user(), [
+            'decision' => 'approve',
+            'officer_id' => $request->validated('officer_id'),
+        ]);
 
         return redirect()->route('grievances.pending')->with('success', 'Investigating officer assigned.');
     }
 
     public function reject(RejectGrievanceRequest $request, Grievance $grievance): RedirectResponse
     {
-        $this->routing->reject($grievance, $request->user(), $request->validated('reason'));
+        $this->workflow->act($grievance, $request->user(), [
+            'decision' => 'reject',
+            'reason' => $request->validated('reason'),
+        ]);
 
         return back()->with('success', 'Grievance rejected with a recorded reason.');
     }
 
     public function resolve(ResolveGrievanceRequest $request, Grievance $grievance): RedirectResponse
     {
-        $this->routing->resolve($grievance, $request->user(), $request->validated('reason'));
+        $validated = $request->validated();
+        $this->workflow->act(
+            $grievance,
+            $request->user(),
+            [
+                'decision' => 'approve',
+                'resolution_html' => $validated['resolution_html'],
+                'reason' => $validated['reason'] ?? null,
+            ],
+            $request->file('documents', []),
+        );
 
-        return back()->with('success', 'Grievance resolved with a recorded reason.');
+        return back()->with('success', 'Resolution draft submitted for final approval.');
     }
 
     public function startInvestigation(StartInvestigationRequest $request, Grievance $grievance): RedirectResponse
     {
-        $this->routing->startInvestigation($grievance, $request->user(), $request->validated('remarks'));
+        $this->workflow->startInvestigation($grievance, $request->user(), $request->validated('remarks'));
 
         return redirect()->route('grievances.pending')->with('success', 'Investigation started.');
     }

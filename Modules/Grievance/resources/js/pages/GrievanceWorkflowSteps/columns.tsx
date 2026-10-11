@@ -8,6 +8,7 @@ export interface GrievanceWorkflowStep {
     step_number: number;
     name: string;
     description: string | null;
+    action_type: string;
     role_name: string | null;
     approver_user_id: number | null;
     approver_user?: { id: number; name: string } | null;
@@ -50,6 +51,19 @@ export const columns: ColumnDef<GrievanceWorkflowStep>[] = [
         cell: ({ row }) =>
             row.original.approver_user?.name ?? row.original.role_name ?? '—',
         enableSorting: false,
+    },
+    {
+        accessorKey: 'action_type',
+        header: 'Form action',
+        cell: ({ row }) =>
+            ({
+                review: 'Review and forward',
+                allocate_division: 'Allocate to division',
+                allocate_section: 'Allocate to section',
+                assign_officer: 'Assign investigating officer',
+                prepare_resolution: 'Prepare resolution draft',
+                final_approval: 'Final approval',
+            })[row.original.action_type] ?? row.original.action_type,
     },
     {
         accessorKey: 'approval_action',

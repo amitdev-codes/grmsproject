@@ -66,12 +66,12 @@ export function GrievanceViewContent({ grievance }: { grievance: Grievance }) {
             </div>
 
             {!grievance.is_anonymous &&
-                (grievance.contact_email || grievance.contact_phone) && (
+                (grievance.complainant_email || grievance.complainant_phone) && (
                     <>
                         <Separator />
                         <div className="grid grid-cols-2 gap-4">
-                            <Field label={t('Email')} value={grievance.contact_email} />
-                            <Field label={t('Phone')} value={grievance.contact_phone} />
+                            <Field label={t('Email')} value={grievance.complainant_email} />
+                            <Field label={t('Phone')} value={grievance.complainant_phone} />
                         </div>
                     </>
                 )}
@@ -95,11 +95,9 @@ export function GrievanceViewContent({ grievance }: { grievance: Grievance }) {
                         className="mt-3"
                     >
                         <a
-                            href={route('resolutions.create', {
-                                grievance_id: grievance.id,
-                            })}
+                            href={route('grievances.edit', grievance.id)}
                         >
-                            {t('Prepare resolution note, memo or report')}
+                            {t('Open investigation workflow')}
                         </a>
                     </Button>
                 )}

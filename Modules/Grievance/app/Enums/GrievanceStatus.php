@@ -12,6 +12,7 @@ enum GrievanceStatus: string
     case AssignedOfficer = 'assigned_officer';
     case Assigned = 'assigned';
     case InProgress = 'in_progress';
+    case PendingApproval = 'pending_approval';
     case Escalated = 'escalated';
     case Resolved = 'resolved';
     case Closed = 'closed';
@@ -29,6 +30,7 @@ enum GrievanceStatus: string
             self::AssignedOfficer => 'Assigned to investigating officer',
             self::Assigned => 'Assigned',
             self::InProgress => 'In progress',
+            self::PendingApproval => 'Pending final approval',
             self::Escalated => 'Escalated',
             self::Resolved => 'Resolved',
             self::Closed => 'Closed',
@@ -38,9 +40,8 @@ enum GrievanceStatus: string
     }
 
     /**
-     * The state machine. This is the ONLY place transition legality is
-     * defined — GrievanceWorkflowService consults this before writing
-     * anything, so an invalid transition can never reach the database.
+     * Status transitions for non-workflow lifecycle operations.
+     * Configured review transitions are driven by grievance_workflow_steps.
      *
      * @return self[]
      */
@@ -55,6 +56,7 @@ enum GrievanceStatus: string
             self::AssignedOfficer => [self::InProgress, self::Rejected],
             self::Assigned => [self::InProgress, self::Rejected],
             self::InProgress => [self::Escalated, self::Resolved, self::Rejected],
+            self::PendingApproval => [self::InProgress, self::Resolved, self::Rejected],
             self::Escalated => [self::InProgress, self::Resolved],
             self::Resolved => [self::Closed, self::Reopened],
             self::Closed => [self::Reopened],
