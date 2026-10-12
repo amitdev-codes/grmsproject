@@ -22,7 +22,7 @@ final class GrievanceIntakeData
     public function __construct(
         public readonly string $channel,
         public readonly string $description,
-        public readonly ?int $categoryId = null,       // null => let the AI classifier pick one
+        public readonly ?int $categoryId = null,
         public readonly ?int $districtId = null,
         public readonly ?int $divisionId = null,        // null => auto-routed from category/district
         public readonly ?int $sectionId = null,
@@ -115,7 +115,7 @@ final class GrievanceIntakeData
     /**
      * SMS — category/district are only known when the citizen used the
      * "GRV <catcode> <distcode> <text>" format; otherwise pass them as null
-     * and the AI classifier decides the category inside submit().
+     * and the "Other" category is used for human review.
      */
     public static function fromSms(string $description, string $phone, array $rawPayload, ?int $categoryId = null, ?int $districtId = null): self
     {

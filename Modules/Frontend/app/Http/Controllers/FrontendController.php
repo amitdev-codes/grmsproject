@@ -4,32 +4,35 @@ namespace Modules\Frontend\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Frontend\Services\PublicAnalyticsService;
+use Modules\Frontend\Services\SiteVisitCounter;
 use Modules\Grievance\Models\VoiceGrievance;
 use Modules\Setting\Models\Faq;
 
 class FrontendController extends Controller
 {
-    public function __construct(protected PublicAnalyticsService $analytics) {}
+    public function __construct(
+        protected PublicAnalyticsService $analytics,
+        protected SiteVisitCounter $siteVisits,
+    ) {}
 
     /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $this->incrementSiteVisits();
+        $this->siteVisits->record($request);
 
         return Inertia::render('Frontend::landing', [
             'landingStats' => $this->analytics->landingData(),
         ]);
     }
 
-    public function faq(): Response
+    public function faq(Request $request): Response
     {
-        $this->incrementSiteVisits();
+        $this->siteVisits->record($request);
         $locale = in_array(app()->getLocale(), ['en', 'st'], true) ? app()->getLocale() : 'en';
         $otherLocale = $locale === 'en' ? 'st' : 'en';
         $faqs = Faq::query()
@@ -50,16 +53,16 @@ class FrontendController extends Controller
         ]);
     }
 
-    public function contact(): Response
+    public function contact(Request $request): Response
     {
-        $this->incrementSiteVisits();
+        $this->siteVisits->record($request);
 
         return Inertia::render('Frontend::contact');
     }
 
-    public function fileGrievance(): Response
+    public function fileGrievance(Request $request): Response
     {
-        $this->incrementSiteVisits();
+        $this->siteVisits->record($request);
 
         return Inertia::render('Frontend::file-grievance', [
             'speechToText' => [
@@ -71,9 +74,9 @@ class FrontendController extends Controller
         ]);
     }
 
-    public function voiceGrievance(): Response
+    public function voiceGrievance(Request $request): Response
     {
-        $this->incrementSiteVisits();
+        $this->siteVisits->record($request);
 
         return Inertia::render('Frontend::voice-grievance');
     }
@@ -87,24 +90,6 @@ class FrontendController extends Controller
         return Inertia::render('Frontend::voice-grievance', [
             'received' => true,
             'referenceNo' => $voiceGrievance->reference_no,
-        ]);
-    }
-
-    private function incrementSiteVisits(): void
-    {
-        if (DB::table('page_view_counters')->where('key', 'site_total')->exists()) {
-            DB::table('page_view_counters')
-                ->where('key', 'site_total')
-                ->increment('count');
-
-            return;
-        }
-
-        DB::table('page_view_counters')->insert([
-            'key' => 'site_total',
-            'count' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
     }
 

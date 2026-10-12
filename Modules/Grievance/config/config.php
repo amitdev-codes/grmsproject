@@ -15,7 +15,6 @@ return [
     'ai' => [
         'enabled' => (bool) env('GRIEVANCE_AI_ENABLED', false),
         'provider' => env('GRIEVANCE_AI_PROVIDER', 'anthropic'),
-        'confidence_threshold' => (float) env('GRIEVANCE_AI_CONFIDENCE_THRESHOLD', 0.70),
     ],
     'speech_to_text' => [
         'enabled' => (bool) env('GRIEVANCE_SPEECH_TO_TEXT_ENABLED', true),

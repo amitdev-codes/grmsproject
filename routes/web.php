@@ -23,4 +23,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class,'index'])->name('dashboard');
     Route::get('dashboard/analytics', [DashboardController::class, 'analytics'])->name('dashboard.analytics');
     Route::get('dashboard/reports', [DashboardController::class, 'reports'])->name('dashboard.reports');
+    Route::post('dashboard/ai-summary', [DashboardController::class, 'aiSummary'])->name('dashboard.ai-summary');
 });

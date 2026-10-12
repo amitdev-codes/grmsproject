@@ -16,7 +16,15 @@ class GrievanceWorkflowAction extends Model
         'actor_id',
         'decision',
         'reason',
+        'data',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'data' => 'array',
+        ];
+    }
 
     public function grievance(): BelongsTo
     {

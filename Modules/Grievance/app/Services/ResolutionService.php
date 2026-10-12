@@ -56,7 +56,7 @@ class ResolutionService
             ->where('assigned_officer_id', Auth::id())
             ->whereHas('currentWorkflowStep', fn ($query) => $query
                 ->where('is_active', true)
-                ->where('action_type', 'prepare_resolution'))
+                ->whereIn('action_type', ['prepare_resolution', 'investigation']))
             ->select(['id', 'reference_no as reference_number'])
             ->orderBy('reference_no')
             ->get();

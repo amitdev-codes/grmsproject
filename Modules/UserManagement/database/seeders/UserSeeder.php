@@ -89,6 +89,129 @@ class UserSeeder extends Seeder
                 'phone' => '+266 58000006',
                 'staff' => true,
                 'mfa' => false,
+                'division' => 'NR',
+                'section' => 'Berea Section',
+                'district' => 'BE',
+            ],
+            [
+                'role' => 'RD Officer',
+                'name' => 'RD Officer',
+                'username' => 'rd.officer',
+                'email' => 'rd.officer@grms.com',
+                'phone' => '+266 58000008',
+                'staff' => true,
+                'mfa' => false,
+            ],
+            [
+                'role' => 'Contractor CLO',
+                'name' => 'Contractor CLO',
+                'username' => 'contractor.clo',
+                'email' => 'contractor.clo@grms.com',
+                'phone' => '+266 58000009',
+                'staff' => true,
+                'mfa' => false,
+                'division' => 'NR',
+                'section' => 'Berea Section',
+                'district' => 'BE',
+            ],
+            [
+                'role' => 'GRC Member',
+                'name' => 'GRC Member',
+                'username' => 'grc.member',
+                'email' => 'grc.member@grms.com',
+                'phone' => '+266 58000010',
+                'staff' => true,
+                'mfa' => false,
+            ],
+            [
+                'role' => 'Responsible Manager',
+                'name' => 'Responsible Manager',
+                'username' => 'responsible.manager',
+                'email' => 'responsible.manager@grms.com',
+                'phone' => '+266 58000011',
+                'staff' => true,
+                'mfa' => false,
+                'division' => 'NR',
+                'section' => 'Berea Section',
+                'district' => 'BE',
+            ],
+            [
+                'role' => 'Investigator',
+                'name' => 'Investigator',
+                'username' => 'investigator',
+                'email' => 'investigator@grms.com',
+                'phone' => '+266 58000012',
+                'staff' => true,
+                'mfa' => false,
+                'division' => 'NR',
+                'section' => 'Berea Section',
+                'district' => 'BE',
+            ],
+            [
+                'role' => 'Engineer',
+                'name' => 'Engineer',
+                'username' => 'engineer',
+                'email' => 'engineer@grms.com',
+                'phone' => '+266 58000013',
+                'staff' => true,
+                'mfa' => false,
+                'division' => 'NR',
+                'section' => 'Berea Section',
+                'district' => 'BE',
+            ],
+            [
+                'role' => 'GRC Chair',
+                'name' => 'GRC Chair',
+                'username' => 'grc.chair',
+                'email' => 'grc.chair@grms.com',
+                'phone' => '+266 58000014',
+                'staff' => true,
+                'mfa' => false,
+            ],
+            [
+                'role' => 'RD Manager',
+                'name' => 'RD Manager',
+                'username' => 'rd.manager',
+                'email' => 'rd.manager@grms.com',
+                'phone' => '+266 58000015',
+                'staff' => true,
+                'mfa' => false,
+            ],
+            [
+                'role' => 'Director General',
+                'name' => 'Director General',
+                'username' => 'director.general',
+                'email' => 'director.general@grms.com',
+                'phone' => '+266 58000016',
+                'staff' => true,
+                'mfa' => true,
+            ],
+            [
+                'role' => 'RD E&S Unit',
+                'name' => 'RD E&S Officer',
+                'username' => 'rd.environment.social',
+                'email' => 'rd.es.unit@grms.com',
+                'phone' => '+266 58000017',
+                'staff' => true,
+                'mfa' => false,
+            ],
+            [
+                'role' => 'External Reviewer',
+                'name' => 'External Reviewer',
+                'username' => 'external.reviewer',
+                'email' => 'external.reviewer@grms.com',
+                'phone' => '+266 58000018',
+                'staff' => true,
+                'mfa' => false,
+            ],
+            [
+                'role' => 'Executive',
+                'name' => 'Executive',
+                'username' => 'executive',
+                'email' => 'executive@grms.com',
+                'phone' => '+266 58000019',
+                'staff' => true,
+                'mfa' => false,
             ],
         ];
 
@@ -123,7 +246,7 @@ class UserSeeder extends Seeder
             $user->syncRoles([$fixed['role']]);
         }
 
-        // 20 users, distributed across all 8 roles in a realistic ratio
+        // 20 users, distributed across the original platform roles
         // for an org this size: 1 Super Admin, 2 IT Admin, 1 Director,
         // 2 Division Director, 3 Section Manager, 5 Helpdesk Officer,
         // 2 Content Editor, 4 Citizen.
@@ -216,7 +339,7 @@ class UserSeeder extends Seeder
             }
         }
 
-        $this->command->info("✅ Created/verified {$created} of {$totalPlanned} planned users across 8 roles.");
+        $this->command->info("✅ Created/verified {$created} of {$totalPlanned} planned sample users across 8 platform roles.");
     }
 
     private function lesothoPhone(): string

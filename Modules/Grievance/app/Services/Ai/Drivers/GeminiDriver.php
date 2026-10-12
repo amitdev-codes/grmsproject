@@ -3,28 +3,27 @@
 namespace Modules\Grievance\Services\Ai\Drivers;
 
 use Illuminate\Support\Facades\Http;
-use Modules\Grievance\Services\Ai\AiClassifierDriverInterface;
+use Modules\Grievance\Services\Ai\AiTextGeneratorInterface;
 
-class GeminiDriver extends AbstractAiDriver implements AiClassifierDriverInterface
+class GeminiDriver extends AbstractAiDriver implements AiTextGeneratorInterface
 {
-    public function classify(string $description, array $categories): array
+    public function generate(string $prompt): string
     {
         $model = config('services.gemini.model');
         $key = config('services.gemini.key');
+        $this->assertConfigured($key, $model);
 
         $response = Http::timeout(15)->post(
             "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$key}",
             [
                 'contents' => [
-                    ['parts' => [['text' => $this->buildPrompt($description, $categories)]]],
+                    ['parts' => [['text' => $prompt]]],
                 ],
             ]
         );
 
-        if ($response->failed()) {
-            return ['category_id' => null, 'confidence' => 0.0, 'reason' => 'api_error'];
-        }
+        $this->assertSuccessful($response);
 
-        return $this->parseJson($response->json('candidates.0.content.parts.0.text'));
+        return $this->requireText($response->json('candidates.0.content.parts.0.text'));
     }
 }

@@ -60,8 +60,10 @@ class GrievanceResource extends JsonResource
                     ?? match ($this->currentWorkflowStep->action_type) {
                         'allocate_division' => $this->currentWorkflowStep->role_name,
                         'allocate_section' => $this->division?->name ?? $this->currentWorkflowStep->role_name,
-                        'assign_officer', 'prepare_resolution' => $this->assignedOfficer?->name
+                        'review', 'assign_officer', 'prepare_resolution', 'investigation' => $this->assignedOfficer?->name
                             ?? $this->section?->name
+                            ?? $this->currentWorkflowStep->role_name,
+                        'acknowledge' => $this->assignedOfficer?->name
                             ?? $this->currentWorkflowStep->role_name,
                         default => $this->currentWorkflowStep->role_name ?? 'Unassigned',
                     },

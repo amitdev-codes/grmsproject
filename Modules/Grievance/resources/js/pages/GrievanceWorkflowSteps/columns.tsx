@@ -13,6 +13,7 @@ export interface GrievanceWorkflowStep {
     approver_user_id: number | null;
     approver_user?: { id: number; name: string } | null;
     approval_action: 'advance' | 'resolve';
+    approval_target_step: number | null;
     rejection_action: 'reject' | 'return_to_step';
     rejection_target_step: number | null;
     is_final_approval: boolean;
@@ -62,7 +63,15 @@ export const columns: ColumnDef<GrievanceWorkflowStep>[] = [
                 allocate_section: 'Allocate to section',
                 assign_officer: 'Assign investigating officer',
                 prepare_resolution: 'Prepare resolution draft',
+                investigation: 'Investigation and corrective action',
                 final_approval: 'Final approval',
+                informal_resolution: 'Informal resolution',
+                screen_allocate: 'Screen and allocate case',
+                acknowledge: 'Acknowledge receipt',
+                decision_approval: 'Decision and approval',
+                closure: 'Notify and record closure',
+                escalation: 'Escalation and external review',
+                monitoring: 'Performance monitoring and reporting',
             })[row.original.action_type] ?? row.original.action_type,
     },
     {
@@ -71,7 +80,9 @@ export const columns: ColumnDef<GrievanceWorkflowStep>[] = [
         cell: ({ row }) =>
             row.original.approval_action === 'resolve'
                 ? 'Resolve grievance'
-                : 'Advance to next level',
+                : row.original.approval_target_step
+                  ? `Route to Level ${row.original.approval_target_step}`
+                  : 'Advance to next level',
     },
     {
         accessorKey: 'rejection_action',

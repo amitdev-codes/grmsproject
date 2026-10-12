@@ -21,7 +21,6 @@ use Modules\Grievance\Models\GrievanceMessage;
 use Modules\Grievance\Models\GrievanceWorkflowStep;
 use Modules\Grievance\Models\InboundSms;
 use Modules\Grievance\Notifications\GrievanceAllocated;
-use Modules\Grievance\Services\Ai\AiGrievanceClassifier;
 use Modules\Master\Models\District;
 // channel is a plain string code (see GrievanceIntakeData) resolved against
 // the grievance_channels table via findChannelByCode() — no enum import.
@@ -33,7 +32,6 @@ class GrievanceRegistrationService
     public function __construct(
         protected GrievanceRepositoryInterface $grievances,
         protected GrievanceDataTable $dataTable,
-        protected AiGrievanceClassifier $classifier,
     ) {}
 
     public function table(Request $request): array
@@ -75,7 +73,7 @@ class GrievanceRegistrationService
 
     /**
      * Quick submit - creates grievance with reference number immediately.
-     * Heavy processing (AI classification, routing, notifications) is deferred to a job.
+     * Heavy processing (routing and notifications) is deferred to a job.
      */
     public function submitQuick(GrievanceIntakeData $data): Grievance
     {
@@ -162,19 +160,19 @@ class GrievanceRegistrationService
     }
 
     /**
-     * Full processing - AI classification, routing, notifications.
+     * Full processing - category resolution, routing, and notifications.
      * Runs in a queued job after quick submit.
      */
     public function processAsync(int $grievanceId): void
     {
         $grievance = Grievance::with(['category', 'channel', 'district'])->findOrFail($grievanceId);
 
-        [$category, $aiResult] = $this->resolveCategoryForAsync($grievance);
+        $category = $this->resolveCategoryForAsync($grievance);
 
         $grievance->update([
             'grievance_category_id' => $category->id,
-            'ai_suggested_category_id' => $aiResult['category_id'] ?? null,
-            'ai_confidence' => $aiResult['confidence'] ?? null,
+            'ai_suggested_category_id' => null,
+            'ai_confidence' => null,
         ]);
 
         // Build minimal intake data from grievance for routing/acknowledgement
@@ -209,37 +207,22 @@ class GrievanceRegistrationService
     }
 
     /**
-     * Resolve category for async processing.
-     * Uses the category from the grievance if already set, otherwise runs AI classification.
+     * Resolve category for async processing without automated classification.
      */
-    protected function resolveCategoryForAsync(Grievance $grievance): array
+    protected function resolveCategoryForAsync(Grievance $grievance): GrievanceCategory
     {
         if ($grievance->grievance_category_id) {
-            $category = GrievanceCategory::findOrFail($grievance->grievance_category_id);
-
-            return [$category, ['category_id' => $category->id, 'confidence' => 1.0]];
+            return GrievanceCategory::findOrFail($grievance->grievance_category_id);
         }
 
-        $aiResult = $this->classifier->classifyToCategory($grievance->description);
-
-        if ($aiResult['confidence'] >= config('grievance.ai.confidence_threshold') && $aiResult['category_id']) {
-            $category = GrievanceCategory::find($aiResult['category_id']);
-
-            if ($category) {
-                return [$category, $aiResult];
-            }
-        }
-
-        $fallback = GrievanceCategory::where('slug', 'other')->first()
+        return GrievanceCategory::where('slug', 'other')->first()
             ?? GrievanceCategory::query()->firstOrFail();
-
-        return [$fallback, $aiResult];
     }
 
     public function submit(GrievanceIntakeData $data): Grievance
     {
         return DB::transaction(function () use ($data) {
-            [$category, $aiResult] = $this->resolveCategory($data);
+            $category = $this->resolveCategory($data);
 
             $channel = $this->grievances->findChannelByCode($data->channel);
 
@@ -266,8 +249,8 @@ class GrievanceRegistrationService
                 'location_accuracy_meters' => $data->locationAccuracyMeters,
                 'preferred_language' => $data->preferredLanguage,
                 'metadata' => $data->metadata,
-                'ai_suggested_category_id' => $aiResult['category_id'] ?? null,
-                'ai_confidence' => $aiResult['confidence'] ?? null,
+                'ai_suggested_category_id' => null,
+                'ai_confidence' => null,
             ]);
 
             if ($data->sourceGrievanceReference) {
@@ -298,32 +281,17 @@ class GrievanceRegistrationService
     }
 
     /**
-     * If the caller already knows the category (dropdown on the web form,
-     * helpdesk officer, USSD menu) we trust it. Otherwise — typically free
-     * text SMS — we ask the configured AI provider to pick one. Low
-     * confidence falls back to "Other" so a human reviews it instead of a
-     * bad auto-classification silently routing the case to the wrong desk.
+     * Use the caller-selected category, or route uncategorized submissions to
+     * "Other" so a human can review the case category.
      */
-    protected function resolveCategory(GrievanceIntakeData $data): array
+    protected function resolveCategory(GrievanceIntakeData $data): GrievanceCategory
     {
         if ($data->categoryId) {
-            return [GrievanceCategory::findOrFail($data->categoryId), null];
+            return GrievanceCategory::findOrFail($data->categoryId);
         }
 
-        $aiResult = $this->classifier->classifyToCategory($data->description);
-
-        if ($aiResult['confidence'] >= config('grievance.ai.confidence_threshold') && $aiResult['category_id']) {
-            $category = GrievanceCategory::find($aiResult['category_id']);
-
-            if ($category) {
-                return [$category, $aiResult];
-            }
-        }
-
-        $fallback = GrievanceCategory::where('slug', 'other')->first()
+        return GrievanceCategory::where('slug', 'other')->first()
             ?? GrievanceCategory::query()->firstOrFail();
-
-        return [$fallback, $aiResult];
     }
 
     protected function routeGrievance(Grievance $grievance, GrievanceCategory $category, GrievanceIntakeData $data): void
@@ -343,9 +311,26 @@ class GrievanceRegistrationService
             throw new \RuntimeException('Cannot register a grievance because no active workflow step is configured.');
         }
 
+        $grievance->setAttribute('division_id', $divisionId);
+        $grievance->setAttribute('section_id', $sectionId);
+        $assignedOfficerId = null;
+        if ($firstStep->action_type === 'review' && $firstStep->role_name === 'Helpdesk Officer') {
+            $helpdeskOfficer = app(HelpdeskOfficerAssignmentService::class)->assignFor(
+                $grievance,
+                $firstStep->approver_user_id,
+            );
+
+            if (! $helpdeskOfficer) {
+                throw new \RuntimeException('Cannot register a grievance because no active Helpdesk Officer is available.');
+            }
+
+            $assignedOfficerId = $helpdeskOfficer->id;
+        }
+
         $this->grievances->update($grievance, [
             'division_id' => $divisionId,
             'section_id' => $sectionId,
+            'assigned_officer_id' => $assignedOfficerId,
             'status' => Grievance::STATUS_SUBMITTED,
             'current_workflow_step_id' => $firstStep->id,
             'grievance_sla_policy_id' => $policy?->id,
@@ -354,9 +339,25 @@ class GrievanceRegistrationService
             'sla_due_at' => $now->copy()->addHours($policy?->acknowledgement_hours ?? 48),
         ]);
 
-        $approvers = $firstStep->approver_user_id
+        if ($assignedOfficerId !== null) {
+            DB::table('grievance_assignments')->insert([
+                'grievance_id' => $grievance->id,
+                'action' => 'assigned',
+                'to_division_id' => $divisionId,
+                'to_section_id' => $sectionId,
+                'to_officer_id' => $assignedOfficerId,
+                'acted_by' => $grievance->registered_by,
+                'reason' => 'Automatically assigned to an active Helpdesk Officer based on geographic scope and workload.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $approvers = $assignedOfficerId
+            ? User::query()->whereKey($assignedOfficerId)->get()
+            : ($firstStep->approver_user_id
             ? User::query()->whereKey($firstStep->approver_user_id)->get()
-            : User::role($firstStep->role_name)->get();
+            : User::role($firstStep->role_name)->get());
 
         Notification::send($approvers, new GrievanceAllocated($grievance));
     }
@@ -516,10 +517,8 @@ class GrievanceRegistrationService
     }
 
     // -------------------------------------------------------------------
-    // SMS — structured "GRV <catcode> <distcode> <text>" still works as
-    // before; free-text SMS with no recognizable code now also registers,
-    // letting the AI classifier pick the category inside submit(), instead
-    // of just parking it in inbound_sms unread.
+    // SMS — structured messages use their selected category; uncategorized
+    // free-text messages are registered under "Other" for human review.
     // -------------------------------------------------------------------
 
     public function handleSms(string $from, string $text): array
@@ -543,8 +542,8 @@ class GrievanceRegistrationService
             }
         }
 
-        // Too short to be meaningful — keep the old "unread inbox" fallback
-        // rather than wasting an AI call and creating junk grievances.
+        // Too short to be meaningful — keep the unread inbox fallback rather
+        // than creating a grievance that has no useful description.
         if (mb_strlen($text) < 10) {
             $inbound = InboundSms::create(['from_number' => $from, 'raw_message' => $text, 'status' => 'pending']);
 

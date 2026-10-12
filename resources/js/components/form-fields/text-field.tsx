@@ -12,7 +12,7 @@ interface TextFieldProps extends Omit<
     onChange: (value: string) => void;
     error?: string;
     required?: boolean;
-    type?: 'text' | 'email' | 'tel' | 'url' | 'password';
+    type?: 'text' | 'email' | 'tel' | 'url' | 'password' | 'date';
 }
 
 export function TextField({

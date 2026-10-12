@@ -3,7 +3,7 @@
 namespace Modules\Grievance\Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use Modules\Grievance\Models\GrievanceWorkflowStep;
 
 class GrievanceWorkflowSeeder extends Seeder
 {
@@ -12,80 +12,109 @@ class GrievanceWorkflowSeeder extends Seeder
         $steps = [
             [
                 'step_number' => 1,
-                'name' => 'Initial review and allocation',
-                'description' => 'Reviews the registered grievance and allocates it to a division.',
-                'action_type' => 'allocate_division',
-                'role_name' => 'Director',
+                'name' => 'Intake and informal resolution',
+                'description' => 'Record the initial contact and attempt an informal resolution. If unresolved, forward for formal submission.',
+                'action_type' => 'informal_resolution',
+                'role_name' => 'RD Officer',
+                'approval_action' => 'advance',
+                'approval_target_step' => 9,
+                'rejection_action' => 'return_to_step',
+                'rejection_target_step' => 2,
+            ],
+            [
+                'step_number' => 2,
+                'name' => 'Formal submission',
+                'description' => 'Register the formal grievance, reference, incident, location, requested remedy and available evidence.',
+                'action_type' => 'review',
+                'role_name' => 'Helpdesk Officer',
                 'approval_action' => 'advance',
                 'rejection_action' => 'reject',
             ],
             [
-                'step_number' => 2,
-                'name' => 'Division review',
-                'description' => 'Reviews the grievance and allocates it to a section.',
-                'action_type' => 'allocate_section',
-                'role_name' => 'Division Director',
-                'approval_action' => 'advance',
-                'rejection_action' => 'return_to_step',
-                'rejection_target_step' => 1,
-            ],
-            [
                 'step_number' => 3,
-                'name' => 'Section review',
-                'description' => 'Reviews the grievance and assigns an investigating officer.',
-                'action_type' => 'assign_officer',
-                'role_name' => 'Section Manager',
+                'name' => 'Registration, screening and allocation',
+                'description' => 'Confirm category and severity, screen repeat cases and allocate the division, section and investigator.',
+                'action_type' => 'screen_allocate',
+                'role_name' => 'Responsible Manager',
                 'approval_action' => 'advance',
                 'rejection_action' => 'return_to_step',
                 'rejection_target_step' => 2,
             ],
             [
                 'step_number' => 4,
-                'name' => 'Investigation and proposed resolution',
-                'description' => 'Investigates the grievance and submits a proposed resolution.',
-                'action_type' => 'prepare_resolution',
-                'role_name' => 'Helpdesk Officer',
+                'name' => 'Acknowledgement',
+                'description' => 'The investigator acknowledges receipt, requests missing information if needed and confirms the expected resolution date.',
+                'action_type' => 'acknowledge',
+                'role_name' => 'Investigator',
                 'approval_action' => 'advance',
                 'rejection_action' => 'return_to_step',
                 'rejection_target_step' => 3,
             ],
             [
                 'step_number' => 5,
-                'name' => 'Final approval',
-                'description' => 'Approves the proposed resolution or returns it for further investigation.',
-                'action_type' => 'final_approval',
-                'role_name' => 'Director',
-                'approval_action' => 'resolve',
+                'name' => 'Investigation and resolution proposal',
+                'description' => 'The assigned Investigator records findings and evidence, prepares the resolution draft and corrective measures, then submits the proposed decision to the GRC Chair for approval.',
+                'action_type' => 'investigation',
+                'role_name' => 'Investigator',
+                'approval_action' => 'advance',
                 'rejection_action' => 'return_to_step',
-                'rejection_target_step' => 4,
-                'is_final_approval' => true,
+                'rejection_target_step' => 3,
+            ],
+            [
+                'step_number' => 6,
+                'name' => 'Decision and approval',
+                'description' => 'Review the preliminary finding, approve and communicate the decision, or route an unresolved case for escalation.',
+                'action_type' => 'decision_approval',
+                'role_name' => 'GRC Chair',
+                'approval_action' => 'advance',
+                'rejection_action' => 'return_to_step',
+                'rejection_target_step' => 8,
+            ],
+            [
+                'step_number' => 7,
+                'name' => 'Notification, closure and satisfaction',
+                'description' => 'Notify the complainant, verify corrective action and record acceptance and satisfaction. Unaccepted outcomes may return to investigation.',
+                'action_type' => 'closure',
+                'role_name' => 'Contractor CLO',
+                'approval_action' => 'advance',
+                'approval_target_step' => 9,
+                'rejection_action' => 'return_to_step',
+                'rejection_target_step' => 5,
+            ],
+            [
+                'step_number' => 8,
+                'name' => 'Escalation and external review',
+                'description' => 'Refer unresolved cases to the RD Environment and Social Affairs Unit or the applicable external review body.',
+                'action_type' => 'escalation',
+                'role_name' => 'RD E&S Unit',
+                'approval_action' => 'advance',
+                'rejection_action' => 'return_to_step',
+                'rejection_target_step' => 5,
+            ],
+            [
+                'step_number' => 9,
+                'name' => 'Performance monitoring and reporting',
+                'description' => 'Record the case outcome for monthly tracking and annual or executive reporting, including risks and overdue actions.',
+                'action_type' => 'monitoring',
+                'role_name' => 'Executive',
+                'approval_action' => 'advance',
+                'rejection_action' => 'return_to_step',
+                'rejection_target_step' => 5,
             ],
         ];
 
         foreach ($steps as $step) {
-            $workflowStep = DB::table('grievance_workflow_steps')
-                ->where('workflow_key', 'default')
-                ->where('step_number', $step['step_number']);
-
-            if ($workflowStep->exists()) {
-                continue;
-            }
-
-            DB::table('grievance_workflow_steps')->insert([
-                'workflow_key' => 'default',
-                'step_number' => $step['step_number'],
-                'name' => $step['name'],
-                'description' => $step['description'],
-                'action_type' => $step['action_type'],
-                'role_name' => $step['role_name'],
-                'approval_action' => $step['approval_action'],
-                'rejection_action' => $step['rejection_action'],
-                'rejection_target_step' => $step['rejection_target_step'] ?? null,
-                'is_final_approval' => $step['is_final_approval'] ?? false,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            GrievanceWorkflowStep::query()->updateOrCreate(
+                [
+                    'workflow_key' => 'default',
+                    'step_number' => $step['step_number'],
+                ],
+                [
+                    ...$step,
+                    'is_final_approval' => false,
+                    'is_active' => true,
+                ],
+            );
         }
     }
 }

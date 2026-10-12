@@ -3,11 +3,12 @@
 namespace App\Http\Middleware;
 
 use App\Http\Controllers\DashboardController;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
-use Modules\Grievance\Models\Grievance;
+use Modules\Grievance\Services\PendingGrievanceQueueService;
 use Modules\Setting\Services\ApplicationSettingService;
 use Modules\Setting\Services\ApplicationTranslationService;
 
@@ -100,6 +101,8 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
                 'import_failures' => fn () => $request->session()->get('import_failures'),
+                'ai_summary' => fn () => $request->session()->get('ai_summary'),
+                'ai_error' => fn () => $request->session()->get('ai_error'),
             ],
         ];
     }
@@ -114,31 +117,21 @@ class HandleInertiaRequests extends Middleware
      *
      * @return array{count: int, href: string, label: string, visible: bool}
      */
-    protected function pendingGrievances(?object $user): array
+    protected function pendingGrievances(?User $user): array
     {
         if (! $user) {
             return ['count' => 0, 'href' => '/grievances?pending=1', 'label' => 'Pending Grievances', 'visible' => false];
         }
 
-        $query = Grievance::query();
-        $href = '/grievances?pending=1';
+        $queue = app(PendingGrievanceQueueService::class);
+        $query = $queue->queryFor($user);
 
-        if ($user->hasRole('Director')) {
-            $query->whereIn('status', ['submitted', 'reallocation_required', 'pending_approval']);
-            $href = '/grievances?pending=1';
-        } elseif ($user->hasRole('Division Director') && $user->division_id) {
-            $query->where('status', 'allocated_division')->where('division_id', $user->division_id);
-            $href = '/grievances/division-queue';
-        } elseif ($user->hasRole('Section Manager') && $user->section_id) {
-            $query->where('status', 'allocated_section')->where('section_id', $user->section_id);
-        } elseif ($user->hasAnyRole(['Helpdesk Officer', 'Content Editor'])) {
-            $query->whereIn('status', ['assigned_officer', 'assigned', 'in_progress', 'escalated'])
-                ->where('assigned_officer_id', $user->id);
-        } else {
-            return ['count' => 0, 'href' => $href, 'label' => 'Pending Grievances', 'visible' => false];
-        }
-
-        return ['count' => $query->count(), 'href' => $href, 'label' => 'Pending Grievances', 'visible' => true];
+        return [
+            'count' => $query->count(),
+            'href' => '/grievances?pending=1',
+            'label' => 'Pending Grievances',
+            'visible' => $queue->visibleFor($user),
+        ];
     }
 
     /**

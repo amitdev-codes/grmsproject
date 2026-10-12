@@ -104,14 +104,26 @@
                                 'allocate_section' => 'Allocate to section',
                                 'assign_officer' => 'Assign investigating officer',
                                 'prepare_resolution' => 'Prepare resolution draft',
+                                'investigation' => 'Investigation and corrective action',
                                 'final_approval' => 'Final approval',
+                                'informal_resolution' => 'Informal resolution',
+                                'screen_allocate' => 'Screen and allocate case',
+                                'acknowledge' => 'Acknowledge receipt',
+                                'decision_approval' => 'Decision and approval',
+                                'closure' => 'Notify and record closure',
+                                'escalation' => 'Escalation and external review',
+                                'monitoring' => 'Performance monitoring and reporting',
                             ][$step->action_type] ?? $step->action_type }}
                         </span>
                         <span class="tag">{{ $step->role_name ?: ($step->approver_user_id ? 'Specific user assigned' : 'No approver configured') }}</span>
-                        <span class="tag">{{ $step->approval_action === 'resolve' ? 'Approval resolves grievance' : 'Approval advances to next level' }}</span>
+                        <span class="tag">{{ $step->approval_action === 'resolve' ? 'Approval resolves grievance' : 'Approval advances or follows its configured route' }}</span>
                         @if($step->rejection_action === 'return_to_step')
                             <span class="tag reject">Rejection returns to Level {{ $step->rejection_target_step }}</span>
-                        @else
+                        @endif
+                        @if($step->approval_target_step)
+                            <span class="tag">Approval routes to Level {{ $step->approval_target_step }}</span>
+                        @endif
+                        @if($step->rejection_action === 'reject')
                             <span class="tag reject">Rejection rejects grievance</span>
                         @endif
                         @if($step->is_final_approval)<span class="tag final">Final approval</span>@endif
@@ -120,8 +132,9 @@
             @empty
                 <div class="callout">No active default workflow steps are configured.</div>
             @endforelse
-            <div class="callout" style="margin-top:16px">New grievances begin at the first active configured level (the default configuration starts with the Director). Decisions advance or return cases according to each step's settings. Staff can attach private workflow documents, and investigating officers prepare a formatted resolution draft for final approval. Digital signatures are not yet integrated; approved resolutions are not digitally signed.</div>
+            <div class="callout" style="margin-top:16px">New grievances begin at the first active configured level. Decisions advance, return, or route cases according to each step's settings. The default workflow includes intake, formal submission, screening and allocation, acknowledgement, investigation, decision, closure, escalation, and case-level monitoring/reporting. Staff can attach private workflow documents. Digital signatures are not yet integrated; approved resolutions are not digitally signed.</div>
             <div class="callout" style="margin-top:12px">Workflow configuration is maintained from <strong>Grievances → Workflow</strong> and drives case routing and approval behavior.</div>
+            <div class="callout" style="margin-top:12px">AI is not used to classify grievances or make workflow decisions. When enabled, AI is used only to summarize aggregate dashboard and report statistics.</div>
         </section>
         <section id="roles">
             <h2>Roles and access</h2>
@@ -153,6 +166,7 @@
             <h2>Privacy and safety</h2>
             <p>Named grievances require the registered phone number or email address to track case details. Anonymous cases can be tracked with their reference number. Public reports contain aggregate statistics, not individual case records.</p>
             <p>Current settings: up to <strong>{{ $intakeSecurity['requests_per_minute'] }} submissions per IP per minute</strong>; duplicate checks cover the last <strong>{{ $intakeSecurity['duplicate_window_hours'] }} hours</strong> (zero disables them); captcha uses <strong>{{ $intakeSecurity['captcha_provider'] === 'cloudflare_turnstile' ? 'Cloudflare Turnstile' : 'the built-in math challenge' }}</strong>.</p>
+            <p>AI-generated report summaries use aggregate dashboard statistics only and do not receive individual grievance descriptions or contact details.</p>
             <p>Intake rate limits, IP lists, duplicate detection, and captcha provider are configured in <strong>Settings → Security</strong>. Cloudflare Turnstile secrets are stored encrypted. Staff management APIs remain protected by Sanctum and application permissions.</p>
         </section>
         <section id="maintenance">

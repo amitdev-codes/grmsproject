@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -9,6 +11,8 @@ use Modules\Grievance\Enums\GrievanceStatus;
 use Modules\Grievance\Models\Grievance;
 use Modules\Grievance\Models\GrievanceCategory;
 use Modules\Grievance\Models\GrievanceChannel;
+use Modules\Grievance\Services\Ai\AiDashboardSummaryService;
+use Modules\Grievance\Services\Ai\AiSummaryException;
 use Modules\Master\Models\District;
 
 class DashboardController
@@ -28,6 +32,24 @@ class DashboardController
         return Inertia::render('dashboard/reports', $this->dashboardData());
     }
 
+    public function aiSummary(AiDashboardSummaryService $summaryService): RedirectResponse
+    {
+        try {
+            $summary = $summaryService->generate($this->dashboardData());
+
+            return back()->with('ai_summary', $summary);
+        } catch (AiSummaryException $exception) {
+            report($exception);
+
+            return back()->with('ai_error', $exception->getMessage());
+        } catch (ConnectionException) {
+            return back()->with(
+                'ai_error',
+                'The AI provider could not be reached. Check provider configuration and connectivity, then retry.',
+            );
+        }
+    }
+
     public function data(): array
     {
         return $this->dashboardData();
@@ -35,6 +57,7 @@ class DashboardController
 
     protected function dashboardData(): array
     {
+        [$yearExpression, $monthExpression] = $this->periodExpressions();
         $total = Grievance::count();
         $resolved = Grievance::where('status', GrievanceStatus::Resolved->value)->count();
         $inProgress = Grievance::where('status', GrievanceStatus::InProgress->value)->count();
@@ -51,11 +74,11 @@ class DashboardController
         $rejected = Grievance::where('status', GrievanceStatus::Rejected->value)->count();
 
         // Trends by month (last 12 months)
-        $monthlyTrends = Grievance::selectRaw('
-                EXTRACT(YEAR FROM created_at) as year,
-                EXTRACT(MONTH FROM created_at) as month,
+        $monthlyTrends = Grievance::selectRaw("
+                {$yearExpression} as year,
+                {$monthExpression} as month,
                 count(*) as count
-            ')
+            ")
             ->where('created_at', '>=', now()->subMonths(12))
             ->groupBy('year', 'month')
             ->orderBy('year')
@@ -65,7 +88,7 @@ class DashboardController
                 $months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
                 return [
-                    'month' => $months[(int) $row->month] . ' ' . $row->year,
+                    'month' => $months[(int) $row->month].' '.$row->year,
                     'count' => $row->count,
                 ];
             });
@@ -111,12 +134,12 @@ class DashboardController
             ->values();
 
         // Monthly compliance reports (resolved / total rate)
-        $compliance = Grievance::selectRaw('
-                EXTRACT(YEAR FROM created_at) as year,
-                EXTRACT(MONTH FROM created_at) as month,
+        $compliance = Grievance::selectRaw("
+                {$yearExpression} as year,
+                {$monthExpression} as month,
                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as resolved,
                 count(*) as total
-            ', [GrievanceStatus::Resolved->value])
+            ", [GrievanceStatus::Resolved->value])
             ->where('created_at', '>=', now()->subMonths(12))
             ->groupBy('year', 'month')
             ->orderBy('year')
@@ -127,7 +150,7 @@ class DashboardController
                 $rate = $row->total > 0 ? round(($row->resolved / $row->total) * 100, 1) : 0;
 
                 return [
-                    'month' => $months[(int) $row->month] . ' ' . $row->year,
+                    'month' => $months[(int) $row->month].' '.$row->year,
                     'resolved' => $row->resolved,
                     'total' => $row->total,
                     'rate' => $rate,
@@ -152,6 +175,7 @@ class DashboardController
         ];
 
         return [
+            'ai_summary_enabled' => (bool) config('grievance.ai.enabled', false),
             'summary' => $summary,
             'monthly_trends' => $monthlyTrends,
             'by_issue_type' => $byIssueType,
@@ -161,5 +185,18 @@ class DashboardController
             'contractor_scores' => $contractorScores,
             'compliance' => $compliance,
         ];
+    }
+
+    /**
+     * @return array{string, string}
+     */
+    private function periodExpressions(): array
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => ["strftime('%Y', created_at)", "strftime('%m', created_at)"],
+            'mysql', 'mariadb' => ['YEAR(created_at)', 'MONTH(created_at)'],
+            'sqlsrv' => ['DATEPART(year, created_at)', 'DATEPART(month, created_at)'],
+            default => ['EXTRACT(YEAR FROM created_at)', 'EXTRACT(MONTH FROM created_at)'],
+        };
     }
 }

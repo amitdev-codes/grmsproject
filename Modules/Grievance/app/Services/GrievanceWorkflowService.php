@@ -49,17 +49,23 @@ class GrievanceWorkflowService
                 $status = $fromStatus;
                 $targetStep = null;
                 $actionData = [];
+                $autoAssignedHelpdeskId = null;
                 $decision = $data['decision'];
                 $reason = $data['reason'] ?? null;
 
                 if ($decision === 'acknowledge') {
-                    if ($step->action_type !== 'prepare_resolution' || $fromStatus !== 'assigned_officer') {
+                    if (! in_array($step->action_type, ['prepare_resolution', 'acknowledge'], true)
+                        || $fromStatus !== 'assigned_officer') {
                         throw ValidationException::withMessages(['decision' => 'This grievance cannot be acknowledged at its current workflow step.']);
                     }
 
                     $status = 'in_progress';
-                    $targetStep = $step;
-                    $actionData = [];
+                    $targetStep = $step->action_type === 'acknowledge'
+                        ? $this->nextStep($step)
+                        : $step;
+                    if ($targetStep !== $step) {
+                        $actionData['current_workflow_step_id'] = $targetStep->id;
+                    }
                 } elseif ($decision === 'reject') {
                     if ($step->rejection_action === 'reject') {
                         $status = 'rejected';
@@ -90,6 +96,22 @@ class GrievanceWorkflowService
                     [$targetStep, $status, $actionData] = $this->approve($lockedGrievance, $step, $actor, $data);
                 }
 
+                if ($targetStep?->action_type === 'review' && $targetStep->role_name === 'Helpdesk Officer') {
+                    $helpdeskOfficer = app(HelpdeskOfficerAssignmentService::class)->assignFor(
+                        $lockedGrievance,
+                        $targetStep->approver_user_id,
+                    );
+
+                    if (! $helpdeskOfficer) {
+                        throw ValidationException::withMessages([
+                            'workflow' => 'No active Helpdesk Officer is available. Contact an administrator to configure Helpdesk Officer accounts.',
+                        ]);
+                    }
+
+                    $actionData['assigned_officer_id'] = $helpdeskOfficer->id;
+                    $autoAssignedHelpdeskId = $helpdeskOfficer->id;
+                }
+
                 if ($decision === 'reject') {
                     DB::table('grievance_assignments')->insert([
                         'grievance_id' => $lockedGrievance->id,
@@ -106,12 +128,30 @@ class GrievanceWorkflowService
                     $this->recordAssignment($lockedGrievance, $step, $actor, $data);
                 }
 
+                if ($autoAssignedHelpdeskId !== null) {
+                    DB::table('grievance_assignments')->insert([
+                        'grievance_id' => $lockedGrievance->id,
+                        'action' => $lockedGrievance->assigned_officer_id ? 'reassigned' : 'assigned',
+                        'from_division_id' => $lockedGrievance->division_id,
+                        'to_division_id' => $lockedGrievance->division_id,
+                        'from_section_id' => $lockedGrievance->section_id,
+                        'to_section_id' => $lockedGrievance->section_id,
+                        'from_officer_id' => $lockedGrievance->assigned_officer_id,
+                        'to_officer_id' => $autoAssignedHelpdeskId,
+                        'acted_by' => $actor->id,
+                        'reason' => 'Automatically assigned to an active Helpdesk Officer based on geographic scope and workload.',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+
                 $action = $lockedGrievance->workflowActions()->create([
                     'from_step_id' => $fromStep->id,
                     'to_step_id' => $targetStep?->id,
                     'actor_id' => $actor->id,
                     'decision' => $decision,
                     'reason' => $reason,
+                    'data' => $data['workflow_data'] ?? null,
                 ]);
 
                 foreach ($documents as $document) {
@@ -150,9 +190,7 @@ class GrievanceWorkflowService
                     );
                 }
 
-                if ($decision !== 'acknowledge') {
-                    $this->notifyNextApprover($lockedGrievance, $targetStep);
-                }
+                $this->notifyNextApprover($lockedGrievance, $targetStep);
 
                 return $action->load(['fromStep', 'toStep', 'actor', 'documents']);
             });
@@ -203,6 +241,7 @@ class GrievanceWorkflowService
     private function approve(Grievance $grievance, GrievanceWorkflowStep $step, User $actor, array $data): array
     {
         $actionData = [];
+        $rejectedClosure = false;
 
         switch ($step->action_type) {
             case 'allocate_division':
@@ -222,17 +261,51 @@ class GrievanceWorkflowService
                 $actionData['assigned_officer_id'] = null;
                 break;
             case 'assign_officer':
+            case 'screen_allocate':
+                if ($step->action_type === 'screen_allocate') {
+                    $section = Section::query()->findOrFail((int) $data['section_id']);
+                    if ($section->division_id !== (int) $data['division_id']) {
+                        throw ValidationException::withMessages(['section_id' => 'Select a section within the allocated division.']);
+                    }
+                    if ($actor->division_id && $actor->division_id !== (int) $data['division_id']) {
+                        throw ValidationException::withMessages(['division_id' => 'Select a division within your assigned remit.']);
+                    }
+
+                    $actionData['division_id'] = (int) $data['division_id'];
+                    $actionData['section_id'] = $section->id;
+
+                    $workflowData = $data['workflow_data'] ?? [];
+                    if (isset($workflowData['severity'])) {
+                        $actionData['priority'] = $workflowData['severity'] === 'medium'
+                            ? 'normal'
+                            : $workflowData['severity'];
+                    }
+                    if (isset($workflowData['repeat_case'])) {
+                        $actionData['is_previously_lodged'] = (bool) $workflowData['repeat_case'];
+                    }
+                }
+
                 $officer = User::query()->whereKey((int) $data['officer_id'])->firstOrFail();
                 if (! $officer->status
-                    || ! $officer->hasRole('Helpdesk Officer')
-                    || ($grievance->section_id
+                    || ($step->action_type === 'screen_allocate'
+                        ? ! $officer->hasRole('Investigator')
+                        : ! $officer->hasAnyRole(['Helpdesk Officer', 'Investigator']))
+                    || ($step->action_type !== 'screen_allocate'
+                        && $grievance->section_id
                         && $officer->section_id !== null
-                        && $officer->section_id !== $grievance->section_id)) {
-                    throw ValidationException::withMessages(['officer_id' => 'Select an active Helpdesk Officer assigned to this section or not yet assigned to a section.']);
+                        && $officer->section_id !== $grievance->section_id)
+                    || ($step->action_type === 'screen_allocate'
+                        && $officer->division_id !== null
+                        && $officer->division_id !== (int) $data['division_id'])
+                    || ($step->action_type === 'screen_allocate'
+                        && $officer->section_id !== null
+                        && $officer->section_id !== (int) $data['section_id'])) {
+                    throw ValidationException::withMessages(['officer_id' => 'Select an active Investigator assigned to this division and section or not yet assigned to a section.']);
                 }
                 $actionData['assigned_officer_id'] = $officer->id;
                 break;
             case 'prepare_resolution':
+            case 'investigation':
                 if (! in_array($grievance->status, ['in_progress', 'escalated'], true)) {
                     throw ValidationException::withMessages(['workflow' => 'Start the investigation before submitting a resolution draft.']);
                 }
@@ -242,6 +315,44 @@ class GrievanceWorkflowService
                     $data['resolution_html'],
                     $data['document_type'] ?? 'report',
                 );
+                break;
+            case 'decision_approval':
+                $resolution = $grievance->resolutions()
+                    ->whereNull('approved_at')
+                    ->latest('id')
+                    ->first();
+
+                if (! $resolution) {
+                    throw ValidationException::withMessages(['workflow' => 'A resolution draft must be submitted before the decision is approved.']);
+                }
+
+                $resolution->update([
+                    'approved_by' => $actor->id,
+                    'approved_at' => now(),
+                ]);
+                break;
+            case 'closure':
+                $workflowData = $data['workflow_data'] ?? [];
+                $actionData['satisfaction_rating'] = $workflowData['satisfaction_rating'] ?? null;
+                $actionData['closed_reason'] = $data['reason'] ?? null;
+                $rejectedClosure = ! (bool) ($workflowData['acceptance'] ?? true);
+                break;
+            case 'escalation':
+                break;
+            case 'monitoring':
+                $actionData += [
+                    'current_workflow_step_id' => null,
+                    'closed_by' => $actor->id,
+                    'closed_reason' => $data['reason'] ?? null,
+                    'closed_at' => now(),
+                ];
+
+                return [null, 'closed', $actionData];
+            case 'informal_resolution':
+                if ($step->approval_target_step) {
+                    $actionData['closed_by'] = $actor->id;
+                    $actionData['closed_reason'] = $data['reason'] ?? null;
+                }
                 break;
             case 'final_approval':
                 if (! $step->is_final_approval || $step->approval_action !== 'resolve') {
@@ -278,6 +389,27 @@ class GrievanceWorkflowService
             throw ValidationException::withMessages(['workflow' => 'Only a final approval step may resolve a grievance.']);
         }
 
+        $nextStep = $this->nextStep($step);
+
+        $targetStep = $rejectedClosure
+            ? $this->targetStep($step, (int) $step->rejection_target_step)
+            : ($step->approval_target_step
+                ? $this->targetStep($step, $step->approval_target_step)
+                : $nextStep);
+        $actionData['current_workflow_step_id'] = $targetStep->id;
+
+        $status = match ($step->action_type) {
+            'informal_resolution' => 'resolved',
+            'closure' => $rejectedClosure ? 'in_progress' : 'resolved',
+            'escalation' => 'escalated',
+            default => $this->statusForStep($targetStep),
+        };
+
+        return [$targetStep, $status, $actionData];
+    }
+
+    private function nextStep(GrievanceWorkflowStep $step): GrievanceWorkflowStep
+    {
         $nextStep = GrievanceWorkflowStep::query()
             ->where('workflow_key', 'default')
             ->where('is_active', true)
@@ -289,9 +421,22 @@ class GrievanceWorkflowService
             throw ValidationException::withMessages(['workflow' => 'There is no active next workflow level.']);
         }
 
-        $actionData['current_workflow_step_id'] = $nextStep->id;
+        return $nextStep;
+    }
 
-        return [$nextStep, $this->statusForStep($nextStep), $actionData];
+    private function targetStep(GrievanceWorkflowStep $step, int $stepNumber): GrievanceWorkflowStep
+    {
+        $targetStep = GrievanceWorkflowStep::query()
+            ->where('workflow_key', 'default')
+            ->where('step_number', $stepNumber)
+            ->where('is_active', true)
+            ->first();
+
+        if (! $targetStep) {
+            throw ValidationException::withMessages(['workflow' => 'The configured route target is not active.']);
+        }
+
+        return $targetStep;
     }
 
     private function saveResolutionDraft(Grievance $grievance, User $actor, string $html, string $documentType): void
@@ -331,6 +476,11 @@ class GrievanceWorkflowService
                 'assigned_officer_id' => null,
             ],
             'assign_officer' => ['assigned_officer_id' => null],
+            'screen_allocate' => [
+                'division_id' => null,
+                'section_id' => null,
+                'assigned_officer_id' => null,
+            ],
             default => [],
         };
     }
@@ -342,7 +492,7 @@ class GrievanceWorkflowService
         array $data,
     ): void {
         $action = match ($step->action_type) {
-            'allocate_division', 'allocate_section' => 'allocated',
+            'allocate_division', 'allocate_section', 'screen_allocate' => 'allocated',
             'assign_officer' => 'assigned',
             default => null,
         };
@@ -374,9 +524,11 @@ class GrievanceWorkflowService
             : ($step->role_name && $actor->hasRole($step->role_name));
 
         $permission = match ($step->action_type) {
-            'allocate_division', 'allocate_section' => 'grievances.allocate',
+            'allocate_division', 'allocate_section', 'screen_allocate' => 'grievances.allocate',
             'assign_officer' => 'grievances.assign',
-            'prepare_resolution', 'final_approval' => 'grievances.resolve',
+            'prepare_resolution', 'investigation', 'final_approval', 'acknowledge', 'decision_approval' => 'grievances.resolve',
+            'closure' => 'grievances.close',
+            'escalation' => 'grievances.escalate',
             default => 'grievances.view',
         };
 
@@ -386,7 +538,9 @@ class GrievanceWorkflowService
                 && $actor->division_id !== $grievance->division_id)
             || ($step->action_type === 'assign_officer'
                 && $actor->section_id !== $grievance->section_id)
-            || ($step->action_type === 'prepare_resolution' && $grievance->assigned_officer_id !== $actor->id)) {
+            || (($step->action_type === 'review' && $step->role_name === 'Helpdesk Officer'
+                || in_array($step->action_type, ['prepare_resolution', 'investigation', 'acknowledge'], true))
+                && $grievance->assigned_officer_id !== $actor->id)) {
             abort(403);
         }
     }
@@ -397,18 +551,18 @@ class GrievanceWorkflowService
             return;
         }
 
-        if ($step->action_type === 'prepare_resolution') {
+        if ($step->action_type === 'review' && $step->role_name === 'Helpdesk Officer') {
+            $approvers = User::query()->whereKey($grievance->assigned_officer_id)->get();
+        } elseif (in_array($step->action_type, ['prepare_resolution', 'investigation', 'acknowledge'], true)) {
             $officers = User::query()->whereKey($grievance->assigned_officer_id)->get();
 
             Notification::send($officers, new GrievanceAssigned($grievance));
 
             return;
-        }
-
-        if ($step->approver_user_id) {
+        } elseif ($step->approver_user_id) {
             $approvers = User::query()->whereKey($step->approver_user_id)->get();
         } else {
-            $approverQuery = User::role($step->role_name);
+            $approverQuery = User::query()->whereHas('roles', fn ($query) => $query->where('name', $step->role_name));
 
             if ($step->action_type === 'allocate_section') {
                 $approverQuery->where('division_id', $grievance->division_id);
@@ -425,11 +579,16 @@ class GrievanceWorkflowService
     private function statusForStep(GrievanceWorkflowStep $step): string
     {
         return match ($step->action_type) {
-            'allocate_division', 'review' => 'submitted',
+            'allocate_division', 'review', 'informal_resolution', 'screen_allocate' => 'submitted',
             'allocate_section' => 'allocated_division',
             'assign_officer' => 'allocated_section',
+            'acknowledge' => 'assigned_officer',
             'prepare_resolution' => 'assigned_officer',
-            'final_approval' => 'pending_approval',
+            'investigation' => 'in_progress',
+            'final_approval', 'decision_approval' => 'pending_approval',
+            'closure' => 'resolved',
+            'escalation' => 'escalated',
+            'monitoring' => 'resolved',
             default => 'submitted',
         };
     }

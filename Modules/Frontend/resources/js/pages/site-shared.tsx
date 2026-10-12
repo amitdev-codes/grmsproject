@@ -3,7 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Menu, X, Sun, Moon } from 'lucide-react';
-import React, { createContext, useContext, useState } from 'react';
+import React, {
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+} from 'react';
 import { route } from 'ziggy-js';
 import '@/../css/grms-site.css';
 
@@ -1463,6 +1468,7 @@ function ThemeToggle() {
 
 export function NavBar() {
     const [open, setOpen] = useState(false);
+    const [activeHref, setActiveHref] = useState('');
     const { t } = useI18n();
     const settings = useApplicationSettings();
     const links = [
@@ -1473,6 +1479,59 @@ export function NavBar() {
         { label: t.nav.faqs, href: FAQ_URL },
         { label: t.nav.contact, href: CONTACT_URL },
     ];
+
+    useEffect(() => {
+        const syncHash = () => {
+            setActiveHref(
+                window.location.hash
+                    ? `${HOME_URL}${window.location.hash}`
+                    : '',
+            );
+        };
+
+        syncHash();
+        window.addEventListener('hashchange', syncHash);
+
+        const sections = ['features', 'how-it-works', 'audiences', 'security']
+            .map((id) => document.getElementById(id))
+            .filter((section): section is HTMLElement => section !== null);
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const visibleSection = entries
+                    .filter((entry) => entry.isIntersecting)
+                    .sort(
+                        (first, second) =>
+                            first.boundingClientRect.top -
+                            second.boundingClientRect.top,
+                    )[0];
+
+                if (visibleSection) {
+                    setActiveHref(
+                        `${HOME_URL}#${visibleSection.target.id}`,
+                    );
+                }
+            },
+            { rootMargin: '-20% 0px -65% 0px', threshold: 0 },
+        );
+
+        sections.forEach((section) => observer.observe(section));
+
+        return () => {
+            window.removeEventListener('hashchange', syncHash);
+            observer.disconnect();
+        };
+    }, []);
+
+    const navLinkClass =
+        'rounded-full border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+
+    const navLinkStyle = (href: string): React.CSSProperties => ({
+        borderColor: activeHref === href ? 'var(--accent)' : 'transparent',
+        background:
+            activeHref === href ? 'var(--accent)' : 'transparent',
+        color: activeHref === href ? '#fff' : 'var(--text-secondary)',
+    });
 
     return (
         <header
@@ -1524,8 +1583,12 @@ export function NavBar() {
                         <Link
                             key={l.label}
                             href={l.href}
-                            className="text-sm font-medium whitespace-nowrap transition-opacity hover:opacity-70"
-                            style={{ color: 'var(--text-secondary)' }}
+                            className={navLinkClass}
+                            style={navLinkStyle(l.href)}
+                            aria-current={
+                                activeHref === l.href ? 'location' : undefined
+                            }
+                            onClick={() => setActiveHref(l.href)}
                         >
                             {l.label}
                         </Link>
@@ -1584,8 +1647,15 @@ export function NavBar() {
                         <Link
                             key={l.label}
                             href={l.href}
-                            className="text-sm font-medium"
-                            onClick={() => setOpen(false)}
+                            className={navLinkClass}
+                            style={navLinkStyle(l.href)}
+                            aria-current={
+                                activeHref === l.href ? 'location' : undefined
+                            }
+                            onClick={() => {
+                                setActiveHref(l.href);
+                                setOpen(false);
+                            }}
                         >
                             {l.label}
                         </Link>
@@ -1648,24 +1718,6 @@ export function Footer() {
                     >
                         {t.footer.fundingLong}
                     </p>
-                    {settings.site_total !== null &&
-                        settings.site_total !== undefined && (
-                            <div
-                                className="mt-3 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium"
-                                style={{
-                                    borderColor: 'var(--border)',
-                                    background: 'var(--bg-raised)',
-                                    color: 'var(--text-primary)',
-                                }}
-                            >
-                                <span>{t.footer.totalSiteVisits}:</span>
-                                <span className="font-mono font-bold">
-                                    {Number(
-                                        settings.site_total,
-                                    ).toLocaleString()}
-                                </span>
-                            </div>
-                        )}
                 </div>
 
                 <div className="space-y-2">

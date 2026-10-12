@@ -13,7 +13,7 @@ class ResolveGrievanceRequest extends FormRequest
         $step = $grievance instanceof Grievance ? $grievance->currentWorkflowStep : null;
         $user = $this->user();
 
-        return $step?->action_type === 'prepare_resolution'
+        return in_array($step?->action_type, ['prepare_resolution', 'investigation'], true)
             && $step->is_active
             && $user
             && $grievance->assigned_officer_id === $user->id

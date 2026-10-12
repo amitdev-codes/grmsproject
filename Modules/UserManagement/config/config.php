@@ -58,6 +58,78 @@ return [
             'code' => 'CITIZEN',
             'status' => true,
         ],
+        [
+            'name' => 'RD Officer',
+            'name_st' => 'Ofisiri ea RD',
+            'code' => 'RD_OFFICER',
+            'status' => true,
+        ],
+        [
+            'name' => 'Contractor CLO',
+            'name_st' => 'Ofisiri ea Likamano le Sechaba',
+            'code' => 'CONTRACTOR_CLO',
+            'status' => true,
+        ],
+        [
+            'name' => 'GRC Member',
+            'name_st' => 'Setho sa GRC',
+            'code' => 'GRC_MEMBER',
+            'status' => true,
+        ],
+        [
+            'name' => 'Responsible Manager',
+            'name_st' => 'Mookameli ea Ikarabellang',
+            'code' => 'RESPONSIBLE_MANAGER',
+            'status' => true,
+        ],
+        [
+            'name' => 'Investigator',
+            'name_st' => 'Mofuputsi',
+            'code' => 'INVESTIGATOR',
+            'status' => true,
+        ],
+        [
+            'name' => 'Engineer',
+            'name_st' => 'Moenjiniere',
+            'code' => 'ENGINEER',
+            'status' => true,
+        ],
+        [
+            'name' => 'GRC Chair',
+            'name_st' => 'Molula-setulo oa GRC',
+            'code' => 'GRC_CHAIR',
+            'status' => true,
+        ],
+        [
+            'name' => 'RD Manager',
+            'name_st' => 'Mookameli oa RD',
+            'code' => 'RD_MANAGER',
+            'status' => true,
+        ],
+        [
+            'name' => 'Director General',
+            'name_st' => 'Motsamaisi-Kakaretso',
+            'code' => 'DIRECTOR_GENERAL',
+            'status' => true,
+        ],
+        [
+            'name' => 'RD E&S Unit',
+            'name_st' => 'Yuniti ea Tikoloho le Sechaba ea RD',
+            'code' => 'RD_ES_UNIT',
+            'status' => true,
+        ],
+        [
+            'name' => 'External Reviewer',
+            'name_st' => 'Mohlahlobi oa Kantle',
+            'code' => 'EXTERNAL_REVIEWER',
+            'status' => true,
+        ],
+        [
+            'name' => 'Executive',
+            'name_st' => 'Motsamaisi e Moholo',
+            'code' => 'EXECUTIVE',
+            'status' => true,
+        ],
     ],
 
     /**
@@ -135,7 +207,7 @@ return [
             'users.*', 'roles.*', 'permissions.*',
             'districts.*', 'divisions.*', 'sections.*',
             'project_types.*', 'projects.*', 'service_providers.*',
-            'settings.*', 'application_settings.*',
+            'application_settings.*',
             'grievances.view',
             'grievances.edit',
             'grievance_categories.*', 'grievance_channels.*',
@@ -185,6 +257,64 @@ return [
 
         'Citizen' => [
             'grievances.create', 'grievances.view_own',
+        ],
+
+        'RD Officer' => [
+            'grievances.view', 'grievances.create',
+            'grievance_categories.view', 'grievance_channels.view',
+        ],
+
+        'Contractor CLO' => [
+            'grievances.view', 'grievances.close',
+            'grievance_categories.view', 'grievance_channels.view',
+        ],
+
+        'GRC Member' => [
+            'grievances.view', 'grievances.view_sensitive', 'grievances.resolve',
+            'grievance_messages.view', 'grievance_status_histories.view',
+        ],
+
+        'Responsible Manager' => [
+            'grievances.view', 'grievances.allocate', 'grievances.assign',
+            'grievances.escalate', 'divisions.view', 'sections.view',
+        ],
+
+        'Investigator' => [
+            'grievances.view', 'grievances.resolve', 'grievance_messages.view',
+            'grievance_messages.create', 'resolutions.*',
+        ],
+
+        'Engineer' => [
+            'grievances.view', 'grievances.resolve', 'grievance_messages.view',
+            'grievance_messages.create', 'projects.view',
+        ],
+
+        'GRC Chair' => [
+            'grievances.view', 'grievances.view_sensitive', 'grievances.resolve',
+            'reports.view',
+        ],
+
+        'RD Manager' => [
+            'grievances.view', 'grievances.view_sensitive', 'grievances.resolve',
+            'grievances.close', 'grievances.escalate', 'reports.view',
+        ],
+
+        'Director General' => [
+            'grievances.view', 'grievances.view_sensitive', 'grievances.resolve',
+            'grievances.close', 'grievances.escalate', 'reports.*',
+        ],
+
+        'RD E&S Unit' => [
+            'grievances.view', 'grievances.view_sensitive', 'grievances.escalate',
+            'grievance_escalations.view', 'reports.view',
+        ],
+
+        'External Reviewer' => [
+            'grievances.view', 'grievances.escalate', 'grievance_messages.view',
+        ],
+
+        'Executive' => [
+            'grievances.view', 'grievances.view_sensitive', 'reports.*',
         ],
     ],
 ];

@@ -16,7 +16,7 @@ class StoreResolutionRequest extends FormRequest
         $step = $grievance?->currentWorkflowStep;
 
         if (! $user || ! $grievance || ! $step || ! $step->is_active
-            || $step->action_type !== 'prepare_resolution'
+            || ! in_array($step->action_type, ['prepare_resolution', 'investigation'], true)
             || ! in_array($grievance->status, ['in_progress', 'escalated'], true)
             || $grievance->assigned_officer_id !== $user->id
             || ! $user->can('grievances.view')

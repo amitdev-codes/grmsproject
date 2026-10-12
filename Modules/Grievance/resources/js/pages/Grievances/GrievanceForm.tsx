@@ -42,6 +42,8 @@ interface SectionOption {
 interface OfficerOption {
     id: number;
     name: string;
+    division_id: number | null;
+    section_id: number | null;
 }
 
 interface GrievanceFormProps {
@@ -61,11 +63,13 @@ interface GrievanceFormProps {
         approver_user_id: number | null;
         rejection_action: string;
         rejection_target_step: number | null;
+        approval_target_step: number | null;
     } | null;
     workflowActions?: {
         id: number;
         decision: string;
         reason: string | null;
+        data: Record<string, string | number | boolean> | null;
         from_step: string | null;
         to_step: string | null;
         actor: string | null;
@@ -102,6 +106,7 @@ interface FormValues {
     remove_attachment_ids: number[];
     officer_id: string;
     workflow_decision: 'approve' | 'reject' | 'acknowledge';
+    workflow_data: Record<string, string>;
 }
 
 export default function Form({
@@ -137,8 +142,12 @@ export default function Form({
             roles.includes(workflowStep.role_name))
     );
     const canOperateWorkflow = !!grievance && isWorkflowApprover &&
-        !['rejected', 'resolved', 'closed'].includes(grievance.status) &&
-        (workflowStep?.action_type !== 'prepare_resolution' ||
+        (!['rejected', 'closed'].includes(grievance.status) &&
+            (grievance.status !== 'resolved' || workflowStep?.action_type === 'monitoring')) &&
+        (!['prepare_resolution', 'investigation', 'acknowledge'].includes(workflowStep?.action_type ?? '') ||
+            grievance.assigned_officer_id === user?.id) &&
+        (workflowStep?.action_type !== 'review' ||
+            workflowStep.role_name !== 'Helpdesk Officer' ||
             grievance.assigned_officer_id === user?.id);
     const [locating, setLocating] = useState(false);
     const [locError, setLocError] = useState<string | null>(null);
@@ -181,7 +190,28 @@ export default function Form({
         remove_attachment_ids: [],
         officer_id: '',
         workflow_decision:
-            grievance?.status === 'assigned_officer' ? 'acknowledge' : 'approve',
+            workflowStep?.action_type === 'informal_resolution'
+                ? 'reject'
+                : workflowStep?.action_type === 'acknowledge' ||
+                    (grievance?.status === 'assigned_officer' &&
+                        ['prepare_resolution', 'investigation'].includes(workflowStep?.action_type ?? ''))
+                  ? 'acknowledge'
+                  : 'approve',
+        workflow_data: {
+            informal_outcome: '',
+            severity: '',
+            repeat_case: '',
+            requested_remedy: '',
+            corrective_action: '',
+            action_owner: '',
+            action_due_at: '',
+            acceptance: '',
+            satisfaction_rating: '',
+            referral_authority: '',
+            referral_date: '',
+            external_review_requested: '',
+            monitoring_notes: '',
+        },
     });
 
     const isAnonymous = data.is_anonymous === '1';
@@ -211,6 +241,7 @@ export default function Form({
                     decision: data.workflow_decision,
                     reason: data.remarks,
                     documents: data.documents,
+                    workflow_data: data.workflow_data,
                 },
                 requestOptions,
             );
@@ -225,6 +256,7 @@ export default function Form({
                     decision: data.workflow_decision,
                     reason: data.remarks,
                     documents: data.documents,
+                    workflow_data: data.workflow_data,
                 },
                 requestOptions,
             );
@@ -248,6 +280,7 @@ export default function Form({
                 resolution_html: data.resolution_html,
                 reason: data.remarks,
                 documents: data.documents,
+                workflow_data: data.workflow_data,
             },
             requestOptions,
         );
@@ -346,6 +379,20 @@ export default function Form({
                 !data.division_id || s.division_id === Number(data.division_id),
         )
         .map((s) => ({ value: String(s.id), label: s.name }));
+    const investigatorOptions = officers
+        .filter(
+            (officer) =>
+                (!data.division_id ||
+                    officer.division_id === null ||
+                    officer.division_id === Number(data.division_id)) &&
+                (!data.section_id ||
+                    officer.section_id === null ||
+                    officer.section_id === Number(data.section_id)),
+        )
+        .map((officer) => ({
+            value: String(officer.id),
+            label: officer.name,
+        }));
 
     const handleCategoryChange = (value: string) => {
         setData('grievance_category_id', value);
@@ -397,12 +444,19 @@ export default function Form({
     if (isEdit && grievance) {
         const canSubmitWorkflow = canOperateWorkflow && !!workflowStep;
         const isInitialAcknowledgement =
-            grievance.status === 'assigned_officer' &&
-            workflowStep?.action_type === 'prepare_resolution';
+            workflowStep?.action_type === 'acknowledge' ||
+            (grievance.status === 'assigned_officer' &&
+                workflowStep?.action_type === 'prepare_resolution');
         const decisionLabel =
-            workflowStep?.action_type === 'final_approval'
-                ? t('Approve and resolve')
-                : t('Forward to next workflow step');
+            ({
+                final_approval: t('Approve and resolve'),
+                informal_resolution: t('Resolve informally'),
+                decision_approval: t('Approve decision'),
+                closure: t('Notify and record outcome'),
+                escalation: t('Record escalation and refer'),
+                monitoring: t('Complete monitoring report'),
+            } as Record<string, string>)[workflowStep?.action_type ?? ''] ??
+            t('Forward to next workflow step');
 
         return (
             <FormLayout
@@ -578,6 +632,20 @@ export default function Form({
                                         {action.reason}
                                     </p>
                                 )}
+                                {action.data && Object.keys(action.data).length > 0 && (
+                                    <dl className="grid gap-2 rounded-md bg-muted/20 p-3 sm:grid-cols-2">
+                                        {Object.entries(action.data).map(([key, value]) => (
+                                            <div key={key}>
+                                                <dt className="text-xs font-medium text-muted-foreground">
+                                                    {t(key.replaceAll('_', ' '))}
+                                                </dt>
+                                                <dd className="whitespace-pre-wrap text-sm">
+                                                    {String(value)}
+                                                </dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                )}
                                 {action.documents.length > 0 && (
                                     <div className="grid gap-3 sm:grid-cols-2">
                                         {action.documents.map((document) => (
@@ -613,6 +681,11 @@ export default function Form({
                             {workflowStep?.description ?? t('Choose what should happen next and add any supporting remarks or documents.')}
                         </p>
                     </div>
+                    {page.props.errors?.workflow && (
+                        <p role="alert" className="text-sm text-destructive">
+                            {page.props.errors.workflow}
+                        </p>
+                    )}
                     {canSubmitWorkflow ? (
                         <>
                             <div className="space-y-1.5">
@@ -633,7 +706,15 @@ export default function Form({
                                     {!isInitialAcknowledgement && (
                                         <option value="approve">{decisionLabel}</option>
                                     )}
-                                    <option value="reject">{t('Reject or return for changes')}</option>
+                                    <option value="reject">
+                                        {workflowStep?.action_type === 'informal_resolution'
+                                            ? t('Not resolved informally — proceed to formal submission')
+                                            : workflowStep?.action_type === 'decision_approval'
+                                              ? t('Decision not accepted — escalate')
+                                              : workflowStep?.action_type === 'closure'
+                                                ? t('Outcome not accepted — return to investigation')
+                                                : t('Reject or return for changes')}
+                                    </option>
                                 </select>
                             </div>
                             <div className="col-span-full space-y-2">
@@ -669,6 +750,123 @@ export default function Form({
                                     error={errors.division_id}
                                 />
                             )}
+                            {workflowStep?.action_type === 'informal_resolution' &&
+                                data.workflow_decision === 'approve' && (
+                                    <div className="col-span-full space-y-2">
+                                        <label className="text-sm font-medium" htmlFor="informal_outcome">
+                                            {t('Informal resolution and satisfaction')}
+                                        </label>
+                                        <textarea
+                                            id="informal_outcome"
+                                            required
+                                            rows={3}
+                                            value={data.workflow_data.informal_outcome}
+                                            onChange={(event) => setData('workflow_data', {
+                                                ...data.workflow_data,
+                                                informal_outcome: event.target.value,
+                                            })}
+                                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                        />
+                                    </div>
+                                )}
+                            {workflowStep?.action_type === 'screen_allocate' && (
+                                <>
+                                    <Select2Field
+                                        id="division_id"
+                                        required
+                                        label={t('Allocate to division')}
+                                        value={data.division_id}
+                                        onChange={(value) =>
+                                            setData((current) => ({
+                                                ...current,
+                                                division_id: value,
+                                                section_id: '',
+                                                officer_id: '',
+                                            }))
+                                        }
+                                        options={divisionOptions}
+                                        placeholder={t('Select a division')}
+                                        error={errors.division_id}
+                                    />
+                                    <Select2Field
+                                        id="section_id"
+                                        required
+                                        label={t('Allocate to section')}
+                                        value={data.section_id}
+                                        onChange={(value) =>
+                                            setData((current) => ({
+                                                ...current,
+                                                section_id: value,
+                                                officer_id: '',
+                                            }))
+                                        }
+                                        options={sectionOptions}
+                                        placeholder={t('Select a section')}
+                                        error={errors.section_id}
+                                    />
+                                    <Select2Field
+                                        id="officer_id"
+                                        required
+                                        label={t('Assign investigator')}
+                                        value={data.officer_id}
+                                        onChange={(value) => setData('officer_id', value)}
+                                        options={investigatorOptions}
+                                        placeholder={t('Select an investigator')}
+                                        error={errors.officer_id}
+                                    />
+                                    {investigatorOptions.length === 0 && (
+                                        <p role="alert" className="text-sm text-destructive">
+                                            {t('No active Investigator is available for the selected division and section. Ask an administrator to assign an Investigator to this area.')}
+                                        </p>
+                                    )}
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium" htmlFor="screen_severity">{t('Severity')}</label>
+                                        <select
+                                            id="screen_severity"
+                                            value={data.workflow_data.severity}
+                                            onChange={(event) => setData('workflow_data', {
+                                                ...data.workflow_data,
+                                                severity: event.target.value,
+                                            })}
+                                            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                        >
+                                            <option value="">{t('Select severity')}</option>
+                                            <option value="high">{t('High')}</option>
+                                            <option value="medium">{t('Medium')}</option>
+                                            <option value="low">{t('Low')}</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium" htmlFor="repeat_case">{t('Repeat grievance?')}</label>
+                                        <select
+                                            id="repeat_case"
+                                            value={data.workflow_data.repeat_case}
+                                            onChange={(event) => setData('workflow_data', {
+                                                ...data.workflow_data,
+                                                repeat_case: event.target.value,
+                                            })}
+                                            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                        >
+                                            <option value="">{t('Select')}</option>
+                                            <option value="1">{t('Yes')}</option>
+                                            <option value="0">{t('No')}</option>
+                                        </select>
+                                    </div>
+                                    <div className="col-span-full space-y-2">
+                                        <label className="text-sm font-medium" htmlFor="requested_remedy">{t('Requested remedy')}</label>
+                                        <textarea
+                                            id="requested_remedy"
+                                            rows={3}
+                                            value={data.workflow_data.requested_remedy}
+                                            onChange={(event) => setData('workflow_data', {
+                                                ...data.workflow_data,
+                                                requested_remedy: event.target.value,
+                                            })}
+                                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                        />
+                                    </div>
+                                </>
+                            )}
                             {workflowStep?.action_type === 'allocate_section' && (
                                 <Select2Field
                                     id="section_id"
@@ -703,9 +901,43 @@ export default function Form({
                                     )}
                                 </div>
                             )}
-                            {workflowStep?.action_type === 'prepare_resolution' &&
+                            {['prepare_resolution', 'investigation'].includes(workflowStep?.action_type ?? '') &&
                                 data.workflow_decision === 'approve' && (
                                     <>
+                                        <div className="col-span-full space-y-2">
+                                            <label className="text-sm font-medium" htmlFor="corrective_action">
+                                                {t('Agreed corrective action')}
+                                            </label>
+                                            <textarea
+                                                id="corrective_action"
+                                                rows={3}
+                                                value={data.workflow_data.corrective_action}
+                                                onChange={(event) => setData('workflow_data', {
+                                                    ...data.workflow_data,
+                                                    corrective_action: event.target.value,
+                                                })}
+                                                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                            />
+                                        </div>
+                                        <TextField
+                                            id="action_owner"
+                                            label={t('Corrective action owner')}
+                                            value={data.workflow_data.action_owner}
+                                            onChange={(value) => setData('workflow_data', {
+                                                ...data.workflow_data,
+                                                action_owner: value,
+                                            })}
+                                        />
+                                        <TextField
+                                            id="action_due_at"
+                                            label={t('Corrective action due date')}
+                                            value={data.workflow_data.action_due_at}
+                                            onChange={(value) => setData('workflow_data', {
+                                                ...data.workflow_data,
+                                                action_due_at: value,
+                                            })}
+                                            type="date"
+                                        />
                                         <div className="col-span-full space-y-2">
                                             <label className="text-sm font-medium" htmlFor="resolution_html">
                                                 {t('Proposed resolution draft')}
@@ -720,7 +952,7 @@ export default function Form({
                                         </div>
                                     </>
                                 )}
-                            {workflowStep?.action_type === 'final_approval' && (
+                            {['final_approval', 'decision_approval'].includes(workflowStep?.action_type ?? '') && (
                                 <div className="col-span-full space-y-2">
                                     <label className="text-sm font-medium">{t('Resolution draft submitted for approval')}</label>
                                     {resolutionDraft ? (
@@ -736,6 +968,105 @@ export default function Form({
                                             {t('No resolution draft has been submitted yet.')}
                                         </p>
                                     )}
+                                    {workflowStep?.action_type === 'closure' &&
+                                        data.workflow_decision === 'approve' && (
+                                            <>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium" htmlFor="acceptance">{t('Remedy accepted and verified?')}</label>
+                                                    <select
+                                                        id="acceptance"
+                                                        required
+                                                        value={data.workflow_data.acceptance}
+                                                        onChange={(event) => setData('workflow_data', {
+                                                            ...data.workflow_data,
+                                                            acceptance: event.target.value,
+                                                        })}
+                                                        className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                                    >
+                                                        <option value="">{t('Select')}</option>
+                                                        <option value="1">{t('Yes')}</option>
+                                                        <option value="0">{t('No')}</option>
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium" htmlFor="satisfaction_rating">{t('Satisfaction rating')}</label>
+                                                    <select
+                                                        id="satisfaction_rating"
+                                                        required
+                                                        value={data.workflow_data.satisfaction_rating}
+                                                        onChange={(event) => setData('workflow_data', {
+                                                            ...data.workflow_data,
+                                                            satisfaction_rating: event.target.value,
+                                                        })}
+                                                        className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                                    >
+                                                        <option value="">{t('Select rating')}</option>
+                                                        {[1, 2, 3, 4, 5].map((rating) => (
+                                                            <option key={rating} value={rating}>{rating}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </>
+                                        )}
+                                    {workflowStep?.action_type === 'escalation' &&
+                                        data.workflow_decision === 'approve' && (
+                                            <>
+                                                <TextField
+                                                    id="referral_authority"
+                                                    required
+                                                    label={t('Referral authority')}
+                                                    value={data.workflow_data.referral_authority}
+                                                    onChange={(value) => setData('workflow_data', {
+                                                        ...data.workflow_data,
+                                                        referral_authority: value,
+                                                    })}
+                                                />
+                                                <TextField
+                                                    id="referral_date"
+                                                    required
+                                                    label={t('Referral date')}
+                                                    value={data.workflow_data.referral_date}
+                                                    onChange={(value) => setData('workflow_data', {
+                                                        ...data.workflow_data,
+                                                        referral_date: value,
+                                                    })}
+                                                    type="date"
+                                                />
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium" htmlFor="external_review_requested">{t('External review requested?')}</label>
+                                                    <select
+                                                        id="external_review_requested"
+                                                        value={data.workflow_data.external_review_requested}
+                                                        onChange={(event) => setData('workflow_data', {
+                                                            ...data.workflow_data,
+                                                            external_review_requested: event.target.value,
+                                                        })}
+                                                        className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                                    >
+                                                        <option value="">{t('Select')}</option>
+                                                        <option value="1">{t('Yes')}</option>
+                                                        <option value="0">{t('No')}</option>
+                                                    </select>
+                                                </div>
+                                            </>
+                                        )}
+                                    {workflowStep?.action_type === 'monitoring' &&
+                                        data.workflow_decision === 'approve' && (
+                                            <div className="col-span-full space-y-2">
+                                                <label className="text-sm font-medium" htmlFor="monitoring_notes">{t('Monitoring and reporting notes')}</label>
+                                                <textarea
+                                                    id="monitoring_notes"
+                                                    required
+                                                    rows={4}
+                                                    value={data.workflow_data.monitoring_notes}
+                                                    onChange={(event) => setData('workflow_data', {
+                                                        ...data.workflow_data,
+                                                        monitoring_notes: event.target.value,
+                                                    })}
+                                                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                                />
+                                            </div>
+                                        )}
                                 </div>
                             )}
                             <div className="col-span-full space-y-2">
@@ -836,6 +1167,11 @@ export default function Form({
                     {workflowStep.description && (
                         <p className="text-sm text-muted-foreground">
                             {workflowStep.description}
+                        </p>
+                    )}
+                    {workflowStep.approval_target_step && (
+                        <p className="text-xs text-muted-foreground">
+                            On approval, this case routes to level {workflowStep.approval_target_step}.
                         </p>
                     )}
                     {workflowStep.rejection_action === 'return_to_step' && (
@@ -1017,7 +1353,7 @@ export default function Form({
                 )}
             </div>
 
-            {isEdit && workflowStep?.action_type === 'prepare_resolution' && (
+            {isEdit && ['prepare_resolution', 'investigation'].includes(workflowStep?.action_type ?? '') && (
                 <div className="col-span-full space-y-2">
                     <label className="text-sm font-medium" htmlFor="resolution_html">
                         {t('Proposed resolution draft')}
@@ -1037,7 +1373,7 @@ export default function Form({
                 </div>
             )}
 
-            {isEdit && workflowStep?.action_type === 'final_approval' && (
+            {isEdit && ['final_approval', 'decision_approval'].includes(workflowStep?.action_type ?? '') && (
                 <div className="col-span-full space-y-2">
                     <label className="text-sm font-medium" htmlFor="resolution_draft_preview">
                         {t('Resolution draft submitted for approval')}

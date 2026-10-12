@@ -15,10 +15,179 @@ use Modules\Grievance\Http\Resources\GrievanceResource;
 use Modules\Grievance\Models\Grievance;
 use Modules\Grievance\Models\GrievanceWorkflowStep;
 use Modules\Grievance\Notifications\GrievanceWorkflowActionRequired;
+use Modules\Grievance\Services\PendingGrievanceQueueService;
+use Modules\UserManagement\Database\Seeders\PermissionSeeder;
+use Modules\UserManagement\Database\Seeders\RoleSeeder;
+use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
+
+it('provides every saved workflow step to the live workflow preview', function () {
+    $this->withoutMiddleware(PermissionMiddleware::class);
+    $this->seed(GrievanceWorkflowSeeder::class);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('grievance-workflow-steps.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('workflowSteps', 9)
+            ->where('workflowSteps.0.step_number', 1)
+            ->where('workflowSteps.8.step_number', 9)
+            ->where('workflowSteps.8.name', 'Performance monitoring and reporting'));
+});
+
+it('shows a pending grievance to its configured workflow role and restricts other workflow roles', function () {
+    $this->seed(GrievanceWorkflowSeeder::class);
+    $rdOfficer = workflowTestUser('RD Officer', ['grievances.view']);
+    $otherRole = workflowTestUser('Executive', ['grievances.view']);
+    $firstStepId = GrievanceWorkflowStep::query()
+        ->where('workflow_key', 'default')
+        ->where('step_number', 1)
+        ->value('id');
+    $grievance = Grievance::query()->create([
+        'reference_no' => 'GRM-PENDING-RD-000001',
+        'grievance_category_id' => workflowTestCategory(),
+        'channel_id' => workflowTestChannel(),
+        'description' => 'Pending grievance assigned to the RD Officer workflow step.',
+        'status' => 'submitted',
+        'current_workflow_step_id' => $firstStepId,
+        'registered_by' => $rdOfficer->id,
+    ]);
+
+    $this->actingAs($rdOfficer)
+        ->get('/grievances?pending=1')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('pendingGrievances.visible', true)
+            ->where('pendingGrievances.count', 1)
+            ->where('meta.total', 1)
+            ->where('data.0.reference_no', $grievance->reference_no));
+
+    $this->actingAs($otherRole)
+        ->get('/grievances?pending=1')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('pendingGrievances.visible', true)
+            ->where('pendingGrievances.count', 0)
+            ->where('meta.total', 0));
+
+    $unassignedUser = workflowTestUser('Unassigned Workflow User', ['grievances.view']);
+    expect(app(PendingGrievanceQueueService::class)
+        ->queryFor($unassignedUser)
+        ->count())->toBe(0);
+
+    $this->actingAs($unassignedUser)
+        ->get('/grievances?pending=1')
+        ->assertForbidden();
+});
+
+it('assigns formal submission to the closest active Helpdesk Officer and enforces ownership', function () {
+    $this->withoutMiddleware(HandleInertiaRequests::class);
+    Notification::fake();
+    $this->seed(GrievanceWorkflowSeeder::class);
+
+    $districtId = DB::table('districts')->insertGetId([
+        'ulid' => (string) Str::ulid(),
+        'code' => 'HELPDESK-LOCAL',
+        'name' => 'Local District',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $otherDistrictId = DB::table('districts')->insertGetId([
+        'ulid' => (string) Str::ulid(),
+        'code' => 'HELPDESK-OTHER',
+        'name' => 'Other District',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $divisionId = DB::table('divisions')->insertGetId([
+        'ulid' => (string) Str::ulid(),
+        'code' => 'HELPDESK-DIV',
+        'name' => 'Helpdesk Division',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $rdOfficer = workflowTestUser('RD Officer', ['grievances.view']);
+    $localOfficer = workflowTestUser('Helpdesk Officer', ['grievances.view'], [
+        'district_id' => $districtId,
+        'division_id' => $divisionId,
+    ]);
+    $otherOfficer = workflowTestUser('Helpdesk Officer', ['grievances.view'], [
+        'district_id' => $otherDistrictId,
+        'division_id' => $divisionId,
+    ]);
+    $grievance = Grievance::query()->create([
+        'reference_no' => 'GRM-HELPDESK-LOCAL-000001',
+        'grievance_category_id' => workflowTestCategory(),
+        'channel_id' => workflowTestChannel(),
+        'district_id' => $districtId,
+        'division_id' => $divisionId,
+        'description' => 'A grievance routed to the local Helpdesk Officer.',
+        'status' => 'submitted',
+        'current_workflow_step_id' => GrievanceWorkflowStep::query()
+            ->where('workflow_key', 'default')
+            ->where('step_number', 1)
+            ->value('id'),
+        'registered_by' => $rdOfficer->id,
+    ]);
+
+    $this->actingAs($rdOfficer)->post(route('grievances.workflow-action', $grievance), [
+        'decision' => 'reject',
+        'reason' => 'Informal resolution was unsuccessful; submit formally.',
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $grievance->refresh();
+    expect($grievance->currentWorkflowStep->action_type)->toBe('review')
+        ->and($grievance->assigned_officer_id)->toBe($localOfficer->id)
+        ->and(DB::table('grievance_assignments')
+            ->where('grievance_id', $grievance->id)
+            ->where('action', 'assigned')
+            ->value('to_officer_id'))
+        ->toBe($localOfficer->id)
+        ->and(app(PendingGrievanceQueueService::class)->queryFor($localOfficer)->whereKey($grievance->id)->exists())->toBeTrue()
+        ->and(app(PendingGrievanceQueueService::class)->queryFor($otherOfficer)->whereKey($grievance->id)->exists())->toBeFalse();
+
+    Notification::assertSentTo($localOfficer, GrievanceWorkflowActionRequired::class);
+    Notification::assertNotSentTo($otherOfficer, GrievanceWorkflowActionRequired::class);
+
+    $this->actingAs($otherOfficer)->post(route('grievances.workflow-action', $grievance), [
+        'decision' => 'approve',
+    ])->assertForbidden();
+
+    $this->actingAs($localOfficer)->post(route('grievances.workflow-action', $grievance), [
+        'decision' => 'approve',
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect($grievance->fresh()->currentWorkflowStep->action_type)->toBe('screen_allocate');
+});
+
+it('keeps an unresolved formal-submission handoff pending when no active Helpdesk Officer exists', function () {
+    $this->withoutMiddleware(HandleInertiaRequests::class);
+    $this->seed(GrievanceWorkflowSeeder::class);
+    $rdOfficer = workflowTestUser('RD Officer', ['grievances.view']);
+    $grievance = Grievance::query()->create([
+        'reference_no' => 'GRM-HELPDESK-MISSING-000001',
+        'grievance_category_id' => workflowTestCategory(),
+        'channel_id' => workflowTestChannel(),
+        'description' => 'A grievance that cannot be handed off without an active Helpdesk Officer.',
+        'status' => 'submitted',
+        'current_workflow_step_id' => GrievanceWorkflowStep::query()
+            ->where('workflow_key', 'default')
+            ->where('step_number', 1)
+            ->value('id'),
+        'registered_by' => $rdOfficer->id,
+    ]);
+
+    $this->actingAs($rdOfficer)->post(route('grievances.workflow-action', $grievance), [
+        'decision' => 'reject',
+        'reason' => 'Informal resolution was unsuccessful; submit formally.',
+    ])->assertRedirect()->assertSessionHasErrors('workflow');
+
+    expect($grievance->fresh()->currentWorkflowStep->action_type)->toBe('informal_resolution')
+        ->and($grievance->fresh()->assigned_officer_id)->toBeNull();
+});
 
 it('routes each grievance through configured approval levels, rejection returns, draft and final approval', function () {
     $this->withoutMiddleware(HandleInertiaRequests::class);
@@ -26,6 +195,7 @@ it('routes each grievance through configured approval levels, rejection returns,
     Queue::fake();
     Storage::fake('local');
     $this->seed(GrievanceWorkflowSeeder::class);
+    seedLegacyWorkflowStepsForExistingFlowTests();
 
     $divisionId = DB::table('divisions')->insertGetId([
         'ulid' => (string) Str::ulid(),
@@ -171,9 +341,292 @@ it('routes each grievance through configured approval levels, rejection returns,
         ->and($draft->fresh()->approved_at)->not->toBeNull();
 });
 
+it('seeds the nine-stage grievance workflow with informal and escalation routes', function () {
+    $this->seed(GrievanceWorkflowSeeder::class);
+
+    $steps = GrievanceWorkflowStep::query()
+        ->where('workflow_key', 'default')
+        ->orderBy('step_number')
+        ->get();
+
+    expect($steps)->toHaveCount(9)
+        ->and($steps->pluck('action_type')->all())->toBe([
+            'informal_resolution',
+            'review',
+            'screen_allocate',
+            'acknowledge',
+            'investigation',
+            'decision_approval',
+            'closure',
+            'escalation',
+            'monitoring',
+        ])
+        ->and($steps[0]->approval_target_step)->toBe(9)
+        ->and($steps[0]->rejection_target_step)->toBe(2)
+        ->and($steps[5]->rejection_target_step)->toBe(8)
+        ->and($steps[6]->approval_target_step)->toBe(9)
+        ->and($steps[6]->rejection_target_step)->toBe(5);
+});
+
+it('records informal resolution and routes resolved cases to per-case monitoring', function () {
+    $this->withoutMiddleware(HandleInertiaRequests::class);
+    Notification::fake();
+    $this->seed(GrievanceWorkflowSeeder::class);
+
+    $officer = workflowTestUser('RD Officer', ['grievances.view']);
+    workflowTestUser('Executive', ['grievances.view']);
+    $grievance = Grievance::query()->create([
+        'reference_no' => 'GRM-INFORMAL-000001',
+        'grievance_category_id' => workflowTestCategory(),
+        'channel_id' => workflowTestChannel(),
+        'description' => 'A grievance resolved during informal intake.',
+        'status' => 'submitted',
+        'current_workflow_step_id' => GrievanceWorkflowStep::query()
+            ->where('workflow_key', 'default')
+            ->where('step_number', 1)
+            ->value('id'),
+        'registered_by' => $officer->id,
+    ]);
+
+    $this->actingAs($officer)
+        ->post(route('grievances.workflow-action', $grievance), [
+            'decision' => 'approve',
+            'reason' => 'The contractor repaired the damaged access point.',
+            'workflow_data' => [
+                'informal_outcome' => 'The complainant confirmed the repair.',
+            ],
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    $grievance->refresh();
+    $action = $grievance->workflowActions()->latest('id')->firstOrFail();
+    expect($grievance->status)->toBe('resolved')
+        ->and($grievance->currentWorkflowStep->step_number)->toBe(9)
+        ->and($action->data['informal_outcome'])->toBe('The complainant confirmed the repair.');
+});
+
+it('routes an unaccepted closure back to investigation and an unapproved decision to escalation', function () {
+    $this->withoutMiddleware(HandleInertiaRequests::class);
+    Notification::fake();
+    $this->seed(GrievanceWorkflowSeeder::class);
+
+    $categoryId = workflowTestCategory();
+    $channelId = workflowTestChannel();
+    $investigator = workflowTestUser('Investigator', ['grievances.view', 'grievances.resolve']);
+    $clo = workflowTestUser('Contractor CLO', ['grievances.view', 'grievances.close']);
+    $grievance = Grievance::query()->create([
+        'reference_no' => 'GRM-CLOSURE-000001',
+        'grievance_category_id' => $categoryId,
+        'channel_id' => $channelId,
+        'description' => 'A grievance whose proposed remedy was not accepted.',
+        'status' => 'resolved',
+        'current_workflow_step_id' => GrievanceWorkflowStep::query()
+            ->where('workflow_key', 'default')
+            ->where('step_number', 7)
+            ->value('id'),
+        'assigned_officer_id' => $investigator->id,
+        'registered_by' => $clo->id,
+    ]);
+
+    $this->actingAs($clo)
+        ->post(route('grievances.workflow-action', $grievance), [
+            'decision' => 'approve',
+            'workflow_data' => [
+                'acceptance' => '0',
+                'satisfaction_rating' => '2',
+            ],
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    $grievance->refresh();
+    expect($grievance->status)->toBe('in_progress')
+        ->and($grievance->currentWorkflowStep->step_number)->toBe(5);
+
+    $chair = workflowTestUser('GRC Chair', ['grievances.view', 'grievances.resolve']);
+    workflowTestUser('RD E&S Unit', ['grievances.view', 'grievances.escalate']);
+    $grievance->update([
+        'status' => 'pending_approval',
+        'current_workflow_step_id' => GrievanceWorkflowStep::query()
+            ->where('workflow_key', 'default')
+            ->where('step_number', 6)
+            ->value('id'),
+    ]);
+    $grievance->resolutions()->create([
+        'proposed_by' => $investigator->id,
+        'document_type' => 'report',
+        'resolution_text' => '<p>Recommended corrective action.</p>',
+    ]);
+
+    $this->actingAs($chair)
+        ->post(route('grievances.workflow-action', $grievance), [
+            'decision' => 'reject',
+            'reason' => 'The case remains unresolved and needs external review.',
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($grievance->fresh()->status)->toBe('escalated')
+        ->and($grievance->fresh()->currentWorkflowStep->step_number)->toBe(8);
+});
+
+it('runs a formally submitted case through screening, investigation, approval, closure and reporting', function () {
+    $this->withoutMiddleware(HandleInertiaRequests::class);
+    Notification::fake();
+    $this->seed(GrievanceWorkflowSeeder::class);
+
+    $divisionId = DB::table('divisions')->insertGetId([
+        'ulid' => (string) Str::ulid(),
+        'code' => 'FLOW-DIV',
+        'name' => 'Workflow Division',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $sectionId = DB::table('sections')->insertGetId([
+        'ulid' => (string) Str::ulid(),
+        'code' => 'FLOW-SEC',
+        'division_id' => $divisionId,
+        'name' => 'Workflow Section',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $rdOfficer = workflowTestUser('RD Officer', ['grievances.view']);
+    $helpdesk = workflowTestUser('Helpdesk Officer', ['grievances.view']);
+    $manager = workflowTestUser('Responsible Manager', ['grievances.view', 'grievances.allocate', 'grievances.assign'], [
+        'division_id' => $divisionId,
+    ]);
+    $investigator = workflowTestUser('Investigator', ['grievances.view', 'grievances.resolve'], [
+        'division_id' => $divisionId,
+        'section_id' => $sectionId,
+    ]);
+    $chair = workflowTestUser('GRC Chair', ['grievances.view', 'grievances.resolve']);
+    $clo = workflowTestUser('Contractor CLO', ['grievances.view', 'grievances.close']);
+    $executive = workflowTestUser('Executive', ['grievances.view']);
+
+    $grievance = Grievance::query()->create([
+        'reference_no' => 'GRM-FULL-FLOW-000001',
+        'grievance_category_id' => workflowTestCategory(),
+        'channel_id' => workflowTestChannel(),
+        'description' => 'A case used to verify all required default workflow transitions.',
+        'status' => 'submitted',
+        'current_workflow_step_id' => GrievanceWorkflowStep::query()
+            ->where('workflow_key', 'default')
+            ->where('step_number', 1)
+            ->value('id'),
+        'registered_by' => $rdOfficer->id,
+    ]);
+
+    $this->actingAs($rdOfficer)->post(route('grievances.workflow-action', $grievance), [
+        'decision' => 'reject',
+        'reason' => 'Informal resolution was not successful; proceed with the formal case.',
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $this->actingAs($helpdesk)->post(route('grievances.workflow-action', $grievance), [
+        'decision' => 'approve',
+        'reason' => 'Formal complaint registered.',
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $this->actingAs($manager)->post(route('grievances.workflow-action', $grievance), [
+        'decision' => 'approve',
+        'division_id' => $divisionId,
+        'section_id' => $sectionId,
+        'officer_id' => $investigator->id,
+        'workflow_data' => [
+            'severity' => 'high',
+            'repeat_case' => '1',
+            'requested_remedy' => 'Repair the damaged road shoulder.',
+        ],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $this->actingAs($investigator)->post(route('grievances.workflow-action', $grievance), [
+        'decision' => 'acknowledge',
+        'reason' => 'Receipt confirmed; investigation started.',
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $this->actingAs($investigator)->post(route('grievances.workflow-action', $grievance), [
+        'decision' => 'approve',
+        'resolution_html' => '<p>Repair the road shoulder and verify completion.</p>',
+        'workflow_data' => [
+            'corrective_action' => 'Repair and inspect the shoulder.',
+            'action_owner' => 'Road maintenance contractor',
+            'action_due_at' => now()->addWeek()->toDateString(),
+        ],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect($grievance->fresh()->currentWorkflowStep->role_name)->toBe('GRC Chair')
+        ->and($grievance->fresh()->resolutions()->whereNull('approved_at')->value('proposed_by'))
+        ->toBe($investigator->id);
+
+    $this->actingAs($chair)->post(route('grievances.workflow-action', $grievance), [
+        'decision' => 'approve',
+        'reason' => 'Finding and proposed remedy approved.',
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $this->actingAs($clo)->post(route('grievances.workflow-action', $grievance), [
+        'decision' => 'approve',
+        'reason' => 'The remedy was communicated and verified.',
+        'workflow_data' => [
+            'acceptance' => '1',
+            'satisfaction_rating' => '5',
+        ],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $grievance->refresh();
+    expect($grievance->currentWorkflowStep->step_number)->toBe(9)
+        ->and($grievance->status)->toBe('resolved')
+        ->and($grievance->priority)->toBe('high')
+        ->and($grievance->is_previously_lodged)->toBeTrue()
+        ->and($grievance->satisfaction_rating)->toBe(5)
+        ->and($grievance->resolutions()->latest('id')->value('approved_by'))->toBe($chair->id)
+        ->and($grievance->resolutions()->latest('id')->value('approved_at'))->not->toBeNull();
+
+    $this->actingAs($executive)->post(route('grievances.workflow-action', $grievance), [
+        'decision' => 'approve',
+        'reason' => 'Case included in monthly performance reporting.',
+        'workflow_data' => [
+            'monitoring_notes' => 'Corrective action completed within the reporting period.',
+        ],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect($grievance->fresh()->status)->toBe('closed')
+        ->and($grievance->fresh()->current_workflow_step_id)->toBeNull()
+        ->and($grievance->fresh()->closed_at)->not->toBeNull();
+});
+
+it('seeds the documented workflow roles with the permissions used by their steps', function () {
+    $this->seed(PermissionSeeder::class);
+    $this->seed(RoleSeeder::class);
+
+    expect(Role::query()->whereIn('name', [
+        'RD Officer',
+        'Contractor CLO',
+        'GRC Member',
+        'Responsible Manager',
+        'Investigator',
+        'Engineer',
+        'GRC Chair',
+        'RD Manager',
+        'Director General',
+        'RD E&S Unit',
+        'External Reviewer',
+        'Executive',
+    ])->count())->toBe(12)
+        ->and(Role::findByName('Responsible Manager')->hasPermissionTo('grievances.allocate'))->toBeTrue()
+        ->and(Role::findByName('Investigator')->hasPermissionTo('grievances.resolve'))->toBeTrue()
+        ->and(Role::findByName('GRC Chair')->hasPermissionTo('grievances.resolve'))->toBeTrue()
+        ->and(Role::findByName('RD Officer')->hasPermissionTo('grievances.view'))->toBeTrue()
+        ->and(Role::findByName('RD Officer')->hasPermissionTo('grievances.close'))->toBeFalse()
+        ->and(Role::findByName('Contractor CLO')->hasPermissionTo('grievances.close'))->toBeTrue()
+        ->and(Role::findByName('RD E&S Unit')->hasPermissionTo('grievances.escalate'))->toBeTrue()
+        ->and(Role::findByName('External Reviewer')->hasPermissionTo('grievances.escalate'))->toBeTrue();
+});
+
 it('does not allow final approval until the investigation step submits a resolution draft', function () {
     $this->withoutMiddleware(HandleInertiaRequests::class);
     $this->seed(GrievanceWorkflowSeeder::class);
+    seedLegacyWorkflowStepsForExistingFlowTests();
 
     $director = workflowTestUser('Director', ['grievances.view', 'grievances.resolve']);
     $finalApprovalStep = GrievanceWorkflowStep::query()
@@ -233,6 +686,7 @@ it('routes legacy resolution submissions through the configured workflow', funct
     $this->withoutMiddleware(HandleInertiaRequests::class);
     Notification::fake();
     $this->seed(GrievanceWorkflowSeeder::class);
+    seedLegacyWorkflowStepsForExistingFlowTests();
 
     workflowTestUser('Director', ['grievances.view', 'grievances.resolve']);
     $helpdesk = workflowTestUser('Helpdesk Officer', ['grievances.view', 'grievances.resolve']);
@@ -274,6 +728,7 @@ it('lets the assigned officer acknowledge the case and upload a document to work
     Notification::fake();
     Storage::fake('local');
     $this->seed(GrievanceWorkflowSeeder::class);
+    seedLegacyWorkflowStepsForExistingFlowTests();
     $helpdesk = workflowTestUser('Helpdesk Officer', ['grievances.view', 'grievances.resolve']);
     $step = GrievanceWorkflowStep::query()
         ->where('workflow_key', 'default')
@@ -312,6 +767,7 @@ it('lets the assigned officer acknowledge the case and upload a document to work
 it('shows admins complete lifecycle lists and restricts those lists to admins', function () {
     $this->withoutMiddleware(HandleInertiaRequests::class);
     $this->seed(GrievanceWorkflowSeeder::class);
+    seedLegacyWorkflowStepsForExistingFlowTests();
     $admin = workflowTestUser('Admin', ['grievances.view']);
     $officer = workflowTestUser('Helpdesk Officer', ['grievances.view']);
     $categoryId = workflowTestCategory();
@@ -423,6 +879,7 @@ it('includes address and coordinates in grievance details', function () {
 it('shows workflow cases forwarded by the signed-in officer after they leave the officer queue', function () {
     $this->withoutMiddleware(HandleInertiaRequests::class);
     $this->seed(GrievanceWorkflowSeeder::class);
+    seedLegacyWorkflowStepsForExistingFlowTests();
     $director = workflowTestUser('Director', ['grievances.view', 'grievances.allocate']);
     workflowTestUser('Helpdesk Officer', ['grievances.view']);
     $divisionId = DB::table('divisions')->insertGetId([
@@ -500,6 +957,7 @@ it('shows workflow cases forwarded by the signed-in officer after they leave the
 it('offers unassigned helpdesk officers for a section and accepts the section manager assignment', function () {
     $this->withoutMiddleware(HandleInertiaRequests::class);
     $this->seed(GrievanceWorkflowSeeder::class);
+    seedLegacyWorkflowStepsForExistingFlowTests();
 
     $divisionId = DB::table('divisions')->insertGetId([
         'ulid' => (string) Str::ulid(),
@@ -713,4 +1171,36 @@ function workflowTestChannel(): int
         'created_at' => now(),
         'updated_at' => now(),
     ]);
+}
+
+function seedLegacyWorkflowStepsForExistingFlowTests(): void
+{
+    $steps = [
+        [1, 'Initial review and allocation', 'allocate_division', 'Director', 'reject', null, false],
+        [2, 'Division review', 'allocate_section', 'Division Director', 'return_to_step', 1, false],
+        [3, 'Section review', 'assign_officer', 'Section Manager', 'return_to_step', 2, false],
+        [4, 'Investigation and proposed resolution', 'prepare_resolution', 'Helpdesk Officer', 'return_to_step', 3, false],
+        [5, 'Final approval', 'final_approval', 'Director', 'return_to_step', 4, true],
+    ];
+
+    foreach ($steps as [$number, $name, $actionType, $roleName, $rejectionAction, $rejectionTarget, $isFinal]) {
+        DB::table('grievance_workflow_steps')->updateOrInsert(
+            ['workflow_key' => 'default', 'step_number' => $number],
+            [
+                'name' => $name,
+                'description' => $name,
+                'action_type' => $actionType,
+                'role_name' => $roleName,
+                'approver_user_id' => null,
+                'approval_action' => $isFinal ? 'resolve' : 'advance',
+                'approval_target_step' => null,
+                'rejection_action' => $rejectionAction,
+                'rejection_target_step' => $rejectionTarget,
+                'is_final_approval' => $isFinal,
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        );
+    }
 }

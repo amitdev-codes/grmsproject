@@ -15,6 +15,7 @@ use Modules\Grievance\Models\GrievanceMessage;
 use Modules\Grievance\Models\GrievanceStatusHistory;
 use Modules\Grievance\Models\ReferenceSequence;
 use Modules\Grievance\Services\GrievanceCommunicationService;
+use Modules\Grievance\Services\PendingGrievanceQueueService;
 use Modules\Master\Models\District;
 
 class GrievanceRepository implements GrievanceRepositoryInterface
@@ -82,6 +83,8 @@ class GrievanceRepository implements GrievanceRepositoryInterface
                     ->where('approved_by', $userId)
                     ->whereNotNull('approved_at'),
             ))
+            ->when($filters['workflow_actionable_by'] ?? null, fn ($q, $user) => app(PendingGrievanceQueueService::class)
+                ->constrain($q, $user))
             ->when($filters['category_id'] ?? null, fn ($q, $v) => $q->where('grievance_category_id', $v))
             ->when($filters['district_id'] ?? null, fn ($q, $v) => $q->where('district_id', $v))
             ->when($filters['division_id'] ?? null, fn ($q, $v) => $q->where('division_id', $v))

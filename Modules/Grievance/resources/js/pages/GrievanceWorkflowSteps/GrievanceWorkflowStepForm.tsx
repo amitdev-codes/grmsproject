@@ -21,6 +21,7 @@ interface GrievanceWorkflowStepFormProps {
     workflowStep: GrievanceWorkflowStep | null;
     roles: Option[];
     users: Option[];
+    workflowTargetSteps: number[];
 }
 
 interface FormValues {
@@ -31,6 +32,7 @@ interface FormValues {
     role_name: string;
     approver_user_id: string;
     approval_action: string;
+    approval_target_step: string;
     rejection_action: string;
     rejection_target_step: string;
     is_final_approval: '1' | '0';
@@ -51,6 +53,7 @@ export default function Form({
     workflowStep,
     roles,
     users,
+    workflowTargetSteps,
 }: GrievanceWorkflowStepFormProps) {
     const isEdit = !!workflowStep;
     const { t } = useTranslation();
@@ -65,6 +68,9 @@ export default function Form({
                 ? String(workflowStep.approver_user_id)
                 : '',
             approval_action: workflowStep?.approval_action ?? 'advance',
+            approval_target_step: workflowStep?.approval_target_step
+                ? String(workflowStep.approval_target_step)
+                : '',
             rejection_action: workflowStep?.rejection_action ?? 'reject',
             rejection_target_step: workflowStep?.rejection_target_step
                 ? String(workflowStep.rejection_target_step)
@@ -85,6 +91,9 @@ export default function Form({
             ...(formData.rejection_action !== 'return_to_step'
                 ? { rejection_target_step: '' }
                 : {}),
+            ...(!formData.approval_target_step
+                ? { approval_target_step: '' }
+                : {}),
             ...(isEdit ? { _method: 'put' } : {}),
         }));
 
@@ -95,15 +104,12 @@ export default function Form({
     const roleOptions = [{ value: '', label: 'Select a role' }, ...roles];
     const targetOptions = [
         { value: '', label: 'Select a level' },
-        ...(Number(data.step_number) > 1
-            ? Array.from(
-                  { length: Number(data.step_number) - 1 },
-                  (_, index) => ({
-                      value: String(index + 1),
-                      label: `Level ${index + 1}`,
-                  }),
-              )
-            : []),
+        ...workflowTargetSteps
+            .filter((stepNumber) => stepNumber !== Number(data.step_number))
+            .map((stepNumber) => ({
+                value: String(stepNumber),
+                label: `Level ${stepNumber}`,
+            })),
     ];
 
     return (
@@ -166,7 +172,15 @@ export default function Form({
                     { value: 'allocate_section', label: t('Allocate to section') },
                     { value: 'assign_officer', label: t('Assign investigating officer') },
                     { value: 'prepare_resolution', label: t('Prepare resolution draft') },
+                    { value: 'investigation', label: t('Investigation and corrective action') },
                     { value: 'final_approval', label: t('Final approval') },
+                    { value: 'informal_resolution', label: t('Informal resolution') },
+                    { value: 'screen_allocate', label: t('Screen and allocate case') },
+                    { value: 'acknowledge', label: t('Acknowledge receipt') },
+                    { value: 'decision_approval', label: t('Decision and approval') },
+                    { value: 'closure', label: t('Notify and record closure') },
+                    { value: 'escalation', label: t('Escalation and external review') },
+                    { value: 'monitoring', label: t('Performance monitoring and reporting') },
                 ]}
                 error={errors.action_type}
             />
@@ -217,6 +231,14 @@ export default function Form({
                 onChange={(value) => setData('rejection_action', value)}
                 options={rejectionActions}
                 error={errors.rejection_action}
+            />
+            <Select2Field
+                id="approval_target_step"
+                label={t('On approval, route directly to level')}
+                value={data.approval_target_step}
+                onChange={(value) => setData('approval_target_step', value)}
+                options={targetOptions}
+                error={errors.approval_target_step}
             />
             {data.rejection_action === 'return_to_step' && (
                 <Select2Field

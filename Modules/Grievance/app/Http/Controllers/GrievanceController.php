@@ -21,6 +21,7 @@ use Modules\Grievance\Models\GrievanceCategory;
 use Modules\Grievance\Models\GrievanceChannel;
 use Modules\Grievance\Models\InboundSms;
 use Modules\Grievance\Services\GrievanceRegistrationService;
+use Modules\Grievance\Services\PendingGrievanceQueueService;
 use Modules\Master\Models\District;
 use Modules\Master\Models\Division;
 use Modules\Master\Models\Section;
@@ -46,7 +47,13 @@ class GrievanceController extends Controller
             'channel', 'status', 'category_id', 'district_id',
             'division_id', 'section_id', 'date_from', 'date_to', 'search',
         ]);
-        $filters['terminal_assigned_to'] = $isAdminList ? null : $user->id;
+        $isPendingQueue = ! $isAdminList && ($request->boolean('pending') || $request->routeIs('grievances.pending'));
+
+        if ($isPendingQueue) {
+            $filters['workflow_actionable_by'] = $user;
+        } else {
+            $filters['terminal_assigned_to'] = $isAdminList ? null : $user->id;
+        }
         $listTitle = 'Grievances';
 
         if ($isAdminList) {
@@ -67,20 +74,8 @@ class GrievanceController extends Controller
 
             $filters['workflow_forwarded_by_user_id'] = $user->id;
             $listTitle = 'Forwarded Grievances';
-        } elseif ($request->boolean('pending') || $request->routeIs('grievances.pending')) {
-
-            if ($user->hasRole('Director')) {
-                $filters['status'] = ['submitted', 'reallocation_required', 'pending_approval'];
-            } elseif ($user->hasRole('Division Director') && $user->division_id) {
-                $filters['status'] = 'allocated_division';
-                $filters['division_id'] = $user->division_id;
-            } elseif ($user->hasRole('Section Manager') && $user->section_id) {
-                $filters['status'] = 'allocated_section';
-                $filters['section_id'] = $user->section_id;
-            } elseif ($user->hasAnyRole(['Helpdesk Officer', 'Content Editor'])) {
-                $filters['status'] = ['assigned_officer', 'assigned', 'in_progress', 'escalated'];
-                $filters['assigned_officer_id'] = $user->id;
-            } else {
+        } elseif ($isPendingQueue) {
+            if (! app(PendingGrievanceQueueService::class)->visibleFor($user)) {
                 abort(403);
             }
         }
@@ -112,7 +107,10 @@ class GrievanceController extends Controller
             'districts' => District::orderBy('name')->get(['id', 'code', 'name']),
             'divisions' => Division::orderBy('name')->get(['id', 'code', 'name']),
             'sections' => Section::orderBy('name')->get(['id', 'code', 'name']),
-            'officers' => User::role('Helpdesk Officer')->orderBy('name')->get(['id', 'name', 'section_id']),
+            'officers' => User::query()
+                ->whereHas('roles', fn ($query) => $query->whereIn('name', ['Helpdesk Officer', 'Investigator']))
+                ->orderBy('name')
+                ->get(['id', 'name', 'section_id']),
             'filters' => $filters,
         ]);
     }
@@ -149,7 +147,11 @@ class GrievanceController extends Controller
 
             if ($step?->approverUser) {
                 $recipients->push($step->approverUser);
-            } elseif ($step?->action_type === 'prepare_resolution') {
+            } elseif ($step?->action_type === 'review' && $step->role_name === 'Helpdesk Officer') {
+                if ($grievance->assignedOfficer) {
+                    $recipients->push($grievance->assignedOfficer);
+                }
+            } elseif (in_array($step?->action_type, ['prepare_resolution', 'investigation', 'acknowledge'], true)) {
                 if ($grievance->assignedOfficer) {
                     $recipients->push($grievance->assignedOfficer);
                 }
@@ -245,19 +247,33 @@ class GrievanceController extends Controller
                 ->when($grievance->division_id, fn ($query) => $query->where('division_id', $grievance->division_id))
                 ->orderBy('name')
                 ->get(['id', 'code', 'name', 'division_id']),
-            'officers' => User::role('Helpdesk Officer')
-                ->where('status', true)
-                ->when($grievance->section_id, fn ($query) => $query->where(
-                    fn ($officers) => $officers
-                        ->where('section_id', $grievance->section_id)
-                        ->orWhereNull('section_id'),
+            'officers' => User::query()
+                ->whereHas('roles', fn ($query) => $query->whereIn(
+                    'name',
+                    $grievance->currentWorkflowStep?->action_type === 'screen_allocate'
+                        ? ['Investigator']
+                        : ['Helpdesk Officer', 'Investigator'],
                 ))
-                ->orderBy('name')->get(['id', 'name']),
+                ->where('status', true)
+                ->when(
+                    $grievance->currentWorkflowStep?->action_type === 'screen_allocate' && $grievance->division_id,
+                    fn ($query) => $query->where(fn ($officers) => $officers
+                        ->where('division_id', $grievance->division_id)
+                        ->orWhereNull('division_id')),
+                )
+                ->when(
+                    $grievance->currentWorkflowStep?->action_type !== 'screen_allocate' && $grievance->section_id,
+                    fn ($query) => $query->where(fn ($officers) => $officers
+                        ->where('section_id', $grievance->section_id)
+                        ->orWhereNull('section_id')),
+                )
+                ->orderBy('name')->get(['id', 'name', 'district_id', 'division_id', 'section_id']),
             'workflowStep' => $grievance->currentWorkflowStep,
             'workflowActions' => $grievance->workflowActions->map(fn ($action): array => [
                 'id' => $action->id,
                 'decision' => $action->decision,
                 'reason' => $action->reason,
+                'data' => $action->data,
                 'from_step' => $action->fromStep?->name,
                 'to_step' => $action->toStep?->name,
                 'actor' => $action->actor?->name,

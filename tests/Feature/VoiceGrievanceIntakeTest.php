@@ -89,6 +89,13 @@ it('files a reviewed voice recording through the regular grievance registration 
         'status' => true,
         'guard_name' => 'web',
     ]);
+    Role::query()->create([
+        'name' => 'RD Officer',
+        'name_st' => 'Ofisiri ea RD',
+        'code' => 'RD_OFFICER',
+        'status' => true,
+        'guard_name' => 'web',
+    ]);
     $user->givePermissionTo([
         Permission::findOrCreate('grievances.view', 'web'),
         Permission::findOrCreate('grievances.create', 'web'),
@@ -139,7 +146,7 @@ it('files a reviewed voice recording through the regular grievance registration 
         ->and($grievance->description)->toBe('I am reporting a problem on the road near my home.')
         ->and($grievance->metadata['voice_grievance_reference'])->toBe($voiceGrievance->reference_no)
         ->and($grievance->status)->toBe('submitted')
-        ->and($grievance->currentWorkflowStep?->action_type)->toBe('allocate_division');
+        ->and($grievance->currentWorkflowStep?->action_type)->toBe('informal_resolution');
 });
 
 function fakeWaveRecording(): UploadedFile

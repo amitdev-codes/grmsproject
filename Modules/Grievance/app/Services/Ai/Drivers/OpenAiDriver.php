@@ -2,31 +2,29 @@
 
 namespace Modules\Grievance\Services\Ai\Drivers;
 
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
-use Modules\Grievance\Services\Ai\AiClassifierDriverInterface;
+use Modules\Grievance\Services\Ai\AiTextGeneratorInterface;
 
-class OpenAiDriver extends AbstractAiDriver implements AiClassifierDriverInterface
+class OpenAiDriver extends AbstractAiDriver implements AiTextGeneratorInterface
 {
-    /**
-     * @throws ConnectionException
-     */
-    public function classify(string $description, array $categories): array
+    public function generate(string $prompt): string
     {
-        $response = Http::withToken(config('services.openai.key'))
+        $key = config('services.openai.key');
+        $model = config('services.openai.model');
+        $this->assertConfigured($key, $model);
+
+        $response = Http::withToken($key)
             ->timeout(15)
             ->post('https://api.openai.com/v1/chat/completions', [
-                'model' => config('services.openai.model'),
+                'model' => $model,
                 'messages' => [
-                    ['role' => 'user', 'content' => $this->buildPrompt($description, $categories)],
+                    ['role' => 'user', 'content' => $prompt],
                 ],
-                'temperature' => 0,
+                'temperature' => 0.2,
             ]);
 
-        if ($response->failed()) {
-            return ['category_id' => null, 'confidence' => 0.0, 'reason' => 'api_error'];
-        }
+        $this->assertSuccessful($response);
 
-        return $this->parseJson($response->json('choices.0.message.content'));
+        return $this->requireText($response->json('choices.0.message.content'));
     }
 }

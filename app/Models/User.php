@@ -9,12 +9,14 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
+use Modules\Grievance\Models\Grievance;
 use Modules\Master\Models\District;
 use Modules\Master\Models\Division;
 use Modules\Master\Models\Section;
@@ -102,5 +104,10 @@ class User extends Authenticatable implements HasMedia
     public function section(): BelongsTo
     {
         return $this->belongsTo(Section::class);
+    }
+
+    public function assignedGrievances(): HasMany
+    {
+        return $this->hasMany(Grievance::class, 'assigned_officer_id');
     }
 }

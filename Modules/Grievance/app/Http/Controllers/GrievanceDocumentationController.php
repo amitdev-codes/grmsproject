@@ -49,6 +49,7 @@ class GrievanceDocumentationController extends Controller
                     'role_name',
                     'approver_user_id',
                     'approval_action',
+                    'approval_target_step',
                     'rejection_action',
                     'rejection_target_step',
                     'is_final_approval',

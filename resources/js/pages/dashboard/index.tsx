@@ -1,28 +1,13 @@
+import { router, usePage } from '@inertiajs/react';
 import {
     BarChart3,
     CheckCircle2,
     Clock3,
-    House,
     PieChart as PieChartIcon,
+    Sparkles,
     TrendingUp,
 } from 'lucide-react';
-import IndexLayout from '@/components/index-layout';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Overview } from './overview';
-import { RecentSales } from './recent-sales';
-import { useTranslation } from '@/hooks/use-translation';
-import type { SharedData } from '@/types/shared-data';
-import { usePage } from '@inertiajs/react';
-import { Heatmap } from './heatmap';
-import { ContractorScores } from './contractor-scores';
-import { ComplianceReport } from './compliance-report';
+import { useState } from 'react';
 import {
     Cell,
     Legend,
@@ -31,6 +16,24 @@ import {
     ResponsiveContainer,
     Tooltip,
 } from 'recharts';
+import IndexLayout from '@/components/index-layout';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTranslation } from '@/hooks/use-translation';
+import type { SharedData } from '@/types/shared-data';
+import { route } from 'ziggy-js';
+import { ComplianceReport } from './compliance-report';
+import { ContractorScores } from './contractor-scores';
+import { Heatmap } from './heatmap';
+import { Overview } from './overview';
+import { RecentSales } from './recent-sales';
 
 interface DashboardData {
     summary: {
@@ -60,10 +63,14 @@ interface DashboardData {
         total: number;
         rate: number;
     }[];
+    ai_summary_enabled: boolean;
 }
 
 export default function Dashboard() {
     const { t } = useTranslation();
+    const [generatingSummary, setGeneratingSummary] = useState(false);
+    const page = usePage<SharedData>();
+    const { flash } = page.props;
     const {
         summary,
         monthly_trends,
@@ -73,52 +80,14 @@ export default function Dashboard() {
         heatmap,
         contractor_scores,
         compliance,
+        ai_summary_enabled = false,
     } =
         usePage<SharedData & { dashboard: DashboardData }>().props.dashboard ??
         ({} as DashboardData);
 
-    const StatCard = ({
-        title,
-        value,
-        icon: Icon,
-        description,
-        color,
-        background,
-    }: {
-        title: string;
-        value: number | string;
-        icon: React.ElementType;
-        description?: string;
-        color: string;
-        background: string;
-    }) => (
-        <Card className="border-border/70 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                    {title}
-                </CardTitle>
-                <span
-                    className="flex h-8 w-8 items-center justify-center rounded-lg"
-                    style={{ backgroundColor: background, color }}
-                >
-                    <Icon className="h-4 w-4" />
-                </span>
-            </CardHeader>
-            <CardContent className="pt-0">
-                <div className="text-2xl font-bold tracking-tight">{value}</div>
-                {description && (
-                    <p className="text-xs text-muted-foreground">
-                        {description}
-                    </p>
-                )}
-            </CardContent>
-        </Card>
-    );
-
     return (
         <IndexLayout
             title="dashboard"
-            breadcrumbs={[{ label: t('menu.dashboard'), icon: House }]}
         >
             <div className="space-y-6">
                 {/* Summary cards */}
@@ -153,7 +122,14 @@ export default function Dashboard() {
                     />
                 </div>
 
-                <Tabs defaultValue="overview" className="space-y-4">
+                <Tabs
+                    defaultValue={
+                        page.url.startsWith('/dashboard/reports')
+                            ? 'reports'
+                            : 'overview'
+                    }
+                    className="space-y-4"
+                >
                     <TabsList>
                         <TabsTrigger value="overview">
                             {t('menu.overview') || 'Overview'}
@@ -275,11 +251,102 @@ export default function Dashboard() {
                     </TabsContent>
 
                     <TabsContent value="reports" className="space-y-6">
+                        <Card>
+                            <CardHeader className="flex flex-row items-start justify-between gap-4">
+                                <div className="space-y-1.5">
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Sparkles className="size-4 text-primary" />
+                                        AI report summary
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Generate a management summary from aggregate dashboard statistics. No individual grievance details are sent.
+                                    </CardDescription>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={!ai_summary_enabled || generatingSummary}
+                                    onClick={() => {
+                                        router.post(
+                                            route('dashboard.ai-summary'),
+                                            {},
+                                            {
+                                                preserveScroll: true,
+                                                onStart: () => setGeneratingSummary(true),
+                                                onFinish: () => setGeneratingSummary(false),
+                                            },
+                                        );
+                                    }}
+                                >
+                                    <Sparkles className="size-4" />
+                                    {generatingSummary ? 'Generating…' : 'Generate summary'}
+                                </Button>
+                            </CardHeader>
+                            <CardContent>
+                                {!ai_summary_enabled ? (
+                                    <p className="text-sm text-muted-foreground">
+                                        AI summaries are disabled. Set GRIEVANCE_AI_ENABLED=true and configure an AI provider API key to enable them.
+                                    </p>
+                                ) : flash.ai_error ? (
+                                    <p role="alert" className="text-sm text-destructive">
+                                        {flash.ai_error}
+                                    </p>
+                                ) : flash.ai_summary ? (
+                                    <div className="rounded-md border bg-muted/30 p-4 text-sm leading-6 whitespace-pre-line">
+                                        {flash.ai_summary}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">
+                                        Generate an AI summary of current workload, resolution trends, and report statistics.
+                                    </p>
+                                )}
+                            </CardContent>
+                        </Card>
                         <ComplianceReport data={compliance} />
                     </TabsContent>
                 </Tabs>
             </div>
         </IndexLayout>
+    );
+}
+
+function StatCard({
+    title,
+    value,
+    icon: Icon,
+    description,
+    color,
+    background,
+}: {
+    title: string;
+    value: number | string;
+    icon: React.ElementType;
+    description?: string;
+    color: string;
+    background: string;
+}) {
+    return (
+        <Card className="border-border/70 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                    {title}
+                </CardTitle>
+                <span
+                    className="flex h-8 w-8 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: background, color }}
+                >
+                    <Icon className="h-4 w-4" />
+                </span>
+            </CardHeader>
+            <CardContent className="pt-0">
+                <div className="text-2xl font-bold tracking-tight">{value}</div>
+                {description && (
+                    <p className="text-xs text-muted-foreground">
+                        {description}
+                    </p>
+                )}
+            </CardContent>
+        </Card>
     );
 }
 
